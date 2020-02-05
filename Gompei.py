@@ -34,4 +34,4 @@ async def help(ctx):
 
 	await ctx.message.channel.send(embed=helpEmbed)
 
-gompei.run(json.load(open(os.path.join("config", "tokens.json")))["token"])
+gompei.run(json.load(open(os.path.join("config", "tokens.json")))["testToken"])

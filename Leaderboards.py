@@ -37,7 +37,7 @@ class Leaderboards(commands.Cog):
 	@commands.Cog.listener()
 	async def on_message(self, message):
 		guild = message.channel.guild
-		serverLeaderboards = self.leaderboards[str(guild.id)]["server"]["messageLeaderboard"]
+		serverLeaderboards = self.leaderboards[str(guild.id)]["server"]
 
 		if not message.author.bot:
 			if str(message.author.id) not in serverLeaderboards["messageLeaderboard"]:
@@ -45,7 +45,7 @@ class Leaderboards(commands.Cog):
 			else:
 				serverLeaderboards["messageLeaderboard"][str(message.author.id)] += 1
 
-			self.update_state()
+			await self.update_state()
 
 	@commands.Cog.listener()
 	async def on_message_delete(self, message):
@@ -55,7 +55,7 @@ class Leaderboards(commands.Cog):
 		if not message.author.bot:
 			serverLeaderboards["messageLeaderboard"][str(message.author.id)] -= 1
 			serverLeaderboards["lastUpdate"] = datetime.utcnow().isoformat()
-			self.update_state()
+			await self.update_state()
 
 	@commands.Cog.listener()
 	async def on_reaction_add(self, reaction, user):
@@ -69,6 +69,35 @@ class Leaderboards(commands.Cog):
 					await reaction.remove(user)
 
 	async def increment_leaderboard(self, message):
+		leaderboardEmbed = discord.Embed(title="Message leaderboard", color=discord.Colour.red())
+
+		guild = message.channel.guild
+		leaderboard = self.leaderboards[str(guild.id)]["server"][self.cachedMessages[message.id]["type"]]
+
+		self.cachedMessages[message.id]["page"]
+
+		if self.cachedMessages[message.id]["page"] + 1 <= len(leaderboard) / 10 + 1:
+			self.cachedMessages[message.id]["page"] += 1
+			page = self.cachedMessages[message.id]["page"]
+
+			leaderboardEmbed.add_field(name="User", value="".join(self.score_leaderboard(guild, leaderboard).split("\t")[(page - 1) * 10:page * 10]), inline=True)
+			await message.edit(embed=leaderboardEmbed)
+
+	async def decrement_leaderboard(self, message):
+		leaderboardEmbed = discord.Embed(title="Message leaderboard", color=discord.Colour.red())
+
+		guild = message.channel.guild
+		leaderboard = self.leaderboards[str(guild.id)]["server"][self.cachedMessages[message.id]["type"]]
+
+		self.cachedMessages[message.id]["page"]
+
+		if self.cachedMessages[message.id]["page"] - 1 > 0:
+			self.cachedMessages[message.id]["page"] -= 1
+			page = self.cachedMessages[message.id]["page"]
+
+			leaderboardEmbed.add_field(name="User", value="".join(self.score_leaderboard(guild, leaderboard).split("\t")[(page - 1) * 10:page * 10]), inline=True)
+			await message.edit(embed=leaderboardEmbed)
+
 
 
 	async def update_guilds(self):
@@ -183,3 +212,29 @@ class Leaderboards(commands.Cog):
 		self.cachedMessages[message.id] = {"type": "messageLeaderboard", "page": 1}
 		await message.add_reaction("⬅️")
 		await message.add_reaction("➡️")
+
+	async def score_leaderboard(self, guild, leaderboard):
+		pastScore = 0
+		offset = 0
+		position = 0
+		userValues = ""
+
+		for participant in leaderboard:
+			score = leaderboard[participant]
+
+			if score == pastScore:
+				offset += 1
+			else:
+				position += offset + 1
+				offset = 0
+				pastScore = score
+
+			username = ""
+			if guild.get_member(int(participant)) is None:
+				username = str(await self.bot.fetch_user(int(participant)))
+			else:
+				username = str(guild.get_member(int(participant)).display_name)
+
+			userValues += "**" + str(position) + ". " + username + "** - " + str(score) + "\n\n\t"
+
+		return userValues
