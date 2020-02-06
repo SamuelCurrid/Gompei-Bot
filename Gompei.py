@@ -7,7 +7,7 @@ from Leaderboards import Leaderboards
 from Settings import Settings
 
 
-gompei = commands.Bot(command_prefix="!")
+gompei = commands.Bot(command_prefix="%")
 
 # Extensions
 gompei.add_cog(Leaderboards(gompei))
@@ -34,4 +34,4 @@ async def help(ctx):
 
 	await ctx.message.channel.send(embed=helpEmbed)
 
-gompei.run(json.load(open(os.path.join("config", "tokens.json")))["testToken"])
+gompei.run(json.load(open(os.path.join("config", "tokens.json")))["token"])
