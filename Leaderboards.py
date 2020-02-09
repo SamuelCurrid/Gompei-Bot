@@ -5,8 +5,7 @@ import os
 import json
 from datetime import datetime
 
-defaultLeaderboard = {"server": {"lastUpdate": None, "messageLeaderboard": {}, "emojiLeaderboard": {}}, "quote": {"lastUpdate": None, "channelID": None, "leaderboard": {}}}
-
+defaultLeaderboard = {"lastUpdate": None, "quotesChannel": None, "messageLeaderboard": {}, "emojiLeaderboard": {}, "quoteLeaderboard": {}}
 embeds = {"messageLeaderboard": discord.Embed(title="Message leaderboard", colour=discord.Colour.red()), "emojiLeaderboard": discord.Embed(title="Emoji Usage Leaderboard", colour=discord.Colour.red()), "quoteLeaderboard": discord.Embed(title="Quotes Leaderboard", description="Calculated from mentions", colour=discord.Colour.red())}
 
 
@@ -38,41 +37,37 @@ class Leaderboards(commands.Cog):
 	@commands.Cog.listener()
 	async def on_message(self, message):
 		guild = message.channel.guild
-		serverLeaderboards = self.leaderboards[str(guild.id)]["server"]
-		quoteLeaderboards = self.leaderboards[str(guild.id)]["quote"]
+		leaderboards = self.leaderboards[str(guild.id)]
 
 		if not message.author.bot:
-			if str(message.author.id) not in serverLeaderboards["messageLeaderboard"]:
-				serverLeaderboards["messageLeaderboard"][str(message.author.id)] = 1
+			if str(message.author.id) not in leaderboards["messageLeaderboard"]:
+				leaderboards["messageLeaderboard"][str(message.author.id)] = 1
 			else:
-				serverLeaderboards["messageLeaderboard"][str(message.author.id)] += 1
+				leaderboards["messageLeaderboard"][str(message.author.id)] += 1
 
-			if str(message.channel.id) == quoteLeaderboards["channelID"]:
+			if str(message.channel.id) == leaderboards["quotesChannel"]:
 				for user in message.mentions:
-					if str(message.author.id) not in quoteLeaderboards["leaderboard"]:
-						quoteLeaderboards["leaderboard"][str(message.author.id)] = 1
+					if str(user.id) not in leaderboards["quoteLeaderboard"]:
+						leaderboards["quoteLeaderboard"][str(user.id)] = 1
 					else:
-						quoteLeaderboards["leaderboard"][str(message.author.id)] += 1
+						leaderboards["quoteLeaderboard"][str(user.id)] += 1
 
-		serverLeaderboards["lastUpdate"] = message.created_at.isoformat();
-		quoteLeaderboards["lastUpdate"] = message.created_at.isoformat();
+		leaderboards["lastUpdate"] = message.created_at.isoformat()
 		await self.update_state()
 
 	@commands.Cog.listener()
 	async def on_message_delete(self, message):
 		guild = message.channel.guild
-		serverLeaderboards = self.leaderboards[str(guild.id)]["server"]
-		quoteLeaderboards = self.leaderboards[str(guild.id)]["quote"]
+		leaderboards = self.leaderboards[str(guild.id)]
 
 		if not message.author.bot:
-			serverLeaderboards["messageLeaderboard"][str(message.author.id)] -= 1
+			leaderboards["messageLeaderboard"][str(message.author.id)] -= 1
 
-			if str(message.channel.id) == quoteLeaderboards["channelID"]:
+			if str(message.channel.id) == leaderboards["quotesChannel"]:
 				for user in message.mentions:
-					quoteLeaderboards["leaderboard"][str(message.author.id)] -= 1
+					leaderboards["quotesChannel"][str(user.id)] -= 1
 
-		serverLeaderboards["lastUpdate"] = message.created_at.isoformat();
-		quoteLeaderboards["lastUpdate"] = message.created_at.isoformat();
+		leaderboards["lastUpdate"] = message.created_at.isoformat()
 		await self.update_state()
 
 	@commands.Cog.listener()
@@ -91,7 +86,7 @@ class Leaderboards(commands.Cog):
 		guild = message.channel.guild
 
 		leaderboardEmbed = embeds[self.cachedMessages[message.id]["type"]]
-		leaderboard = self.leaderboards[str(guild.id)]["server"][self.cachedMessages[message.id]["type"]]
+		leaderboard = self.leaderboards[str(guild.id)][self.cachedMessages[message.id]["type"]]
 
 		page = self.cachedMessages[message.id]["page"]
 
@@ -130,48 +125,45 @@ class Leaderboards(commands.Cog):
 		for guildID in removeGuilds:
 			self.leaderboards.pop(str(guildID))
 
+		await self.update_state()
+
 	async def update_leaderboards(self):
 		"""
 		Updates leaderboards from last run
 		"""
 
 		for guildID in self.leaderboards:
-			serverLeaderboards = self.leaderboards[guildID]["server"]
-			quoteLeaderboards = self.leaderboards[guildID]["quote"]
+			leaderboard = self.leaderboards[guildID]
+			lastUpdate = leaderboard["lastUpdate"]
 
-			lastServerUpdate = serverLeaderboards["lastUpdate"]
-			lastQuotesUpdate = quoteLeaderboards["lastUpdate"]
-
-			if serverLeaderboards["lastUpdate"] is not None:
-				lastServerUpdate = datetime.fromisoformat(serverLeaderboards["lastUpdate"])
-
-			if quoteLeaderboards["lastUpdate"] is not None:
-				lastQuotesUpdate = datetime.fromisoformat(lastQuotesUpdate)
+			if leaderboard["lastUpdate"] is not None:
+				lastUpdate = datetime.fromisoformat(leaderboard["lastUpdate"])
 
 			for channel in self.bot.get_guild(int(guildID)).text_channels:
+
 				# Catch exceptions for no permissions
 				try:
-					async for message in channel.history(limit=None, after=lastServerUpdate):
+					async for message in channel.history(limit=None, after=lastUpdate):
 						if not message.author.bot:
 
 							# Message leaderboard
-							if str(message.author.id) not in serverLeaderboards["messageLeaderboard"]:
-								serverLeaderboards["messageLeaderboard"][str(message.author.id)] = 1
+							if str(message.author.id) not in leaderboard["messageLeaderboard"]:
+								leaderboard["messageLeaderboard"][str(message.author.id)] = 1
 							else:
-								serverLeaderboards["messageLeaderboard"][str(message.author.id)] += 1
+								leaderboard["messageLeaderboard"][str(message.author.id)] += 1
 
-							if str(message.channel.id) == quoteLeaderboards["channelID"]:
+							# Quote leaderboard
+							if str(message.channel.id) == leaderboard["quotesChannel"]:
 								for user in message.mentions:
-									if str(message.author.id) not in quoteLeaderboards["leaderboard"]:
-										quoteLeaderboards["leaderboard"][str(message.author.id)] = 1
+									if str(user.id) not in leaderboard["quoteLeaderboard"]:
+										leaderboard["quoteLeaderboard"][str(user.id)] = 1
 									else:
-										quoteLeaderboards["leaderboard"][str(message.author.id)] += 1
+										leaderboard["quoteLeaderboard"][str(user.id)] += 1
 
 				except discord.Forbidden:
 					print("Do not have read message history permissions for: " + str(channel))
 
-			serverLeaderboards["lastUpdate"] = datetime.utcnow().isoformat()
-			quoteLeaderboards["lastUpdate"] = datetime.utcnow().isoformat()
+			leaderboard["lastUpdate"] = datetime.utcnow().isoformat()
 
 		await self.update_state()
 		print("Got there")
@@ -205,19 +197,20 @@ class Leaderboards(commands.Cog):
 		if len(arg) > 0:
 			if arg[0].lower() == "quotes":
 				leaderboardType = "quoteLeaderboard"
-				leaderboard = self.leaderboards[str(ctx.message.guild.id)]["quote"]["leaderboard"]
+				leaderboard = self.leaderboards[str(ctx.message.guild.id)]["quoteLeaderboard"]
 				leaderboardEmbed = embeds[leaderboardType]
 			elif arg[0].lower() == "emojis":
 				leaderboardType = "emojiLeaderboard"
-				leaderboard = self.leaderboards[str(ctx.message.guild.id)]["server"]["emojiLeaderboard"]
+				leaderboard = self.leaderboards[str(ctx.message.guild.id)]["emojiLeaderboard"]
 				leaderboardEmbed = embeds[leaderboardType]
 		else:
 			leaderboardType = "messageLeaderboard"
-			leaderboard = self.leaderboards[str(ctx.message.guild.id)]["server"]["messageLeaderboard"]
+			leaderboard = self.leaderboards[str(ctx.message.guild.id)]["messageLeaderboard"]
 			leaderboardEmbed = embeds[leaderboardType]
 
 		leaderboardEmbed.clear_fields()
 
+		leaderboard = {k: v for k, v in sorted(leaderboard.items(), key=lambda a: a[1], reverse=True)}
 		leaderboard = {k: v for k, v in sorted(leaderboard.items(), key=lambda a: a[1], reverse=True)}
 
 		pastScore = 0
@@ -254,35 +247,51 @@ class Leaderboards(commands.Cog):
 		await message.add_reaction("➡️")
 
 	@commands.command(pass_context=True, name="set")
-	async def set_quote_channel(self, ctx, arg):
+	async def set_quote_channel(self, ctx):
 		if ctx.message.author.guild_permissions.administrator:
 			guild = ctx.message.guild
 
 			for channel in ctx.message.channel_mentions:
-				if self.leaderboards[str(guild.id)]["quote"]["channelID"] != str(channel.id):
-					self.leaderboards[str(guild.id)]["quote"]["channelID"] = str(channel.id)
-					self.leaderboards[str(guild.id)]["quote"]["lastUpdate"] = None
+				if self.leaderboards[str(guild.id)]["quotesChannel"] != str(channel.id):
+					self.leaderboards[str(guild.id)]["quotesChannel"] = str(channel.id)
+
+					print("Updating guild " + str(guild.id) + " to use quotes channel " + str(channel.id))
+
+					# REPLACE THIS WITH SEARCH FOR QUOTES CHANNEL, THIS DOES A FULL RESET
+					self.leaderboards[str(guild.id)]["quoteLeaderboard"] = {}
+					self.leaderboards[str(guild.id)]["lastUpdate"] = None
+
+					async for message in guild.get_channel(channel.id).history(limit=None):
+						if not message.author.bot:
+							for user in message.mentions:
+								if str(user.id) not in self.leaderboards[str(guild.id)]["quoteLeaderboard"]:
+									self.leaderboards[str(guild.id)]["quoteLeaderboard"][str(user.id)] = 1
+								else:
+									self.leaderboards[str(guild.id)]["quoteLeaderboard"][str(user.id)] += 1
 
 					await self.update_state()
-					await self.update_leaderboards()
-
-					return
+					print("Finished updating quotes channel")
 
 	@commands.command(pass_context=True, name="reset")
 	async def reset_leaderboard(self, ctx):
+		"""
+		Resets all leaderboard information. Requires admin perms
+		"""
+
 		if ctx.message.author.guild_permissions.administrator:
 			guild = ctx.message.guild
 
-			self.leaderboards[str(guild.id)]["server"]["lastUpdate"] = None
-			self.leaderboards[str(guild.id)]["quote"]["lastUpdate"] = None
+			print("Resetting leaderboards for " + str(guild.id))
 
-			self.leaderboards[str(guild.id)]["server"]["messageLeaderboard"] = {}
-			self.leaderboards[str(guild.id)]["server"]["quoteLeaderboard"] = {}
-			self.leaderboards[str(guild.id)]["quote"]["leaderboard"] = {}
+			self.leaderboards[str(guild.id)]["lastUpdate"] = None
+
+			self.leaderboards[str(guild.id)]["messageLeaderboard"] = {}
+			self.leaderboards[str(guild.id)]["emojiLeaderboard"] = {}
+			self.leaderboards[str(guild.id)]["quoteLeaderboard"] = {}
 
 			await self.update_state()
 			await self.update_leaderboards()
-			print("Got there")
+			print("Successfully reset leaderboards")
 
 	async def score_leaderboard(self, guild, leaderboard):
 		leaderboard = {k: v for k, v in sorted(leaderboard.items(), key=lambda a: a[1], reverse=True)}
