@@ -1,6 +1,7 @@
 import json
 import os
 import discord
+import requests
 from discord.ext import commands
 
 from Leaderboards import Leaderboards
@@ -21,6 +22,9 @@ gompei.remove_command("help")
 
 @gompei.event
 async def on_ready():
+	"""
+	Load state and update information since last run
+	"""
 
 	await gompei.change_presence(activity=discord.Game(name="Underwater Hockey"))
 	await update_guilds(gompei)
@@ -30,6 +34,10 @@ async def on_ready():
 
 @gompei.command(pass_context=True)
 async def help(ctx):
+	"""
+	Sends help information
+	"""
+
 	helpEmbed = discord.Embed(title="Gompei Bot", colour=discord.Colour.red())
 	helpEmbed.add_field(name="Documentation", value="https://samuelcurrid.github.io/Gompei-Bot/")
 	helpEmbed.set_thumbnail(url="https://raw.githubusercontent.com/SamuelCurrid/Gompei-Bot/master/assets/gompei.png")
@@ -42,6 +50,7 @@ async def update_guilds(self):
 	"""
 	Updates guilds included in leaderboards.json
 	"""
+
 	# with open(os.path.join("config", "settings"), "r+") as leaderboards:
 	# 	guilds = json.loads(leaderboards.read())
 	#
@@ -64,5 +73,6 @@ async def update_guilds(self):
 	# for guildID in removeGuilds:
 	# 	self.leaderboards.pop(str(guildID))
 	return
+
 
 gompei.run(json.load(open(os.path.join("config", "tokens.json")))["token"])
