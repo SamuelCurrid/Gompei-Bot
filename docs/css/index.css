@@ -1,14 +1,14 @@
 @charset "UTF-8";
 /* Body */
 body {
-	font-family: source-sans-pro;
+	font-family: caudex;
 	background-color: #f2f2f2;
 	margin-top: 0px;
 	margin-right: 0px;
 	margin-bottom: 0px;
 	margin-left: 0px;
 	font-style: normal;
-	font-weight: 200;
+	font-weight: 700;
 }
 /* Container */
 .container {
@@ -511,6 +511,3 @@ td, th {
 	padding: 5px;
 	text-align: left;
 }
-
-
-
