@@ -6,15 +6,12 @@ from discord.ext import commands
 
 from Leaderboards import Leaderboards
 from Settings import Settings
-from AudioPlayer import AudioPlayer
-
 
 gompei = commands.Bot(command_prefix=".")
 
 # Extensions
 gompei.add_cog(Leaderboards(gompei))
 gompei.add_cog(Settings(gompei))
-gompei.add_cog(AudioPlayer(gompei))
 
 # Overwrite
 gompei.remove_command("help")

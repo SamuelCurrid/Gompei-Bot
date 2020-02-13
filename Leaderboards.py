@@ -225,9 +225,9 @@ class Leaderboards(commands.Cog):
 								if type(reaction.emoji) is not str:
 									if type(reaction.emoji) is not discord.partial_emoji.PartialEmoji:
 										if ("<:" + str(reaction.emoji.name) + ":" + str(reaction.emoji.id) + ">") not in leaderboard["reactionLeaderboard"]:
-											leaderboard["emojiLeaderboard"]["<:" + str(reaction.emoji.name) + ":" + str(reaction.emoji.id) + ">"] = reaction.count
+											leaderboard["reactionLeaderboard"]["<:" + str(reaction.emoji.name) + ":" + str(reaction.emoji.id) + ">"] = reaction.count
 										else:
-											leaderboard["emojiLeaderboard"]["<:" + str(reaction.emoji.name) + ":" + str(reaction.emoji.id) + ">"] += reaction.count
+											leaderboard["reactionLeaderboard"]["<:" + str(reaction.emoji.name) + ":" + str(reaction.emoji.id) + ">"] += reaction.count
 								else:
 									if str(reaction.emoji) not in leaderboard["reactionLeaderboard"]:
 										leaderboard["reactionLeaderboard"][str(reaction.emoji)] = reaction.count
