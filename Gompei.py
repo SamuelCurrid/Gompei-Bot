@@ -4,7 +4,6 @@ import discord
 from discord.ext import commands
 
 from Leaderboards import Leaderboards
-from Settings import Settings
 
 settings = {}
 
@@ -17,7 +16,6 @@ gompei = commands.Bot(command_prefix=get_prefix)
 
 # Extensions
 gompei.add_cog(Leaderboards(gompei))
-gompei.add_cog(Settings(gompei))
 
 # Overwrite
 gompei.remove_command("help")
