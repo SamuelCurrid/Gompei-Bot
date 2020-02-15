@@ -68,24 +68,6 @@ class Leaderboards(commands.Cog):
 					else:
 						leaderboard["quoteLeaderboard"][str(user.id)] += 1
 
-			# Check for emojis
-			# custom_emojis = re.findall(r"<:\w*:\d*>", message.content)
-			# unicode_emojis = re.findall(r"\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff]", message.content)
-
-			# for emoji in custom_emojis:
-			# 	if str(emoji) not in leaderboard["emojiLeaderboard"]:
-			# 		leaderboard["emojiLeaderboard"][str(emoji)] = 1
-			# 	else:
-			# 		leaderboard["emojiLeaderboard"][str(emoji)] += 1
-			#
-			# for emoji in unicode_emojis:
-			# 	if emoji == "’" or emoji == "　" or emoji == "░" or emoji == "”" or emoji == "“" or emoji == "█" or emoji == "⣿" or emoji == "▄" or emoji == "⠄" or emoji == "▀" or emoji == " ":
-			# 		break;
-			# 	if emoji not in leaderboard["emojiLeaderboard"]:
-			# 		leaderboard["emojiLeaderboard"][str(emoji)] = 1
-			# 	else:
-			# 		leaderboard["emojiLeaderboard"][str(emoji)] += 1
-
 		leaderboard["lastUpdate"] = message.created_at.isoformat()
 		await self.update_state()
 
@@ -109,34 +91,63 @@ class Leaderboards(commands.Cog):
 		await self.update_state()
 
 	@commands.Cog.listener()
-	async def on_reaction_add(self, reaction, user):
+	async def on_raw_reaction_add(self, payload):
 		"""
 		Updates reactions leaderboard and checks for leaderboard page changes
 		"""
 
-		if not user.bot:
-			if reaction.message.id in self.cachedMessages:
-				if reaction.emoji == "➡️":
-					await self.update_leaderboard_message(reaction.message, 1)
-					await reaction.remove(user)
-				elif reaction.emoji == "⬅️":
-					await self.update_leaderboard_message(reaction.message, -1)
-					await reaction.remove(user)
+		guild = self.bot.get_guild(payload.guild_id)
+		channel = guild.get_channel(payload.channel_id)
+		message = await channel.fetch_message(payload.message_id)
+		user = guild.get_member(payload.user_id)
 
-		if not reaction.message.author.bot:
-			reactionLeaderboard = self.leaderboards[str(reaction.message.guild.id)]["reactionLeaderboard"]
+		# Update cached leaderboards
+		if not payload.member.bot:
+			if payload.message_id in self.cachedMessages:
+				if payload.emoji.name == "➡️":
+					await self.update_leaderboard_message(message, 1)
+					await message.remove_reaction("➡️", user)
+				elif payload.emoji.name == "⬅️":
+					await self.update_leaderboard_message(message, -1)
+					await message.remove_reaction("⬅️", user)
 
-			if type(reaction.emoji) is not str:
-				if type(reaction.emoji) is not discord.partial_emoji.PartialEmoji:
-					if ("<:" + str(reaction.emoji.name) + ":" + str(reaction.emoji.id) + ">") not in reactionLeaderboard:
-						reactionLeaderboard["<:" + str(reaction.emoji.name) + ":" + str(reaction.emoji.id) + ">"] = 1
-					else:
-						reactionLeaderboard["<:" + str(reaction.emoji.name) + ":" + str(reaction.emoji.id) + ">"] += 1
+		# Update reaction leaderboards
+		if not payload.member.bot:
+			reactionLeaderboard = self.leaderboards[str(payload.guild_id)]["reactionLeaderboard"]
+
+			if payload.emoji.id is not None:
+				for guildEmoji in guild.emojis:
+					if payload.emoji.id == guildEmoji.id:
+						if ("<:" + str(payload.emoji.name) + ":" + str(payload.emoji.id) + ">") not in reactionLeaderboard:
+							reactionLeaderboard["<:" + str(payload.emoji.name) + ":" + str(payload.emoji.id) + ">"] = 1
+						else:
+							reactionLeaderboard["<:" + str(payload.emoji.name) + ":" + str(payload.emoji.id) + ">"] += 1
+
+						break
 			else:
-				if str(reaction.emoji) not in reactionLeaderboard:
-					reactionLeaderboard[str(reaction.emoji)] = 1
+				if payload.emoji.name not in reactionLeaderboard:
+					reactionLeaderboard[str(payload.emoji.name)] = 1
 				else:
-					reactionLeaderboard[str(reaction.emoji)] += 1
+					reactionLeaderboard[str(payload.emoji.name)] += 1
+
+	@commands.Cog.listener()
+	async def on_raw_reaction_remove(self, payload):
+		"""
+		Updates the reaction leaderboard
+		"""
+
+		guild = self.bot.get_guild(payload.guild_id)
+
+		# Update reaction leaderboards
+		reactionLeaderboard = self.leaderboards[str(payload.guild_id)]["reactionLeaderboard"]
+
+		if payload.emoji.id is not None:
+			for guildEmoji in guild.emojis:
+				if payload.emoji.id == guildEmoji.id:
+					reactionLeaderboard["<:" + str(payload.emoji.name) + ":" + str(payload.emoji.id) + ">"] -= 1
+					break
+		else:
+			reactionLeaderboard[str(payload.emoji.name)] -= 1
 
 	async def update_leaderboard_message(self, message, modifier):
 		"""
@@ -224,30 +235,21 @@ class Leaderboards(commands.Cog):
 							for reaction in message.reactions:
 								if type(reaction.emoji) is not str:
 									if type(reaction.emoji) is not discord.partial_emoji.PartialEmoji:
-										if ("<:" + str(reaction.emoji.name) + ":" + str(reaction.emoji.id) + ">") not in leaderboard["reactionLeaderboard"]:
-											leaderboard["reactionLeaderboard"]["<:" + str(reaction.emoji.name) + ":" + str(reaction.emoji.id) + ">"] = reaction.count
-										else:
-											leaderboard["reactionLeaderboard"]["<:" + str(reaction.emoji.name) + ":" + str(reaction.emoji.id) + ">"] += reaction.count
+										for guildEmoji in self.bot.get_guild(guildID).emojis:
+											if reaction.emoji.id == guildEmoji.id:
+												if ("<:" + str(reaction.emoji.name) + ":" + str(reaction.emoji.id) + ">") not in leaderboard["reactionLeaderboard"]:
+													leaderboard["reactionLeaderboard"]["<:" + str(reaction.emoji.name) + ":" + str(reaction.emoji.id) + ">"] = 1
+												else:
+													leaderboard["reactionLeaderboard"]["<:" + str(reaction.emoji.name) + ":" + str(reaction.emoji.id) + ">"] += 1
+
+												break
+
 								else:
 									if str(reaction.emoji) not in leaderboard["reactionLeaderboard"]:
 										leaderboard["reactionLeaderboard"][str(reaction.emoji)] = reaction.count
 									else:
 										leaderboard["reactionLeaderboard"][str(reaction.emoji)] += reaction.count
 
-							# custom_emojis = re.findall(r"<:\w*:\d*>", message.content)
-							# unicode_emojis = re.findall(r"\u00a9|\u00ae|[\u2000-\u3300]|\ud83c[\ud000-\udfff]|\ud83d[\ud000-\udfff]|\ud83e[\ud000-\udfff]", message.content)
-							#
-							# for emoji in custom_emojis:
-							# 	if str(emoji) not in leaderboard["emojiLeaderboard"]:
-							# 		leaderboard["emojiLeaderboard"][str(emoji)] = 1
-							# 	else:
-							# 		leaderboard["emojiLeaderboard"][str(emoji)] += 1
-							#
-							# for emoji in unicode_emojis:
-							# 	if str(emoji) not in leaderboard["emojiLeaderboard"]:
-							# 		leaderboard["emojiLeaderboard"][str(emoji)] = 1
-							# 	else:
-							# 		leaderboard["emojiLeaderboard"][str(emoji)] += 1
 
 				except discord.Forbidden:
 					print("Do not have read message history permissions for: " + str(channel))
