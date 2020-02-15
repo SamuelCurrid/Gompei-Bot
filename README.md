@@ -20,6 +20,7 @@ Read the docs [here](https://samuelcurrid.github.io/Gompei-Bot/documentation.htm
 1. [Create a discord bot](https://github.com/reactiflux/discord-irc/wiki/Creating-a-discord-bot-&-getting-a-token)
 2. Clone repo
 3. Put bot token into `config/tokens.json`
+4. Install pip requirements (listed in `requirements.txt`)
 4. Run Gompei.py
 
 ## Contributions
