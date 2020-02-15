@@ -72,23 +72,25 @@ class Leaderboards(commands.Cog):
 		await self.update_state()
 
 	@commands.Cog.listener()
-	async def on_message_delete(self, message):
+	async def on_raw_message_delete(self, payload):
 		"""
-		Updates leaderboards based on deleted message content
+		Updates leaderboards based ond deleted message content
 		"""
-
-		guild = message.channel.guild
+		guild = self.bot.get_guild(payload.guild_id)
 		leaderboards = self.leaderboards[str(guild.id)]
 
-		if not message.author.bot:
-			leaderboards["messageLeaderboard"][str(message.author.id)] -= 1
+		if payload.cached_message is not None:
+			message = payload.cached_message
 
-			if str(message.channel.id) == leaderboards["quotesChannel"]:
-				for user in message.mentions:
-					leaderboards["quotesChannel"][str(user.id)] -= 1
+			if not message.author.bot:
+				leaderboards["messageLeaderboard"][str(message.author.id)] -= 1
 
-		leaderboards["lastUpdate"] = message.created_at.isoformat()
-		await self.update_state()
+				if str(message.channel.id) == leaderboards["quotesChannel"]:
+					for user in message.mentions:
+						leaderboards["quotesChannel"][str(user.id)] -= 1
+
+			leaderboards["lastUpdate"] = message.created_at.isoformat()
+			await self.update_state()
 
 	@commands.Cog.listener()
 	async def on_raw_reaction_add(self, payload):
