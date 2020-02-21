@@ -303,7 +303,6 @@ class Leaderboards(commands.Cog):
 		leaderboardEmbed.clear_fields()
 
 		leaderboard = {k: v for k, v in sorted(leaderboard.items(), key=lambda a: a[1], reverse=True)}
-		leaderboard = {k: v for k, v in sorted(leaderboard.items(), key=lambda a: a[1], reverse=True)}
 
 		pastScore = 0
 		offset = 0
@@ -323,8 +322,11 @@ class Leaderboards(commands.Cog):
 			if leaderboardType == "reactionLeaderboard":
 				name = str(participant)
 			else:
-				if guild.get_member(int(participant)) is None:
-					name = str(self.bot.get_user(int(participant)))
+				if(int(participant) == 456226577798135808):
+					# Skip deleted users
+					True
+				elif guild.get_member(int(participant)) is None:
+					name = str(await self.bot.fetch_user(int(participant)))
 				else:
 					name = str(guild.get_member(int(participant)).display_name)
 
@@ -428,11 +430,14 @@ class Leaderboards(commands.Cog):
 				offset = 0
 				pastScore = score
 
+			if int(participant) == 229082074471071754:
+				print(await self.bot.fetch_user(int(participant)))
+
 			if leaderboardType == "reactionLeaderboard":
 				name = str(participant)
 			else:
 				if guild.get_member(int(participant)) is None:
-					name = str(self.bot.get_user(int(participant)))
+					name = str(await self.bot.fetch_user(int(participant)))
 				else:
 					name = str(guild.get_member(int(participant)).display_name)
 
