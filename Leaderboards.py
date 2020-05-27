@@ -5,8 +5,8 @@ import os
 import json
 from datetime import datetime
 
-defaultLeaderboard = {"lastUpdate": None, "quotesChannel": None, "messageLeaderboard": {}, "reactionLeaderboard": {}, "quoteLeaderboard": {}}
-embeds = {"messageLeaderboard": discord.Embed(title="Message leaderboard", colour=discord.Colour.red()), "reactionLeaderboard": discord.Embed(title="Reaction Usage Leaderboard", colour=discord.Colour.red()), "quoteLeaderboard": discord.Embed(title="Quotes Leaderboard", description="Calculated from mentions", colour=discord.Colour.red())}
+defaultLeaderboard = {"lastUpdate": None, "quotesChannel": None, "messageLeaderboard": {}, "reactionLeaderboard": {}, "emojiLeaderboard": {}, "quoteLeaderboard": {}}
+embeds = {"messageLeaderboard": discord.Embed(title="Message leaderboard", colour=discord.Colour.red()), "reactionLeaderboard": discord.Embed(title="Reaction Usage Leaderboard", colour=discord.Colour.red()), "quoteLeaderboard": discord.Embed(title="Quotes Leaderboard", description="Calculated from mentions", colour=discord.Colour.red()), "emojiLeaderboard": discord.Embed(title="Emoji leaderboard", colour=discord.Colour.red())}
 
 
 class Leaderboards(commands.Cog):
@@ -35,6 +35,17 @@ class Leaderboards(commands.Cog):
 		if str(guild.id) not in self.leaderboards:
 			self.leaderboards[str(guild.id)] = defaultLeaderboard
 			await self.update_state()
+
+	@commands.Cog.listener()
+	async def on_guild_emojis_update(self, guild, before, after):
+
+		emojiLeaderboard = self.leaderboards["emojiLeaderboard"]
+
+		addEmoji = [x for x in after if x not in before]
+
+		for emoji in addEmoji:
+			emojiLeaderboard[str(emoji.id)] == 0
+
 
 	@commands.Cog.listener()
 	async def on_guild_remove(self, guild):
@@ -68,6 +79,13 @@ class Leaderboards(commands.Cog):
 					else:
 						leaderboard["quoteLeaderboard"][str(user.id)] += 1
 
+			# Check for emojis
+			for emoji in self.bot.emojis:
+				emojiName = "<:" + emoji.name + ":" + str(emoji.id) + ">"
+				for index in range(0, message.content.count(emojiName)):
+					leaderboard["emojiLeaderboard"][str(emoji.id)] += 1
+
+
 		leaderboard["lastUpdate"] = message.created_at.isoformat()
 		await self.update_state()
 
@@ -88,6 +106,11 @@ class Leaderboards(commands.Cog):
 				if str(message.channel.id) == leaderboards["quotesChannel"]:
 					for user in message.mentions:
 						leaderboards["quotesChannel"][str(user.id)] -= 1
+
+				for emoji in self.bot.emojis:
+					emojiName = "<:" + emoji.name + ":" + str(emoji.id) + ">"
+					for index in range(0, message.content.count(emojiName)):
+						leaderboards["emojiLeaderboard"][str(emoji.id)] -= 1
 
 			leaderboards["lastUpdate"] = message.created_at.isoformat()
 			await self.update_state()
@@ -125,12 +148,17 @@ class Leaderboards(commands.Cog):
 						else:
 							reactionLeaderboard["<:" + str(payload.emoji.name) + ":" + str(payload.emoji.id) + ">"] += 1
 
+
+
 						break
 			else:
 				if payload.emoji.name not in reactionLeaderboard:
 					reactionLeaderboard[str(payload.emoji.name)] = 1
 				else:
 					reactionLeaderboard[str(payload.emoji.name)] += 1
+
+			if str(payload.emoji.id) in self.leaderboards[str(payload.guild_id)]["emojiLeaderboard"]:
+				self.leaderboards[str(payload.guild_id)]["emojiLeaderboard"][str(payload.emoji.id)] += 1
 
 	@commands.Cog.listener()
 	async def on_raw_reaction_remove(self, payload):
@@ -148,8 +176,12 @@ class Leaderboards(commands.Cog):
 				if payload.emoji.id == guildEmoji.id:
 					reactionLeaderboard["<:" + str(payload.emoji.name) + ":" + str(payload.emoji.id) + ">"] -= 1
 					break
+
 		else:
 			reactionLeaderboard[str(payload.emoji.name)] -= 1
+
+		if str(payload.emoji.id) in self.leaderboards[str(payload.guild_id)]["emojiLeaderboard"]:
+			self.leaderboards[str(payload.guild_id)]["emojiLeaderboard"][str(payload.emoji.id)] -= 1
 
 	async def update_leaderboard_message(self, message, modifier):
 		"""
@@ -233,24 +265,35 @@ class Leaderboards(commands.Cog):
 									else:
 										leaderboard["quoteLeaderboard"][str(user.id)] += 1
 
-							# Emoji leaderboard
+							# Reaction + Emoji leaderboard
 							for reaction in message.reactions:
 								if type(reaction.emoji) is not str:
 									if type(reaction.emoji) is not discord.partial_emoji.PartialEmoji:
 										for guildEmoji in self.bot.get_guild(guildID).emojis:
 											if reaction.emoji.id == guildEmoji.id:
 												if ("<:" + str(reaction.emoji.name) + ":" + str(reaction.emoji.id) + ">") not in leaderboard["reactionLeaderboard"]:
-													leaderboard["reactionLeaderboard"]["<:" + str(reaction.emoji.name) + ":" + str(reaction.emoji.id) + ">"] = 1
+													leaderboard["reactionLeaderboard"]["<:" + str(reaction.emoji.name) + ":" + str(reaction.emoji.id) + ">"] = reaction.count
 												else:
-													leaderboard["reactionLeaderboard"]["<:" + str(reaction.emoji.name) + ":" + str(reaction.emoji.id) + ">"] += 1
+													leaderboard["reactionLeaderboard"]["<:" + str(reaction.emoji.name) + ":" + str(reaction.emoji.id) + ">"] += reaction.count
 
 												break
+
+									if str(reaction.emoji.id) in leaderboard["emojiLeaderboard"]:
+										leaderboard["emojiLeaderboard"][str(reaction.emoji.id)] += reaction.count
 
 								else:
 									if str(reaction.emoji) not in leaderboard["reactionLeaderboard"]:
 										leaderboard["reactionLeaderboard"][str(reaction.emoji)] = reaction.count
 									else:
 										leaderboard["reactionLeaderboard"][str(reaction.emoji)] += reaction.count
+
+
+
+							#Emoji check
+							for emoji in self.bot.emojis:
+								emojiName = "<:" + emoji.name + ":" + str(emoji.id) + ">"
+								for index in range(0, message.content.count(emojiName)):
+									leaderboard["emojiLeaderboard"][str(emoji.id)] += 1
 
 
 				except discord.Forbidden:
@@ -295,6 +338,10 @@ class Leaderboards(commands.Cog):
 			leaderboardType = "reactionLeaderboard"
 			leaderboard = self.leaderboards[str(ctx.message.guild.id)]["reactionLeaderboard"]
 			leaderboardEmbed = embeds[leaderboardType]
+		elif boardType == "emojis":
+			leaderboardType = "emojiLeaderboard"
+			leaderboard = self.leaderboards[str(ctx.message.guild.id)]["emojiLeaderboard"]
+			leaderboardEmbed = embeds[leaderboardType]
 		else:
 			leaderboardType = "messageLeaderboard"
 			leaderboard = self.leaderboards[str(ctx.message.guild.id)]["messageLeaderboard"]
@@ -321,6 +368,11 @@ class Leaderboards(commands.Cog):
 
 			if leaderboardType == "reactionLeaderboard":
 				name = str(participant)
+			elif leaderboardType == "emojiLeaderboard":
+				for emoji in guild.emojis:
+					if int(participant) == emoji.id:
+						name = "<:" + emoji.name + ":" + str(emoji.id) + ">"
+						break
 			else:
 				if(int(participant) == 456226577798135808):
 					# Skip deleted users
@@ -366,6 +418,14 @@ class Leaderboards(commands.Cog):
 
 		await self.message_leaderboard(ctx, "reactions")
 
+	@commands.command(pass_context=True, name="emojis")
+	async def emojis(self, ctx):
+		"""
+		Sends the emoji leaderboard
+		"""
+
+		await self.leaderboard(ctx, "emojis")
+
 	@commands.command(pass_context=True, name="set")
 	async def set_quote_channel(self, ctx):
 		if ctx.message.author.guild_permissions.administrator:
@@ -407,6 +467,10 @@ class Leaderboards(commands.Cog):
 			self.leaderboards[str(guild.id)]["messageLeaderboard"] = {}
 			self.leaderboards[str(guild.id)]["reactionLeaderboard"] = {}
 			self.leaderboards[str(guild.id)]["quoteLeaderboard"] = {}
+			self.leaderboards[str(guild.id)]["emojiLeaderboard"] = {}
+
+			for emoji in guild.emojis:
+				self.leaderboards[str(guild.id)]["emojiLeaderboard"][str(emoji.id)] = 0
 
 			await self.update_state()
 			await self.update_leaderboards()
@@ -435,6 +499,11 @@ class Leaderboards(commands.Cog):
 
 			if leaderboardType == "reactionLeaderboard":
 				name = str(participant)
+			elif leaderboardType == "emojiLeaderboard":
+				for emoji in guild.emojis:
+					if int(participant) == emoji.id:
+						name = "<:" + emoji.name + ":" + str(emoji.id) + ">"
+						break
 			else:
 				if guild.get_member(int(participant)) is None:
 					name = str(await self.bot.fetch_user(int(participant)))

@@ -100,7 +100,14 @@ async def change_prefix(ctx, prefix):
 
 		await update_state()
 
-
+@gompei.command()
+async def ping(ctx):
+	"""
+	Sends bot latency
+	"""
+	await ctx.send(f'Pong! `{int(gompei.latency * 1000)}ms`')
 
 
 gompei.run(json.load(open(os.path.join("config", "tokens.json")))["token"])
+
+
