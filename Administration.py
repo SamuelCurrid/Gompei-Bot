@@ -37,15 +37,28 @@ class Administration(commands.Cog):
 		self.logs["guildSettings"].pop(str(guild.id))
 		await self.update_state()
 
+	@commands.command(pass_context=True)
+	async def echo(self, ctx, arg1, *, arg2):
+		channel = ctx.guild.get_channel(int(arg1[2:-1]))
+
+		images = []
+
+		if len(ctx.message.attachments) > 0:
+			for i in ctx.message.attachments:
+				images.append(await i.to_file())
+
+		if channel is not None and ctx.message.author.guild_permissions.administrator or ctx.message.author.id == 87585011070414848:
+			await channel.send(arg2, files=images)
+
 	async def update_guilds(self):
 
 		savedGuilds = []
 		for guildID in self.logs["guildSettings"]:
-			savedGuilds.append(int(guildID))
+			savedGuilds.append(guildID)
 
 		guilds = []
 		for guild in self.bot.guilds:
-			guilds.append(guild.id)
+			guilds.append(str(guild.id))
 
 		addGuilds = [x for x in guilds if x not in savedGuilds]
 		removeGuilds = [x for x in savedGuilds if x not in guilds]
@@ -56,7 +69,8 @@ class Administration(commands.Cog):
 
 		# Remove disconnected guilds
 		for guildID in removeGuilds:
-			self.logs["guildSettings"].pop(str(guildID))
+			if guildID != "guildSettings":
+				self.logs["guildSettings"].pop(str(guildID))
 
 		await self.update_state()
 
@@ -111,13 +125,12 @@ class Administration(commands.Cog):
 
 	async def load_state(self):
 		with open(os.path.join("config", "logging.json"), "r+") as loggingFile:
-			self.logs = json.loads(loggingFile.read())
+			logs = loggingFile.read()
+			self.logs = json.loads(logs)
 
 	async def send_status_log(self, user, before, after):
-
-		channel = user.guild.get_channel(int(self.logs["guildSettings"][str(user.guild.id)]))
-
-		if channel is not None:
+		if self.logs["guildSettings"][str(user.guild.id)] is not None:
+			channel = user.guild.get_channel(int(self.logs["guildSettings"][str(user.guild.id)]))
 
 			self.embed.clear_fields()
 			self.embed.set_author(name=user.name + "#" + user.discriminator, icon_url=user.avatar_url)
