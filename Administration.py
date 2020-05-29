@@ -9,6 +9,7 @@ class Administration(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.logs = {}
+		self.load_state()
 		self.embed = discord.Embed(colour=discord.Colour.blue())
 
 	@commands.Cog.listener()
@@ -16,8 +17,6 @@ class Administration(commands.Cog):
 		"""
 		Loads leaderboard states
 		"""
-
-		await self.load_state()
 		await self.update_guilds()
 
 	@commands.Cog.listener()
@@ -123,7 +122,7 @@ class Administration(commands.Cog):
 			loggingFile.seek(0)
 			json.dump(self.logs, loggingFile, indent=4)
 
-	async def load_state(self):
+	def load_state(self):
 		with open(os.path.join("config", "logging.json"), "r+") as loggingFile:
 			logs = loggingFile.read()
 			self.logs = json.loads(logs)
