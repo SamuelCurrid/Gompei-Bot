@@ -176,19 +176,20 @@ class MovieVoting(commands.Cog):
 		"""
 		Sends a embed that lists the movies that the calling user has voted for
 		"""
-		author = ctx.message.author.id
+		author = str(ctx.message.author.id)
 
 		if author in self.userList:
-			title = ctx.message.author.nick + "'s Votes"
+			heading = str(ctx.message.author.display_name) + "'s votes"
 			votes = ""
 			count = 0
 			for title in self.userList[author]["votes"]:
-				votes = votes + str(count + 1) + ". " + title
-			embed = discord.Embed(title=title, description=votes)
+				count += 1
+				votes = votes + str(count) + ". " + title + "\n"
+			embed = discord.Embed(title=heading, description=votes)
 			embed.set_thumbnail(url=ctx.message.author.avatar_url)
 			await ctx.send(embed=embed)
 		else:
-			await ctx.send("You have not voted for anything yet")
+			await ctx.send("You have not voted for anything yet.")
 
 	@commands.command(pass_context=True)
 	async def listMovies(self, ctx):

@@ -1,1 +1,24 @@
-{}
+{
+    "2001: A Space Odyssey": {
+        "year": "1968",
+        "director": "Stanley Kubrick",
+        "summary": "After discovering a mysterious artifact buried beneath the Lunar surface, mankind sets off on a quest to find its origins with help from intelligent supercomputer H.A.L. 9000.",
+        "image": "https://m.media-amazon.com/images/M/MV5BMmNlYzRiNDctZWNhMi00MzI4LThkZTctMTUzMmZkMmFmNThmXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_SX300.jpg",
+        "id": "tt0062622",
+        "request": "245274980693180418",
+        "votes": [
+            "245274980693180418"
+        ]
+    },
+    "The Big Short": {
+        "year": "2015",
+        "director": "Adam McKay",
+        "summary": "In 2006-2007 a group of investors bet against the US mortgage market. In their research they discover how flawed and corrupt the market is.",
+        "image": "https://m.media-amazon.com/images/M/MV5BNDc4MThhN2EtZjMzNC00ZDJmLThiZTgtNThlY2UxZWMzNjdkXkEyXkFqcGdeQXVyNDk3NzU2MTQ@._V1_SX300.jpg",
+        "id": "tt1596363",
+        "request": "245274980693180418",
+        "votes": [
+            "245274980693180418"
+        ]
+    }
+}
