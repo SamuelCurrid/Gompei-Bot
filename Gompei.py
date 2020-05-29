@@ -1,5 +1,7 @@
 import json
 import os
+import sys
+
 import discord
 from discord.ext import commands
 
@@ -11,8 +13,10 @@ settings = {}
 
 
 def get_prefix(client, message):
-	return settings[str(message.guild.id)]["prefix"]
+	if isinstance(message.channel, discord.DMChannel):
+		return "."
 
+	return settings[str(message.guild.id)]["prefix"]
 
 gompei = commands.Bot(command_prefix=get_prefix)
 
@@ -102,6 +106,7 @@ async def change_prefix(ctx, prefix):
 
 		await update_state()
 
+
 @gompei.command()
 async def ping(ctx):
 	"""
@@ -110,6 +115,6 @@ async def ping(ctx):
 	await ctx.send(f'Pong! `{int(gompei.latency * 1000)}ms`')
 
 
-gompei.run(json.load(open(os.path.join("config", "tokens.json")))["token"])
+gompei.run(sys.argv[1])
 
 
