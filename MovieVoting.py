@@ -122,13 +122,10 @@ class MovieVoting(commands.Cog):
 						self.userList[user]["votes"].remove(title)
 					del self.movieList[title]
 					await ctx.send("Successfully removed " + title + ". ")
-
 				else:
 					await ctx.send("Movie \"" + title + "\" not found. ")
-
 			else:
 				await ctx.send("You have to be an admin to use this command!")
-
 			await self.updateMovieList()
 			await self.updateUserList()
 		else:
@@ -143,7 +140,6 @@ class MovieVoting(commands.Cog):
 			title = ctx.message.content
 			title = title[12:len(title)]
 			author = str(ctx.message.author.id)
-
 			if title in self.movieList:
 				if author in self.movieList[title]["votes"]:
 					self.movieList[title]["votes"].remove(author)
@@ -213,19 +209,20 @@ class MovieVoting(commands.Cog):
 		"""
 		sends an embed listing all of the movies that the calling user has voted for
 		"""
-		author = str(ctx.message.author.id)
-		if author in self.userList:
-			h = ctx.message.author.display_name + "'s Votes:"
-			d = ""
-			count = 0
-			for title in self.userList[author]["votes"]:
-				count += 1
-				d = d + str(count) + ". " + title + "\n"
-			embed = discord.Embed(title=h, description=d)
-			embed.set_thumbnail(url=ctx.message.author.avatar_url)
-			await ctx.send(embed=embed)
-		else:
-			await ctx.send("You have not voted for any movies yet!")
+		if isinstance(ctx.channel, discord.DMChannel) or ctx.channel.id == 567179438047887381:
+			author = str(ctx.message.author.id)
+			if author in self.userList:
+				h = ctx.message.author.display_name + "'s Votes:"
+				d = ""
+				count = 0
+				for title in self.userList[author]["votes"]:
+					count += 1
+					d = d + str(count) + ". " + title + "\n"
+				embed = discord.Embed(title=h, description=d)
+				embed.set_thumbnail(url=ctx.message.author.avatar_url)
+				await ctx.send(embed=embed)
+			else:
+				await ctx.send("You have not voted for any movies yet!")
 
 	@commands.command(pass_context=True)
 	async def listMovies(self, ctx):
