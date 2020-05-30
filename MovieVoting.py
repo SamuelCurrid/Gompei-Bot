@@ -86,11 +86,14 @@ class MovieVoting(commands.Cog):
 						self.movieList[title]["summary"] = movieDetails.get("Plot")
 						self.movieList[title]["image"] = movieDetails.get("Poster")
 						self.movieList[title]["id"] = movieDetails.get("imdbID")
+						self.movieList[title]["request"] = author
 						self.movieList[title]["votes"] = [author]
 						if author in self.userList:
+							self.userList[author]["requests"].append(title)
 							self.userList[author]["votes"].append(title)
 						else:
 							self.userList[author] = {}
+							self.userList[author]["requests"] = [title]
 							self.userList[author]["votes"] = [title]
 						await ctx.send(title + " has been added to the list. By suggesting it, you have already voted for it! You have " + str(2 - (authorVotes+1)) + " suggestions remaining.")
 
@@ -113,15 +116,15 @@ class MovieVoting(commands.Cog):
 		if len(title) > 12:
 			title = title[13:len(title)]
 			if ctx.message.author.guild_permissions.administrator:
+				if title in self.movieList:
+					self.userList[self.movieList[title]["request"]]["requests"].remove(title)
+					for user in self.userList.keys():
+						self.userList[user]["votes"].remove(title)
+					del self.movieList[title]
+					await ctx.send("Successfully removed " + title + ". ")
 
-					if title in self.movieList:
-						del self.movieList[title]
-						for user in self.userList.keys():
-							self.userList[user]["votes"].remove(title)
-						await ctx.send("Successfully removed " + title + ". ")
-
-					else:
-						await ctx.send("Movie \"" + title + "\" not found. ")
+				else:
+					await ctx.send("Movie \"" + title + "\" not found. ")
 
 			else:
 				await ctx.send("You have to be an admin to use this command!")
@@ -144,10 +147,10 @@ class MovieVoting(commands.Cog):
 			if title in self.movieList:
 				if author in self.movieList[title]["votes"]:
 					self.movieList[title]["votes"].remove(author)
+					self.userList[author]["votes"].remove(title)
 					if len(self.movieList[title]["votes"]) == 0:
+						self.userList[self.movieList[title]["request"]]["requests"].remove(title)
 						del self.movieList[title]
-						if title in self.userList[author]["votes"]:
-							self.userList[author]["votes"].remove(title)
 						await ctx.send("Vote for " + title + " removed. Since you were the only vote for this movie, it has been removed from the list.")
 						return
 					else:
@@ -186,13 +189,14 @@ class MovieVoting(commands.Cog):
 			title = ctx.message.content
 			if len(title) > 5:
 				title = title[6:len(title)]
-
+				author = str(ctx.message.author.id)
 				movies = list(self.movieList.keys())
 
 				for index in range(0, len(movies)):
 					if title.lower() == movies[index].lower():
-						if str(ctx.message.author.id) not in self.movieList[movies[index]]["votes"]:
-							self.movieList[title]["votes"].append(str(ctx.message.author.id))
+						if author not in self.movieList[movies[index]]["votes"]:
+							self.movieList[title]["votes"].append(author)
+							self.userList[author]["votes"].append(title)
 							await ctx.send("Successfully voted for " + str(title))
 							return
 						else:
@@ -204,6 +208,24 @@ class MovieVoting(commands.Cog):
 			else:
 				await ctx.send("Please give a movie title")
 
+	@commands.command(pass_context=True)
+	async def myVotes(self, ctx):
+		"""
+		sends an embed listing all of the movies that the calling user has voted for
+		"""
+		author = str(ctx.message.author.id)
+		if author in self.userList:
+			h = ctx.message.author.display_name + "'s Votes:"
+			d = ""
+			count = 0
+			for title in self.userList[author]["votes"]:
+				count += 1
+				d = d + str(count) + ". " + title + "\n"
+			embed = discord.Embed(title=h, description=d)
+			embed.set_thumbnail(url=ctx.message.author.avatar_url)
+			await ctx.send(embed=embed)
+		else:
+			await ctx.send("You have not voted for any movies yet!")
 
 	@commands.command(pass_context=True)
 	async def listMovies(self, ctx):
