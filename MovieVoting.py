@@ -66,11 +66,9 @@ class MovieVoting(commands.Cog):
 				if authorVotes < 2:
 					title = ctx.message.content
 					title = title[10:len(title)]
-					print(title[0:5])
 					if title[0:5] == "https":
 						endID = title.index("/?")
 						imdbID = title[27:endID]
-						print(imdbID)
 						req = "http://www.omdbapi.com/?apikey=2a4f4a86&i=" + imdbID + "&type=movie"
 					else:
 						req = "http://www.omdbapi.com/?apikey=2a4f4a86&t=" + title + "&type=movie"
