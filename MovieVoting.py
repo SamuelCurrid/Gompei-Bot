@@ -56,53 +56,60 @@ class MovieVoting(commands.Cog):
 		"""
 		Add a movie to our list from an IMDB link
 		"""
-
 		if isinstance(ctx.channel, discord.DMChannel) or ctx.channel.id == 567179438047887381:
-
-			author = str(ctx.message.author.id)
-			if author in self.userList:
-				authorVotes = len(self.userList[author]["votes"])
-			else:
-				authorVotes = 0
-			if authorVotes < 2:
-				title = ctx.message.content
-				title = title[10:len(title)]
-				req = "http://www.omdbapi.com/?apikey=2a4f4a86&t=" + title + "&type=movie"
-				response = requests.get(req)
-				movieDetails = response.json()
-				title = movieDetails.get("Title")
-
-				if response == 404:
-					await ctx.send("Movie not found. Please try another.")
+			if len(ctx.message.content) > 10:
+				author = str(ctx.message.author.id)
+				if author in self.userList:
+					authorVotes = len(self.userList[author]["votes"])
 				else:
-					if movieDetails.get("Response") == "False":
-						await ctx.send("Movie not found. Please try another.")
-					elif title in self.movieList:
-						await ctx.send(title + " is already present in the list.")
+					authorVotes = 0
+				if authorVotes < 2:
+					title = ctx.message.content
+					title = title[10:len(title)]
+					if title[0:5] == "https":
+						endID = title.index("/?")
+						imdbID = title[27:endID]
+						req = "http://www.omdbapi.com/?apikey=2a4f4a86&i=" + imdbID + "&type=movie"
 					else:
-						self.movieList[title] = {}
-						self.movieList[title]["year"] = movieDetails.get("Year")
-						self.movieList[title]["director"] = movieDetails.get("Director")
-						self.movieList[title]["summary"] = movieDetails.get("Plot")
-						self.movieList[title]["image"] = movieDetails.get("Poster")
-						self.movieList[title]["id"] = movieDetails.get("imdbID")
-						self.movieList[title]["request"] = author
-						self.movieList[title]["votes"] = [author]
-						if author in self.userList:
-							self.userList[author]["requests"].append(title)
-							self.userList[author]["votes"].append(title)
-						else:
-							self.userList[author] = {}
-							self.userList[author]["requests"] = [title]
-							self.userList[author]["votes"] = [title]
-						await ctx.send(title + " has been added to the list. By suggesting it, you have already voted for it! You have " + str(2 - (authorVotes+1)) + " suggestions remaining.")
+						req = "http://www.omdbapi.com/?apikey=2a4f4a86&t=" + title + "&type=movie"
 
-						lastPage = math.ceil(len(self.movieList) / 9)
-						for embed in self.cachedVoting:
-							if self.cachedVoting[embed]["page"] == lastPage:
-								await self.updateMovieMessage(self.cachedVoting[embed]["message"])
+					response = requests.get(req)
+					movieDetails = response.json()
+					title = movieDetails.get("Title")
+
+					if response == 404:
+						await ctx.send("(404) Movie not found. Please try another.")
+					else:
+						if movieDetails.get("Response") == "False":
+							await ctx.send("Movie not found. Please try another.")
+						elif title in self.movieList:
+							await ctx.send(title + " is already present in the list.")
+						else:
+							self.movieList[title] = {}
+							self.movieList[title]["year"] = movieDetails.get("Year")
+							self.movieList[title]["director"] = movieDetails.get("Director")
+							self.movieList[title]["summary"] = movieDetails.get("Plot")
+							self.movieList[title]["image"] = movieDetails.get("Poster")
+							self.movieList[title]["id"] = movieDetails.get("imdbID")
+							self.movieList[title]["request"] = author
+							self.movieList[title]["votes"] = [author]
+							if author in self.userList:
+								self.userList[author]["requests"].append(title)
+								self.userList[author]["votes"].append(title)
+							else:
+								self.userList[author] = {}
+								self.userList[author]["requests"] = [title]
+								self.userList[author]["votes"] = [title]
+							await ctx.send(title + " has been added to the list. By suggesting it, you have already voted for it! You have " + str(2 - (authorVotes+1)) + " suggestions remaining.")
+
+							lastPage = math.ceil(len(self.movieList) / 9)
+							for embed in self.cachedVoting:
+								if self.cachedVoting[embed]["page"] == lastPage:
+									await self.updateMovieMessage(self.cachedVoting[embed]["message"])
+				else:
+					await ctx.send("You can only suggest up to two movies.")
 			else:
-				await ctx.send("You can only suggest up to two movies.")
+				ctx.send("Please include a movie title.")
 
 			await self.updateMovieList()
 			await self.updateUserList()
@@ -112,24 +119,45 @@ class MovieVoting(commands.Cog):
 		"""
 		Removes a movies (admin command)
 		"""
-		title = ctx.message.content
-		if len(title) > 12:
-			title = title[13:len(title)]
-			if ctx.message.author.guild_permissions.administrator:
-				if title in self.movieList:
-					self.userList[self.movieList[title]["request"]]["requests"].remove(title)
-					for user in self.userList.keys():
-						self.userList[user]["votes"].remove(title)
-					del self.movieList[title]
-					await ctx.send("Successfully removed " + title + ". ")
+		if ctx.channel.id == 567179438047887381:
+			title = ctx.message.content
+			if len(title) > 12:
+				title = title[13:len(title)]
+				if ctx.message.author.guild_permissions.administrator:
+					if title in self.movieList:
+						self.userList[self.movieList[title]["request"]]["requests"].remove(title)
+						for user in self.userList.keys():
+							self.userList[user]["votes"].remove(title)
+						del self.movieList[title]
+						await ctx.send("Successfully removed " + title + ". ")
+					else:
+						await ctx.send("Movie \"" + title + "\" not found. ")
 				else:
-					await ctx.send("Movie \"" + title + "\" not found. ")
+					await ctx.send("Only administrators have permission to use this command.")
+				await self.updateMovieList()
+				await self.updateUserList()
 			else:
-				await ctx.send("You have to be an admin to use this command!")
-			await self.updateMovieList()
-			await self.updateUserList()
-		else:
-			await ctx.send("Please include a movie to remove.")
+				await ctx.send("Please include a movie title.")
+		elif isinstance(ctx.channel, discord.DMChannel):
+			await ctx.send("This command cannot be used in DM channels")
+
+	@commands.command(pass_context=True)
+	async def resetMovies(self, ctx):
+		"""
+		Resets the movie voting data to empty
+		"""
+		if ctx.channel.id == 567179438047887381:
+			if ctx.message.author.guild_permissions.administrator:
+				self.movieList = {}
+				self.userList = {}
+
+				await self.updateMovieList()
+				await self.updateUserList()
+				await ctx.send("Movie voting data successfully cleared.")
+			else:
+				await ctx.send("Only administrators have permission to use this command.")
+		elif isinstance(ctx.channel, discord.DMChannel):
+			await ctx.send("This command cannot be in DM channels.")
 
 	@commands.command(pass_context=True)
 	async def removeVote(self, ctx):
@@ -137,27 +165,30 @@ class MovieVoting(commands.Cog):
 		Removes the calling user's vote from a given movie
 		"""
 		if isinstance(ctx.channel, discord.DMChannel) or ctx.channel.id == 567179438047887381:
-			title = ctx.message.content
-			title = title[12:len(title)]
-			author = str(ctx.message.author.id)
-			if title in self.movieList:
-				if author in self.movieList[title]["votes"]:
-					self.movieList[title]["votes"].remove(author)
-					self.userList[author]["votes"].remove(title)
-					if len(self.movieList[title]["votes"]) == 0:
-						self.userList[self.movieList[title]["request"]]["requests"].remove(title)
-						del self.movieList[title]
-						await ctx.send("Vote for " + title + " removed. Since you were the only vote for this movie, it has been removed from the list.")
-						return
+			if len(ctx.message.content) > 12:
+				title = ctx.message.content
+				title = title[12:len(title)]
+				author = str(ctx.message.author.id)
+				if title in self.movieList:
+					if author in self.movieList[title]["votes"]:
+						self.movieList[title]["votes"].remove(author)
+						self.userList[author]["votes"].remove(title)
+						if len(self.movieList[title]["votes"]) == 0:
+							self.userList[self.movieList[title]["request"]]["requests"].remove(title)
+							del self.movieList[title]
+							await ctx.send("Vote for " + title + " removed. Since you were the only vote for this movie, it has been removed from the list.")
+							return
+						else:
+							await ctx.send("Vote for " + title + " removed.")
+							return
 					else:
-						await ctx.send("Vote for " + title + " removed.")
+						await ctx.send("You have not voted for this movie.")
 						return
 				else:
-					await ctx.send("You have not voted for this movie.")
+					await ctx.send("Movie not found.")
 					return
 			else:
-				await ctx.send("Movie not found.")
-				return
+				ctx.send("Please include a movie title.")
 
 			await self.updateMovieList()
 			await self.updateUserList()
@@ -168,16 +199,19 @@ class MovieVoting(commands.Cog):
 		Sends an embed listing the details of a given movie
 		"""
 		if isinstance(ctx.channel, discord.DMChannel) or ctx.channel.id == 567179438047887381:
-			title = ctx.message.content
-			title = title[11:len(title)]
+			if len(ctx.message.content) > 11:
+				title = ctx.message.content
+				title = title[11:len(title)]
 
-			if title in self.movieList:
-				d = "*dir. " + self.movieList[title]["director"] + "*\n" + self.movieList[title]["summary"]
-				info = discord.Embed(title=title + " (" + self.movieList[title]["year"] + ")", description=d)
-				info.set_thumbnail(url=self.movieList[title]["image"])
-				await ctx.send(embed=info)
+				if title in self.movieList:
+					d = "*dir. " + self.movieList[title]["director"] + "*\n" + self.movieList[title]["summary"]
+					info = discord.Embed(title=title + " (" + self.movieList[title]["year"] + ")", description=d)
+					info.set_thumbnail(url=self.movieList[title]["image"])
+					await ctx.send(embed=info)
+				else:
+					await ctx.send("Movie not found.")
 			else:
-				await ctx.send("Movie not found.")
+				ctx.send("Please include a movie title.")
 
 	@commands.command(pass_context=True)
 	async def vote(self, ctx):
@@ -202,7 +236,7 @@ class MovieVoting(commands.Cog):
 				await ctx.send("Movie not recognized")
 				return
 			else:
-				await ctx.send("Please give a movie title")
+				await ctx.send("Please include a movie title.")
 
 	@commands.command(pass_context=True)
 	async def myVotes(self, ctx):
