@@ -60,7 +60,7 @@ class MovieVoting(commands.Cog):
 			if len(ctx.message.content) > 10:
 				author = str(ctx.message.author.id)
 				if author in self.userList:
-					authorVotes = len(self.userList[author]["votes"])
+					authorVotes = len(self.userList[author]["requests"])
 				else:
 					authorVotes = 0
 				if authorVotes < 2:
@@ -226,6 +226,8 @@ class MovieVoting(commands.Cog):
 					if title.lower() == movies[index].lower():
 						if author not in self.movieList[movies[index]]["votes"]:
 							self.movieList[title]["votes"].append(author)
+							if author not in self.userList:
+								self.userList[author] = {"requests": [], "votes": []}
 							self.userList[author]["votes"].append(title)
 							await ctx.send("Successfully voted for " + str(title))
 							return
