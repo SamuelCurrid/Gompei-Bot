@@ -1,151 +1,107 @@
-import discord
-import json
-import os
 from discord.ext import commands
 from datetime import datetime
 
 
+def module_perms(ctx):
+	return ctx.message.author.guild_permissions.administrator
+
+
 class Administration(commands.Cog):
+	"""
+	Administration tools
+	"""
+
 	def __init__(self, bot):
 		self.bot = bot
-		self.logs = {}
-		self.load_state()
-		self.embed = discord.Embed(colour=discord.Colour.blue())
-
-	@commands.Cog.listener()
-	async def on_ready(self):
-		"""
-		Loads leaderboard states
-		"""
-		await self.update_guilds()
-
-	@commands.Cog.listener()
-	async def on_guild_join(self, guild):
-		"""
-		Creates default settings for new guilds
-		"""
-
-		self.logs["guildSettings"][str(guild.id)] = None
-		await self.update_state()
-
-	@commands.Cog.listener()
-	async def on_guild_remove(self, guild):
-		"""
-		Removes guild settings for logging
-		"""
-		self.logs["guildSettings"].pop(str(guild.id))
-		await self.update_state()
 
 	@commands.command(pass_context=True)
-	async def echo(self, ctx, arg1, *, arg2):
+	@commands.check(module_perms)
+	async def echo(self, ctx, arg1):
+		"""
+		Forwards given message / attachments to channel
+		"""
 		channel = ctx.guild.get_channel(int(arg1[2:-1]))
 
-		images = []
+		if channel is not None:
+			images = []
 
-		if len(ctx.message.attachments) > 0:
-			for i in ctx.message.attachments:
-				images.append(await i.to_file())
+			if len(ctx.message.attachments) > 0:
+				for i in ctx.message.attachments:
+					images.append(await i.to_file())
 
-		if channel is not None and ctx.message.author.guild_permissions.administrator or ctx.message.author.id == 87585011070414848:
-			await channel.send(arg2, files=images)
+			message = ctx.message.content[7 + len(arg1):]
+			if len(message) > 0:
+				await channel.send(message, files=images)
+			elif len(images) > 0:
+				await channel.send(files=images)
+			else:
+				await ctx.send("No content to send.")
 
-	async def update_guilds(self):
+	@echo.error
+	async def echo_error(self, ctx, error):
+		if isinstance(error, commands.CheckFailure):
+			print("!ERROR! " + str(ctx.author.id) + " did not have permissions for echo command")
+		elif isinstance(error, commands.MissingRequiredArgument):
+			await ctx.send("Command is missing arguments")
+		else:
+			print(error)
 
-		savedGuilds = []
-		for guildID in self.logs["guildSettings"]:
-			savedGuilds.append(guildID)
-
-		guilds = []
-		for guild in self.bot.guilds:
-			guilds.append(str(guild.id))
-
-		addGuilds = [x for x in guilds if x not in savedGuilds]
-		removeGuilds = [x for x in savedGuilds if x not in guilds]
-
-		# Add new guilds
-		for guildID in addGuilds:
-			self.logs["guildSettings"][str(guildID)] = None
-
-		# Remove disconnected guilds
-		for guildID in removeGuilds:
-			if guildID != "guildSettings":
-				self.logs["guildSettings"].pop(str(guildID))
-
-		await self.update_state()
+	@commands.command(pass_context=True)
+	@commands.check(module_perms)
+	async def purge(self, ctx, arg1):
+		"""
+		Purges a number of messages in channel used
+		:param arg1: number of messages to purge
+		"""
+		await ctx.channel.purge(limit=int(arg1) + 1)
 
 
-	@commands.Cog.listener()
-	async def on_member_update(self, before, after):
-		for activity in after.activities:
-			foundActivity = False
+	@purge.error
+	async def purge_error(self, ctx, error):
+		if isinstance(error, commands.CheckFailure):
+			print("!ERROR! " + str(ctx.author.id) + " did not have permissions for purge command")
+		elif isinstance(error, commands.MissingRequiredArgument):
+			await ctx.send("Command is missing arguments")
+		else:
+			print(error)
 
-			if type(activity) is discord.activity.CustomActivity:
-				foundActivity = True
+	@commands.command(pass_context=True, name="spurge")
+	@commands.check(module_perms)
+	async def selective_purge(self, ctx, arg1, arg2):
+		"""
+		Purges messages from a specific user in the channel
+		:param arg1: user to purge
+		:param arg2: number of messages to purge
+		"""
+		if "<" in arg1:
+			member = ctx.guild.get_member(int(arg1[3:-1]))
+		else:
+			member = ctx.guild.get_member(int(arg1))
 
-				# Check new status
-				status = ""
-				if activity.emoji is not None:
-					if activity.emoji.is_custom_emoji():
-						status += "<:" + str(activity.emoji.name) + ":" + str(activity.emoji.id) + "> "
-					else:
-						status += activity.emoji.name + " "
-				if activity.name is not None:
-					status += activity.name
+		messages = [ctx.message]
+		oldMessage = ctx.message
+		count = 0
 
-				# Compare status before and after member update
-				if str(after.id) not in self.logs:
-					self.logs[str(after.id)] = status
+		while count < int(arg2):
+			async for message in ctx.message.channel.history(limit=int(arg2), before=oldMessage, oldest_first=False):
+				if message.author == member:
+					count += 1
+					messages.append(message)
 
-					await self.send_status_log(after, "None", status)
-					await self.update_state()
 
-				elif self.logs[str(after.id)] != status:
-					await self.send_status_log(after, str(self.logs[str(after.id)]), status)
-					self.logs[str(after.id)] = status
-					await self.update_state()
+					if count == int(arg2):
+						break
 
-			if not foundActivity:
-				if str(after.id) not in self.logs:
-					self.logs[str(after.id)] = None
-					await self.update_state()
+				oldMessage = message.created_at
 
-				if self.logs[str(after.id)] is not None:
-					await self.send_status_log(after, str(self.logs[str(after.id)]), None)
-					self.logs[str(after.id)] = None
-					await self.update_state()
+		await ctx.channel.delete_messages(messages)
 
-			break
 
-	async def update_state(self):
-		with open(os.path.join("config", "logging.json"), "r+") as loggingFile:
-			loggingFile.truncate(0)
-			loggingFile.seek(0)
-			json.dump(self.logs, loggingFile, indent=4)
-
-	def load_state(self):
-		with open(os.path.join("config", "logging.json"), "r+") as loggingFile:
-			logs = loggingFile.read()
-			self.logs = json.loads(logs)
-
-	async def send_status_log(self, user, before, after):
-		if self.logs["guildSettings"][str(user.guild.id)] is not None:
-			channel = user.guild.get_channel(int(self.logs["guildSettings"][str(user.guild.id)]))
-
-			self.embed.clear_fields()
-			self.embed.set_author(name=user.name + "#" + user.discriminator, icon_url=user.avatar_url)
-			self.embed.add_field(name="**Custom status update**", value="\n**Before:** " + str(before) + "\n**After:** " + str(after))
-			self.embed.set_footer(text="ID: " + str(user.id) + " • ")
-
-			await channel.send(embed=self.embed)
-
-	@commands.command(pass_context=True, name="logging")
-	async def change_logging(self, ctx):
-		if ctx.message.author.guild_permissions.administrator:
-			for channel in ctx.message.channel_mentions:
-				if self.logs["guildSettings"][str(ctx.message.guild.id)] != str(channel.id):
-					self.logs["guildSettings"][str(ctx.message.guild.id)] = str(channel.id)
-
-					print("Updating guild " + str(ctx.message.guild.id) + " to use logging channel " + str(channel.id))
-
-					await self.update_state()
-					print("Finished updating logging channel")
+	# @selective_purge.error
+	# async def selective_purge_error(self, ctx, error):
+	# 	if isinstance(error, commands.CheckFailure):
+	# 		print("!ERROR! " + str(ctx.author.id) + " did not have permissions for selective purge command")
+	# 	elif isinstance(error, commands.MissingRequiredArgument):
+	# 		await ctx.send("Command is missing arguments")
+	# 	else:
+	# 		print(error)

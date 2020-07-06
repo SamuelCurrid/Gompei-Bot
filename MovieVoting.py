@@ -7,6 +7,7 @@ import discord
 
 
 class MovieVoting(commands.Cog):
+
 	def __init__(self, bot):
 		self.bot = bot
 		self.embed = discord.Embed(title="Movie Night Voting")
@@ -243,7 +244,7 @@ class MovieVoting(commands.Cog):
 	@commands.command(pass_context=True)
 	async def myVotes(self, ctx):
 		"""
-		sends an embed listing all of the movies that the calling user has voted for
+		Sends an embed listing all of the movies that the calling user has voted for
 		"""
 		if isinstance(ctx.channel, discord.DMChannel) or ctx.channel.id == 567179438047887381:
 			author = str(ctx.message.author.id)
@@ -327,6 +328,7 @@ class MovieVoting(commands.Cog):
 						# If user has not already voted for the movie
 						if str(user.id) not in self.movieList[titles[index]]["votes"]:
 							self.movieList[titles[index]]["votes"].append(str(user.id))
+							self.userList[str(user.id)]["votes"].append(titles[index])
 
 							# Figure out how many positions the movie changed by
 							differential = 0

@@ -18,7 +18,8 @@ def get_prefix(client, message):
 
 	return settings[str(message.guild.id)]["prefix"]
 
-gompei = commands.Bot(command_prefix=get_prefix)
+
+gompei = commands.Bot(command_prefix=get_prefix, case_insensitive=True)
 
 # Extensions
 gompei.add_cog(Leaderboards(gompei))

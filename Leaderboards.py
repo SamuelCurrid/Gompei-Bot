@@ -271,7 +271,7 @@ class Leaderboards(commands.Cog):
 							for reaction in message.reactions:
 								if type(reaction.emoji) is not str:
 									if type(reaction.emoji) is not discord.partial_emoji.PartialEmoji:
-										for guildEmoji in self.bot.get_guild(guildID).emojis:
+										for guildEmoji in self.bot.get_guild(int(guildID)).emojis:
 											if reaction.emoji.id == guildEmoji.id:
 												if ("<:" + str(reaction.emoji.name) + ":" + str(reaction.emoji.id) + ">") not in leaderboard["reactionLeaderboard"]:
 													leaderboard["reactionLeaderboard"]["<:" + str(reaction.emoji.name) + ":" + str(reaction.emoji.id) + ">"] = reaction.count
