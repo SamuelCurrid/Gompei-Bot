@@ -8,6 +8,8 @@ from discord.ext import commands
 from Leaderboards import Leaderboards
 from Administration import Administration
 from MovieVoting import MovieVoting
+from Hangman import Hangman
+
 from Logging import Logging
 from Statistics import Statistics
 
@@ -75,6 +77,7 @@ print("Loading cogs...")
 gompei.add_cog(Leaderboards(gompei))
 gompei.add_cog(Administration(gompei))
 gompei.add_cog(MovieVoting(gompei, sys.argv[2]))
+gompei.add_cog(Hangman(gompei))
 gompei.add_cog(Statistics(gompei))
 gompei.add_cog(Logging(gompei))
 print("Cogs loaded")

@@ -1,0 +1,3 @@
+<insert your dictionary here>
+
+https://www.mit.edu/~ecprice/wordlist.10000 is a pretty good one
