@@ -376,13 +376,14 @@ class Leaderboards(commands.Cog):
 						name = "<:" + emoji.name + ":" + str(emoji.id) + ">"
 						break
 			else:
-				if int(participant) == 456226577798135808:
-					# Skip deleted users
-					True
-				elif guild.get_member(int(participant)) is None:
-					name = str(await self.bot.fetch_user(int(participant)))
-				else:
-					name = str(guild.get_member(int(participant)).display_name)
+				name = "<@" + str(participant) + ">"
+				# if int(participant) == 456226577798135808:
+				# 	# Skip deleted users
+				# 	True
+				# elif guild.get_member(int(participant)) is None:
+				# 	name = str(await self.bot.fetch_user(int(participant)))
+				# else:
+				# 	name = str(guild.get_member(int(participant)).display_name)
 
 			userValues += "**" + str(position) + ". " + name + "** - " + str(score) + "\n\n\t"
 
@@ -401,32 +402,36 @@ class Leaderboards(commands.Cog):
 		"""
 		Sends the quotes leaderboard
 		"""
-
-		await self.message_leaderboard(ctx, "quotes")
+		if isinstance(ctx.channel, discord.DMChannel) or ctx.channel.id == 567179438047887381:
+			await ctx.channel.trigger_typing()
+			await self.message_leaderboard(ctx, "quotes")
 
 	@commands.command(pass_context=True, name="messages")
 	async def messages(self, ctx):
 		"""
 		Sends the messages leaderboard
 		"""
-
-		await self.message_leaderboard(ctx, "messages")
+		if isinstance(ctx.channel, discord.DMChannel) or ctx.channel.id == 567179438047887381:
+			await ctx.channel.trigger_typing()
+			await self.message_leaderboard(ctx, "messages")
 
 	@commands.command(pass_context=True, name="reactions")
 	async def reactions(self, ctx):
 		"""
 		Sends the reactions leaderboard
 		"""
-
-		await self.message_leaderboard(ctx, "reactions")
+		if isinstance(ctx.channel, discord.DMChannel) or ctx.channel.id == 567179438047887381:
+			await ctx.channel.trigger_typing()
+			await self.message_leaderboard(ctx, "reactions")
 
 	@commands.command(pass_context=True, name="emojis")
 	async def emojis(self, ctx):
 		"""
 		Sends the emoji leaderboard
 		"""
-
-		await self.message_leaderboard(ctx, "emojis")
+		if isinstance(ctx.channel, discord.DMChannel) or ctx.channel.id == 567179438047887381:
+			await ctx.channel.trigger_typing()
+			await self.message_leaderboard(ctx, "emojis")
 
 	@commands.command(pass_context=True, name="set")
 	async def set_quote_channel(self, ctx):
@@ -496,9 +501,6 @@ class Leaderboards(commands.Cog):
 				offset = 0
 				pastScore = score
 
-			if int(participant) == 229082074471071754:
-				print(await self.bot.fetch_user(int(participant)))
-
 			if leaderboardType == "reactionLeaderboard":
 				name = str(participant)
 			elif leaderboardType == "emojiLeaderboard":
@@ -507,10 +509,11 @@ class Leaderboards(commands.Cog):
 						name = "<:" + emoji.name + ":" + str(emoji.id) + ">"
 						break
 			else:
-				if guild.get_member(int(participant)) is None:
-					name = str(await self.bot.fetch_user(int(participant)))
-				else:
-					name = str(guild.get_member(int(participant)).display_name)
+				name = "<@" + str(participant) + ">"
+				# if guild.get_member(int(participant)) is None:
+				# 	name = str(await self.bot.fetch_user(int(participant)))
+				# else:
+				# 	name = str(guild.get_member(int(participant)).display_name)
 
 			userValues += "**" + str(position) + ". " + name + "** - " + str(score) + "\n\n\t"
 

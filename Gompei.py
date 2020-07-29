@@ -10,38 +10,12 @@ from Administration import Administration
 from MovieVoting import MovieVoting
 from Hangman import Hangman
 
+from Logging import Logging
+from Statistics import Statistics
+
+
+# State handling
 settings = {}
-
-
-def get_prefix(client, message):
-	if isinstance(message.channel, discord.DMChannel):
-		return "."
-
-	return settings[str(message.guild.id)]["prefix"]
-
-
-gompei = commands.Bot(command_prefix=get_prefix, case_insensitive=True)
-
-# Extensions
-gompei.add_cog(Leaderboards(gompei))
-gompei.add_cog(Administration(gompei))
-gompei.add_cog(MovieVoting(gompei))
-gompei.add_cog(Hangman(gompei))
-
-# Overwrite
-gompei.remove_command("help")
-
-
-@gompei.event
-async def on_ready():
-	"""
-	Load state and update information since last run
-	"""
-	await load_state()
-	await gompei.change_presence(activity=discord.Game(name="Underwater Hockey"))
-	await update_guilds(gompei)
-
-	print("Logged on as {0}".format(gompei.user))
 
 
 async def load_state():
@@ -58,20 +32,6 @@ async def update_state():
 		settingsFile.truncate(0)
 		settingsFile.seek(0)
 		json.dump(settings, settingsFile, indent=4)
-
-
-@gompei.command(pass_context=True)
-async def help(ctx):
-	"""
-	Sends help information
-	"""
-
-	helpEmbed = discord.Embed(title="Gompei Bot", colour=discord.Colour.red())
-	helpEmbed.add_field(name="Documentation", value="https://samuelcurrid.github.io/Gompei-Bot/documentation.html")
-	helpEmbed.set_thumbnail(url="https://raw.githubusercontent.com/SamuelCurrid/Gompei-Bot/master/assets/gompei.png")
-	helpEmbed.set_footer(text="Source: https://github.com/SamuelCurrid/Gompei-Bot/")
-
-	await ctx.message.channel.send(embed=helpEmbed)
 
 
 async def update_guilds(self):
@@ -102,6 +62,58 @@ async def update_guilds(self):
 	await update_state()
 
 
+def get_prefix(client, message):
+	if isinstance(message.channel, discord.DMChannel):
+		return "."
+
+	return settings[str(message.guild.id)]["prefix"]
+
+
+# Initialize Bot
+gompei = commands.Bot(command_prefix=get_prefix, case_insensitive=True)
+
+# Load Extensions
+print("Loading cogs...")
+gompei.add_cog(Leaderboards(gompei))
+gompei.add_cog(Administration(gompei))
+gompei.add_cog(MovieVoting(gompei, sys.argv[2]))
+gompei.add_cog(Hangman(gompei))
+gompei.add_cog(Statistics(gompei))
+gompei.add_cog(Logging(gompei))
+print("Cogs loaded")
+
+# Overwrite help command
+gompei.remove_command("help")
+
+
+# Events
+@gompei.event
+async def on_ready():
+	"""
+	Load state and update information since last run
+	"""
+	await load_state()
+	await gompei.change_presence(activity=discord.Game(name="Underwater Hockey"))
+	await update_guilds(gompei)
+
+	print("Logged on as {0}".format(gompei.user))
+
+
+#Commands
+@gompei.command(pass_context=True)
+async def help(ctx):
+	"""
+	Sends help information
+	"""
+	if isinstance(ctx.channel, discord.DMChannel) or ctx.channel.id == 567179438047887381:
+		helpEmbed = discord.Embed(title="Gompei Bot", colour=discord.Colour.blue())
+		helpEmbed.add_field(name="Documentation", value="https://samuelcurrid.github.io/Gompei-Bot/documentation.html")
+		helpEmbed.set_thumbnail(url="https://raw.githubusercontent.com/SamuelCurrid/Gompei-Bot/master/assets/gompei.png")
+		helpEmbed.set_footer(text="Source: https://github.com/SamuelCurrid/Gompei-Bot/")
+
+		await ctx.message.channel.send(embed=helpEmbed)
+
+
 @gompei.command(pass_context=True, name="prefix")
 async def change_prefix(ctx, prefix):
 	if ctx.message.author.guild_permissions.administrator:
@@ -115,9 +127,8 @@ async def ping(ctx):
 	"""
 	Sends bot latency
 	"""
-	await ctx.send(f'Pong! `{int(gompei.latency * 1000)}ms`')
+	if isinstance(ctx.channel, discord.DMChannel) or ctx.channel.id == 567179438047887381:
+		await ctx.send(f'Pong! `{int(gompei.latency * 1000)}ms`')
 
-
+# Run the bot
 gompei.run(sys.argv[1])
-
-

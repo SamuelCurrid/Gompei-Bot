@@ -1,9 +1,24 @@
 from discord.ext import commands
-from datetime import datetime
+import asyncio
 
 
 def module_perms(ctx):
 	return ctx.message.author.guild_permissions.administrator
+
+
+def parse_id(arg):
+	"""
+	Parses an ID from a discord @
+	:param arg: @ or ID passed
+	:return: ID
+	"""
+	if "<" in arg:
+		for i, c in enumerate(arg):
+			if c.isdigit():
+				return int(arg[i:-1])
+	# Using ID
+	else:
+		return int(arg)
 
 
 class Administration(commands.Cog):
@@ -73,10 +88,7 @@ class Administration(commands.Cog):
 		:param arg1: user to purge
 		:param arg2: number of messages to purge
 		"""
-		if "<" in arg1:
-			member = ctx.guild.get_member(int(arg1[3:-1]))
-		else:
-			member = ctx.guild.get_member(int(arg1))
+		member = ctx.guild.get_member(parse_id(arg1))
 
 		messages = [ctx.message]
 		oldMessage = ctx.message
@@ -88,7 +100,6 @@ class Administration(commands.Cog):
 					count += 1
 					messages.append(message)
 
-
 					if count == int(arg2):
 						break
 
@@ -96,12 +107,42 @@ class Administration(commands.Cog):
 
 		await ctx.channel.delete_messages(messages)
 
+	@selective_purge.error
+	async def selective_purge_error(self, ctx, error):
+		if isinstance(error, commands.CheckFailure):
+			print("!ERROR! " + str(ctx.author.id) + " did not have permissions for selective purge command")
+		elif isinstance(error, commands.MissingRequiredArgument):
+			await ctx.send("Command is missing arguments")
+		else:
+			print(error)
 
-	# @selective_purge.error
-	# async def selective_purge_error(self, ctx, error):
-	# 	if isinstance(error, commands.CheckFailure):
-	# 		print("!ERROR! " + str(ctx.author.id) + " did not have permissions for selective purge command")
-	# 	elif isinstance(error, commands.MissingRequiredArgument):
-	# 		await ctx.send("Command is missing arguments")
-	# 	else:
-	# 		print(error)
+	@commands.command(pass_context=True)
+	@commands.check(module_perms)
+	async def mute(self, ctx, arg1, arg2):
+		member = ctx.guild.get_member(parse_id(arg1))
+		username = member.name + "#" + str(member.discriminator)
+		minutes = int(arg2)
+		reason = ctx.message.content[8 + len(arg1 + arg2):]
+
+		mutedRole = ctx.guild.get_role(615956736616038432)
+
+		await member.add_roles(mutedRole)
+		await ctx.send("**Muted** user **" + username + "** for **" + str(minutes) + " minutes** for: **" + reason + "**")
+		await member.send("**You were muted in the WPI Discord Server for:** " + reason)
+
+		await asyncio.sleep(60 * minutes)
+
+		await member.remove_roles(mutedRole)
+		await ctx.send("**Unmuted** user **" + username + "**")
+
+	@mute.error
+	async def mute_error(self, ctx, error):
+		if isinstance(error, commands.MissingRequiredArgument):
+			await ctx.send("Command is missing arguments: .mute <user> <minutes> <reason>")
+		if isinstance(error, commands.CommandInvokeError):
+			await ctx.send("Invalid mute time")
+
+
+
+
+
