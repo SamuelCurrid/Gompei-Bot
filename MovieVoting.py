@@ -8,8 +8,9 @@ import discord
 
 class MovieVoting(commands.Cog):
 
-	def __init__(self, bot):
+	def __init__(self, bot, key):
 		self.bot = bot
+		self.key = key
 		self.embed = discord.Embed(title="Movie Night Voting")
 		self.cachedVoting = {}
 		self.movieList = {}
@@ -70,9 +71,9 @@ class MovieVoting(commands.Cog):
 					if title[0:5] == "https":
 						endID = title.index("/?")
 						imdbID = title[27:endID]
-						req = "http://www.omdbapi.com/?apikey=2a4f4a86&i=" + imdbID + "&type=movie"
+						req = "http://www.omdbapi.com/?apikey=" + self.key + "&i=" + imdbID + "&type=movie"
 					else:
-						req = "http://www.omdbapi.com/?apikey=2a4f4a86&t=" + title + "&type=movie"
+						req = "http://www.omdbapi.com/?apikey=" + self.key + "&t=" + title + "&type=movie"
 
 					response = requests.get(req)
 					movieDetails = response.json()
