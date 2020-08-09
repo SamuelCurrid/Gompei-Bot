@@ -99,7 +99,7 @@ class Hangman(commands.Cog):
         global hangman_embed
         embed = hangman_embed.copy()
 
-        head = '◯' if hangman.errors > 0 else '  '
+        head = '()' if hangman.errors > 0 else '  '
         torso = '||' if hangman.errors > 1 else '  '
         left_arm = '/' if hangman.errors > 2 else ' '
         right_arm = '\\' if hangman.errors > 3 else ' '
