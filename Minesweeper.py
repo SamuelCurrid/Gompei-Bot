@@ -65,6 +65,6 @@ class Minesweeper(commands.Cog):
                 ct = 0
                 for c in range(-1, 2):
                     for r in range(-1, 2):
-                        if x + c >= 0 and x + c < len(board) and y + r >= 0 and y + r < len(board) and board[y + r][x + c] == bomb:
+                        if x + c >= 0 and x + c < len(board[y]) and y + r >= 0 and y + r < len(board) and board[y + r][x + c] == bomb:
                             ct += 1
                 board[y][x] = numbers[ct]
