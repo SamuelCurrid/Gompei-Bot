@@ -40,6 +40,9 @@ class Minesweeper(commands.Cog):
         if x < 2 or y < 2:
             await ctx.send(f"{x}x{y} is too small for a minesweeper board. The minimum dimensions are 2x2.")
             return
+        else if x > 10 or y > 10:
+            await ctx.send(f"{x}x{y} is too large for a minesweeper board. The maximum dimensions are 10x10.")
+            return
 
         bomb_count = max(2, (x * y // 10) + random.randrange(0, x + y))
         board = self.create_board(x, y)
