@@ -77,7 +77,12 @@ gompei = commands.Bot(command_prefix=get_prefix, case_insensitive=True)
 print("Loading cogs...")
 gompei.add_cog(Leaderboards(gompei))
 gompei.add_cog(Administration(gompei))
-gompei.add_cog(MovieVoting(gompei, sys.argv[2]))
+
+if len(sys.argv) > 2:
+	gompei.add_cog(MovieVoting(gompei, sys.argv[2]))
+else:
+	print("No OMDb token passed! Not loading MovieVoting")
+
 gompei.add_cog(Hangman(gompei))
 gompei.add_cog(Minesweeper(gompei))
 gompei.add_cog(Statistics(gompei))
