@@ -40,17 +40,25 @@ class Minesweeper(commands.Cog):
         if x < 2 or y < 2:
             await ctx.send(f"{x}x{y} is too small for a minesweeper board. The minimum dimensions are 2x2.")
             return
-        else if x > 10 or y > 10:
+        elif x > 10 or y > 10:
             await ctx.send(f"{x}x{y} is too large for a minesweeper board. The maximum dimensions are 10x10.")
             return
 
-        bomb_count = max(2, (x * y // 10) + random.randrange(0, x + y))
+        bomb_count = min(x * y - 1, max(2, (x * y // 10) + random.randrange(0, x + y)))
         board = self.create_board(x, y)
         self.place_bombs(board, bomb_count)
         self.place_neighbors(board)
 
+        if any(any(cell == numbers[0] for cell in row) for row in board):
+            while True:
+                y = random.choice(range(len(board)))
+                x = random.choice(range(len(board[y])))
+                if board[y][x] == numbers[0]:
+                    board[y][x] = None
+                    break
+
         embed = discord.Embed(title="Spoiler Minesweeper", color=discord.Color.red()).set_footer(text=f'Find all {bomb_count} bombs!')
-        embed.add_field(name="Minefield", value="\n".join(["".join([f"||{cell}||" for cell in row]) for row in board]))
+        embed.add_field(name="Minefield", value="\n".join(["".join([numbers[0] if cell is None else f"||{cell}||" for cell in row]) for row in board]))
 
         await ctx.send(embed=embed)
     
