@@ -2,8 +2,12 @@ from discord.ext import commands
 import asyncio
 
 
-def module_perms(ctx):
+def administrator_perms(ctx):
 	return ctx.message.author.guild_permissions.administrator
+
+
+def moderator_perms(ctx):
+	return ctx.message.author.guild_permissions.administrator or ctx.message.author.top_role.id == 742118136458772551
 
 
 def parse_id(arg):
@@ -30,7 +34,7 @@ class Administration(commands.Cog):
 		self.bot = bot
 
 	@commands.command(pass_context=True)
-	@commands.check(module_perms)
+	@commands.check(administrator_perms)
 	async def echo(self, ctx, arg1):
 		"""
 		Forwards given message / attachments to channel
@@ -62,7 +66,7 @@ class Administration(commands.Cog):
 			print(error)
 
 	@commands.command(pass_context=True)
-	@commands.check(module_perms)
+	@commands.check(moderator_perms)
 	async def purge(self, ctx, arg1):
 		"""
 		Purges a number of messages in channel used
@@ -81,7 +85,7 @@ class Administration(commands.Cog):
 			print(error)
 
 	@commands.command(pass_context=True, name="spurge")
-	@commands.check(module_perms)
+	@commands.check(moderator_perms)
 	async def selective_purge(self, ctx, arg1, arg2):
 		"""
 		Purges messages from a specific user in the channel
@@ -117,7 +121,7 @@ class Administration(commands.Cog):
 			print(error)
 
 	@commands.command(pass_context=True)
-	@commands.check(module_perms)
+	@commands.check(moderator_perms)
 	async def mute(self, ctx, arg1, arg2):
 		member = ctx.guild.get_member(parse_id(arg1))
 		username = member.name + "#" + str(member.discriminator)
