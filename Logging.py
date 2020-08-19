@@ -39,15 +39,15 @@ def timeDeltaString(date1, date2):
 	delta = relativedelta.relativedelta(date2, date1)
 
 	if delta.years > 0:
-		if delta.years > 1:
+		if delta.years == 1:
 			output = str(delta.years) + " years, "
 		else:
 			output = str(delta.years) + " year, "
-		if delta.months > 1:
+		if delta.months == 1:
 			output += str(delta.months) + " months, "
 		else:
 			output += str(delta.months) + " month, "
-		if delta.days > 1:
+		if delta.days == 1:
 			output += "and " + str(delta.days) + " days"
 		else:
 			output += "and " + str(delta.days) + " day"
@@ -55,15 +55,15 @@ def timeDeltaString(date1, date2):
 		return output
 
 	elif delta.months > 0:
-		if delta.months > 1:
+		if delta.months == 1:
 			output = str(delta.months) + " months, "
 		else:
 			output = str(delta.months) + " month, "
-		if delta.days > 1:
+		if delta.days == 1:
 			output += str(delta.days) + " days, "
 		else:
 			output += str(delta.days) + " day, "
-		if delta.hours > 1:
+		if delta.hours == 1:
 			output += "and " + str(delta.hours) + " hours"
 		else:
 			output += "and " + str(delta.hours) + " hour"
@@ -71,15 +71,15 @@ def timeDeltaString(date1, date2):
 		return output
 
 	elif delta.days > 0:
-		if delta.days > 1:
+		if delta.days == 1:
 			output = str(delta.days) + " days, "
 		else:
 			output = str(delta.days) + " day, "
-		if delta.hours > 1:
+		if delta.hours == 1:
 			output += str(delta.hours) + " hours, "
 		else:
 			output += str(delta.hours) + " hour, "
-		if delta.minutes > 1:
+		if delta.minutes == 1:
 			output += "and " + str(delta.minutes) + " minutes"
 		else:
 			output += "and " + str(delta.minutes) + " minute"
@@ -87,15 +87,15 @@ def timeDeltaString(date1, date2):
 		return output
 
 	elif delta.hours > 0:
-		if delta.hours > 1:
+		if delta.hours == 1:
 			output = str(delta.hours) + " hours, "
 		else:
 			output = str(delta.hours) + " hour, "
-		if delta.minutes > 1:
+		if delta.minutes == 1:
 			output += str(delta.minutes) + " minutes, "
 		else:
 			output += str(delta.minutes) + " minute, "
-		if delta.seconds > 1:
+		if delta.seconds == 1:
 			output += "and " + str(delta.seconds) + " seconds"
 		else:
 			output += "and " + str(delta.seconds) + " second"
@@ -103,7 +103,7 @@ def timeDeltaString(date1, date2):
 		return output
 
 	elif delta.minutes > 0:
-		if delta.minutes > 1:
+		if delta.minutes == 1:
 			output = str(delta.minutes) + " minutes "
 		else:
 			output = str(delta.minutes) + " minute "
@@ -115,7 +115,7 @@ def timeDeltaString(date1, date2):
 		return output
 
 	elif delta.seconds > 0:
-		if delta.seconds > 1:
+		if delta.seconds == 1:
 			return str(delta.seconds) + " seconds"
 		else:
 			return str(delta.seconds) + " second"
