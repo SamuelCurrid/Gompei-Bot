@@ -5,6 +5,7 @@ import discord
 import json
 import os
 from datetime import datetime
+from dateutil import relativedelta
 from discord.ext import commands
 
 
@@ -26,6 +27,100 @@ def parse_id(arg):
 	else:
 		return int(arg)
 
+
+def timeDeltaString(date1, date2):
+	"""
+	Returns a string with three most significant time deltas between date1 and date2
+	:param date1: datetime 1
+	:param date2: datetime 2
+	:return: string
+	"""
+	output = ""
+	delta = relativedelta.relativedelta(date2, date1)
+
+	if delta.years > 0:
+		if delta.years > 1:
+			output = str(delta.years) + " years, "
+		else:
+			output = str(delta.years) + " year, "
+		if delta.months > 1:
+			output += str(delta.months) + " months, "
+		else:
+			output += str(delta.months) + " month, "
+		if delta.days > 1:
+			output += "and " + str(delta.days) + " days"
+		else:
+			output += "and " + str(delta.days) + " day"
+
+		return output
+
+	elif delta.months > 0:
+		if delta.months > 1:
+			output = str(delta.months) + " months, "
+		else:
+			output = str(delta.months) + " month, "
+		if delta.days > 1:
+			output += str(delta.days) + " days, "
+		else:
+			output += str(delta.days) + " day, "
+		if delta.hours > 1:
+			output += "and " + str(delta.hours) + " hours"
+		else:
+			output += "and " + str(delta.hours) + " hour"
+
+		return output
+
+	elif delta.days > 0:
+		if delta.days > 1:
+			output = str(delta.days) + " days, "
+		else:
+			output = str(delta.days) + " day, "
+		if delta.hours > 1:
+			output += str(delta.hours) + " hours, "
+		else:
+			output += str(delta.hours) + " hour, "
+		if delta.minutes > 1:
+			output += "and " + str(delta.minutes) + " minutes"
+		else:
+			output += "and " + str(delta.minutes) + " minute"
+
+		return output
+
+	elif delta.hours > 0:
+		if delta.hours > 1:
+			output = str(delta.hours) + " hours, "
+		else:
+			output = str(delta.hours) + " hour, "
+		if delta.minutes > 1:
+			output += str(delta.minutes) + " minutes, "
+		else:
+			output += str(delta.minutes) + " minute, "
+		if delta.seconds > 1:
+			output += "and " + str(delta.seconds) + " seconds"
+		else:
+			output += "and " + str(delta.seconds) + " second"
+
+		return output
+
+	elif delta.minutes > 0:
+		if delta.minutes > 1:
+			output = str(delta.minutes) + " minutes "
+		else:
+			output = str(delta.minutes) + " minute "
+		if delta.seconds > 1:
+			output += "and " + str(delta.seconds) + " seconds"
+		else:
+			output += "and " + str(delta.seconds) + " second"
+
+		return output
+
+	elif delta.seconds > 0:
+		if delta.seconds > 1:
+			return str(delta.seconds) + " seconds"
+		else:
+			return str(delta.seconds) + " second"
+
+	return "!!DATETIME ERROR!!"
 
 class Logging(commands.Cog):
 	def __init__(self, bot):
@@ -116,6 +211,11 @@ class Logging(commands.Cog):
 				self.embed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
 				self.embed.title = "Message deleted in " + "#" + channel.name
 				self.embed.description = message.content
+
+				if len(message.attachments) > 0: # Check for attachments
+					for attachment in message.attachments:
+						self.embed.add_field(name="Attachment", value=attachment.proxy_url)
+
 				self.embed.set_footer(text="ID: " + str(message.author.id))
 				self.embed.timestamp = datetime.utcnow()
 
@@ -378,10 +478,9 @@ class Logging(commands.Cog):
 			self.embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
 			self.embed.title = "Member joined"
 
-			creationDelta = datetime.now() - member.created_at
-			count = 0
+			creationDelta = timeDeltaString(member.created_at, datetime.utcnow())
 
-			self.embed.description = "<@" + str(member.id) + "> " + ordinal(member.guild.member_count) + " to join\ncreated "
+			self.embed.description = "<@" + str(member.id) + "> " + ordinal(member.guild.member_count) + " to join\ncreated " + creationDelta + " ago"
 			self.embed.set_footer(text="ID: " + str(member.id))
 			self.embed.timestamp = datetime.utcnow()
 
@@ -393,7 +492,26 @@ class Logging(commands.Cog):
 		Sends a logging message containing
 		the name, avatar, id, time spent on the server
 		"""
-		return
+		if self.logs[str(member.guild.id)]["channel"] is not None:
+			loggingChannel = member.guild.get_channel(int(self.logs[str(member.guild.id)]["channel"]))
+
+			self.embed = discord.Embed()
+			self.embed.colour = discord.Colour(0xbe4041)
+			self.embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
+			self.embed.title = "Member left"
+
+			joinDelta = timeDeltaString(member.joined_at, datetime.utcnow())
+			roles = ""
+
+			for index in range(1, len(member.roles)):
+				roles += "<@&" + str(member.roles[index].id) + ">"
+
+
+			self.embed.description = "<@" + str(member.id) + "> joined " + joinDelta + " ago\n**Roles: **" + roles
+			self.embed.set_footer(text="ID: " + str(member.id))
+			self.embed.timestamp = datetime.utcnow()
+
+			await loggingChannel.send(embed=self.embed)
 
 	@commands.Cog.listener()
 	async def on_member_update(self, before, after):
