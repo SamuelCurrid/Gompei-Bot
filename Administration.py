@@ -41,85 +41,86 @@ def timeDeltaString(date1, date2):
 
 	if delta.years > 0:
 		if delta.years == 1:
-			output = str(delta.years) + " years, "
-		else:
 			output = str(delta.years) + " year, "
+		else:
+			output = str(delta.years) + " years, "
 		if delta.months == 1:
-			output += str(delta.months) + " months, "
-		else:
 			output += str(delta.months) + " month, "
-		if delta.days == 1:
-			output += "and " + str(delta.days) + " days"
 		else:
+			output += str(delta.months) + " months, "
+
+		if delta.days == 1:
 			output += "and " + str(delta.days) + " day"
+		else:
+			output += "and " + str(delta.days) + " days"
 
 		return output
 
 	elif delta.months > 0:
 		if delta.months == 1:
-			output = str(delta.months) + " months, "
-		else:
 			output = str(delta.months) + " month, "
+		else:
+			output = str(delta.months) + " months, "
 		if delta.days == 1:
-			output += str(delta.days) + " days, "
-		else:
 			output += str(delta.days) + " day, "
-		if delta.hours == 1:
-			output += "and " + str(delta.hours) + " hours"
 		else:
+			output += str(delta.days) + " days, "
+		if delta.hours == 1:
 			output += "and " + str(delta.hours) + " hour"
+		else:
+			output += "and " + str(delta.hours) + " hours"
 
 		return output
 
 	elif delta.days > 0:
 		if delta.days == 1:
-			output = str(delta.days) + " days, "
-		else:
 			output = str(delta.days) + " day, "
+		else:
+			output = str(delta.days) + " days, "
 		if delta.hours == 1:
-			output += str(delta.hours) + " hours, "
-		else:
 			output += str(delta.hours) + " hour, "
-		if delta.minutes == 1:
-			output += "and " + str(delta.minutes) + " minutes"
 		else:
+			output += str(delta.hours) + " hours, "
+		if delta.minutes == 1:
 			output += "and " + str(delta.minutes) + " minute"
+		else:
+			output += "and " + str(delta.minutes) + " minutes"
 
 		return output
 
 	elif delta.hours > 0:
 		if delta.hours == 1:
-			output = str(delta.hours) + " hours, "
-		else:
 			output = str(delta.hours) + " hour, "
+		else:
+			output = str(delta.hours) + " hours, "
 		if delta.minutes == 1:
-			output += str(delta.minutes) + " minutes, "
-		else:
 			output += str(delta.minutes) + " minute, "
-		if delta.seconds == 1:
-			output += "and " + str(delta.seconds) + " seconds"
 		else:
+			output += str(delta.minutes) + " minutes, "
+		if delta.seconds == 1:
 			output += "and " + str(delta.seconds) + " second"
+		else:
+			output += "and " + str(delta.seconds) + " seconds"
 
 		return output
 
 	elif delta.minutes > 0:
 		if delta.minutes == 1:
-			output = str(delta.minutes) + " minutes "
-		else:
 			output = str(delta.minutes) + " minute "
-		if delta.seconds > 1:
-			output += "and " + str(delta.seconds) + " seconds"
 		else:
+			output = str(delta.minutes) + " minutes "
+		if delta.seconds == 1:
 			output += "and " + str(delta.seconds) + " second"
+		else:
+			output += "and " + str(delta.seconds) + " seconds"
 
 		return output
 
 	elif delta.seconds > 0:
 		if delta.seconds == 1:
-			return str(delta.seconds) + " seconds"
-		else:
 			return str(delta.seconds) + " second"
+		else:
+			return str(delta.seconds) + " seconds"
 
 	return "!!DATETIME ERROR!!"
 
@@ -136,27 +137,65 @@ class Administration(commands.Cog):
 	@commands.check(administrator_perms)
 	async def echo(self, ctx, arg1):
 		"""
-		Forwards given message / attachments to channel
+		Forwards given message / attachments to given channel
 		"""
 		channel = ctx.guild.get_channel(int(arg1[2:-1]))
 
 		if channel is not None:
-			images = []
+			attachments = []
 
 			if len(ctx.message.attachments) > 0:
 				for i in ctx.message.attachments:
-					images.append(await i.to_file())
+					attachments.append(await i.to_file())
 
 			message = ctx.message.content[7 + len(arg1):]
 			if len(message) > 0:
-				await channel.send(message, files=images)
-			elif len(images) > 0:
-				await channel.send(files=images)
+				await channel.send(message, files=attachments)
+			elif len(attachments) > 0:
+				await channel.send(files=attachments)
 			else:
 				await ctx.send("No content to send.")
+		else:
+			await ctx.send("Not a valid channel")
 
 	@echo.error
 	async def echo_error(self, ctx, error):
+		if isinstance(error, commands.CheckFailure):
+			print("!ERROR! " + str(ctx.author.id) + " did not have permissions for echo command")
+		elif isinstance(error, commands.MissingRequiredArgument):
+			await ctx.send("Command is missing arguments")
+		else:
+			print(error)
+
+	@commands.command(pass_context=True)
+	@commands.check(administrator_perms)
+	async def echoPM(self, ctx, arg1):
+		"""
+		Fowards given message / attachments to give user
+		"""
+		member = ctx.guild.get_member(parse_id(arg1))
+
+		if member is None:
+			await ctx.send("Not a valid member")
+			return
+
+		attachments = []
+		if len(ctx.message.attachments) > 0:
+			for i in ctx.message.attachments:
+				attachments.append(await i.to_file())
+
+		message = ctx.message.content[9 + len(arg1):]
+		if len(message) > 0:
+			await member.send(message, files=attachments)
+		elif len(attachments) > 0:
+			await member.send(files=attachments)
+		else:
+			await ctx.send("No content to send")
+
+		await ctx.message.add_reaction("👍")
+
+	@echoPM.error
+	async def echoPM_error(self, ctx, error):
 		if isinstance(error, commands.CheckFailure):
 			print("!ERROR! " + str(ctx.author.id) + " did not have permissions for echo command")
 		elif isinstance(error, commands.MissingRequiredArgument):
@@ -172,7 +211,6 @@ class Administration(commands.Cog):
 		:param arg1: number of messages to purge
 		"""
 		await ctx.channel.purge(limit=int(arg1) + 1)
-
 
 	@purge.error
 	async def purge_error(self, ctx, error):
@@ -223,6 +261,12 @@ class Administration(commands.Cog):
 	@commands.check(moderator_perms)
 	async def mute(self, ctx, arg1, arg2):
 		member = ctx.guild.get_member(parse_id(arg1))
+		mutedRole = ctx.guild.get_role(615956736616038432)
+
+		# Is user already muted
+		if mutedRole in member.roles:
+			await ctx.send("This member is already muted")
+			return
 
 		# Check role hierarchy
 		if ctx.author.top_role.position <= member.top_role.position:
@@ -237,15 +281,11 @@ class Administration(commands.Cog):
 
 		delta = timedelta(seconds=seconds)
 		reason = ctx.message.content[8 + len(arg1 + arg2):]
-		print(len(reason))
 		if len(reason) < 1:
 			await ctx.send("You must include a reason for the mute")
 			return
 
-		mutedRole = ctx.guild.get_role(615956736616038432)
-
 		muteTime = timeDeltaString(datetime.utcnow(), datetime.utcnow() + delta)
-
 
 		await member.add_roles(mutedRole)
 		await ctx.send("**Muted** user **" + username + "** for **" + muteTime + "** for: **" + reason + "**")
@@ -256,11 +296,9 @@ class Administration(commands.Cog):
 		await member.remove_roles(mutedRole)
 		await ctx.send("**Unmuted** user **" + username + "**")
 
-	# @mute.error
-	# async def mute_error(self, ctx, error):
-	# 	if isinstance(error, commands.MissingRequiredArgument):
-	# 		await ctx.send("Command is missing arguments: .mute <user> <minutes> <reason>")
-	# 	if isinstance(error, commands.CommandInvokeError):
-	# 		await ctx.send("Invalid mute time")
-	#
-	# 	await ctx.send(error)
+	@mute.error
+	async def mute_error(self, ctx, error):
+		if isinstance(error, commands.MissingRequiredArgument):
+			await ctx.send("Command is missing arguments: .mute <user> <minutes> <reason>")
+		if isinstance(error, commands.CommandInvokeError):
+			await ctx.send("Invalid mute time")
