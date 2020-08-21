@@ -105,6 +105,28 @@ async def on_ready():
 
 	print("Logged on as {0}".format(gompei.user))
 
+@gompei.event
+async def on_message(message):
+	"""
+	Forwards DMs to a channel
+	"""
+	if isinstance(message.channel, discord.channel.DMChannel) and not message.author.bot:
+		wpi_discord = gompei.get_guild(567169726250352640)
+		gompei_channel = wpi_discord.get_channel(746002454180528219)
+
+		attachments = []
+		if len(message.attachments) > 0:
+			for i in message.attachments:
+				attachments.append(await i.to_file())
+
+		if len(message.content) > 0:
+			await gompei_channel.send(message.clean_content + "\n-<@" + str(message.author.id) + ">", files=attachments)
+		elif len(attachments) > 0:
+			await gompei_channel.send("<@" + str(message.author.id) + ">", files=attachments)
+
+	await gompei.process_commands(message)
+
+
 
 #Commands
 @gompei.command(pass_context=True)
