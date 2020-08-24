@@ -84,7 +84,7 @@ class MovieVoting(commands.Cog):
 					else:
 						if movieDetails.get("Response") == "False":
 							await ctx.send("Movie not found. Please try another.")
-						elif title in self.movieList:
+						elif title in self.moviesList:
 							await ctx.send(title + " is already present in the list.")
 						else:
 							self.movieList[title] = {}
@@ -329,7 +329,10 @@ class MovieVoting(commands.Cog):
 						# If user has not already voted for the movie
 						if str(user.id) not in self.movieList[titles[index]]["votes"]:
 							self.movieList[titles[index]]["votes"].append(str(user.id))
-							self.userList[str(user.id)]["votes"].append(titles[index])
+							if str(user.id) not in self.userList:
+								self.userList[str(user.id)] = {"requests": [], "votes": [titles[index]]}
+							else:
+								self.userList[str(user.id)]["votes"].append(titles[index])
 
 							# Figure out how many positions the movie changed by
 							differential = 0
@@ -338,7 +341,7 @@ class MovieVoting(commands.Cog):
 
 							# If the movie changed positions in leaderboard
 							if differential > 0:
-								#Min page number of leaderboard to update
+								# Min page number of leaderboard to update
 								page = math.floor((index - differential) / 9)
 
 								for messageID in self.cachedVoting:
@@ -348,8 +351,8 @@ class MovieVoting(commands.Cog):
 								await self.updateMovieMessage(reaction.message)
 
 						await self.updateMovieList()
-				# Remove reaction
 
+				# Remove reaction
 				if not isinstance(reaction.message.channel, discord.channel.DMChannel):
 					await reaction.remove(user)
 
