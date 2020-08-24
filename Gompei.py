@@ -11,12 +11,14 @@ from MovieVoting import MovieVoting
 from Hangman import Hangman
 from Minesweeper import Minesweeper
 
+# from Democracy import Democracy
 from Logging import Logging
 from Statistics import Statistics
 
 
 # State handling
 settings = {}
+class_roles = [664719508404961293, 567179738683015188, 578350297978634240, 578350427209203712, 578350479688466455, 692461531983511662, 599319106478669844, 638748298152509461, 638748298152509461, 630589807084699653]
 
 
 async def load_state():
@@ -128,7 +130,23 @@ async def on_message(message):
 
 
 
-#Commands
+@gompei.event
+async def on_member_update(before, after):
+	"""
+	Load state and update information since last run
+	"""
+	if len(after.roles) < len(before.roles):
+		role_list = []
+		for role in after.roles:
+			if role.id in class_roles:
+				return
+			if role.id != 725887796312801340:
+				role_list.append(role)
+
+		await after.edit(roles=role_list)
+
+
+# Commands
 @gompei.command(pass_context=True)
 async def help(ctx):
 	"""
