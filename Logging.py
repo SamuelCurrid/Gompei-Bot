@@ -527,7 +527,23 @@ class Logging(commands.Cog):
 		Sends a logging message containing
 		the property of the user updated before and after
 		"""
-		return
+		if self.logs["567169726250352640"]["channel"] is not None:
+
+			loggingChannel = self.bot.get_guild(567169726250352640).get_channel(738536336016801793)
+
+			# Check for avatar update
+			if before.avatar != after.avatar:
+				self.embed = discord.Embed()
+				self.embed.colour = discord.Colour(0x8899d4)
+				self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+				self.embed.title = "Avatar update"
+				self.embed.set_image(url=after.avatar_url)
+				self.embed.description = "<@" + str(after.id) + ">"
+
+				self.embed.set_footer(text="ID: " + str(after.id))
+				self.embed.timestamp = datetime.utcnow()
+
+				await loggingChannel.send(embed=self.embed)
 
 	@commands.Cog.listener()
 	async def on_guild_update(self, before, after):
