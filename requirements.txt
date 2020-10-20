@@ -1,3 +1,4 @@
+pytimeparse
 discord.py
 python-dateutil
 pytimeparse
