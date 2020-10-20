@@ -84,7 +84,7 @@ class MovieVoting(commands.Cog):
 					else:
 						if movieDetails.get("Response") == "False":
 							await ctx.send("Movie not found. Please try another.")
-						elif title in self.moviesList:
+						elif title in self.movieList:
 							await ctx.send(title + " is already present in the list.")
 						else:
 							self.movieList[title] = {}
@@ -262,7 +262,7 @@ class MovieVoting(commands.Cog):
 			else:
 				await ctx.send("You have not voted for any movies yet!")
 
-	@commands.command(pass_context=True)
+	@commands.command(pass_context=True, aliases=['movieList'])
 	async def listMovies(self, ctx):
 		"""
 		Sends an embed listing the movies & reactions to vote for them
