@@ -40,85 +40,86 @@ def timeDeltaString(date1, date2):
 
 	if delta.years > 0:
 		if delta.years == 1:
-			output = str(delta.years) + " years, "
-		else:
 			output = str(delta.years) + " year, "
+		else:
+			output = str(delta.years) + " years, "
 		if delta.months == 1:
-			output += str(delta.months) + " months, "
-		else:
 			output += str(delta.months) + " month, "
-		if delta.days == 1:
-			output += "and " + str(delta.days) + " days"
 		else:
+			output += str(delta.months) + " months, "
+
+		if delta.days == 1:
 			output += "and " + str(delta.days) + " day"
+		else:
+			output += "and " + str(delta.days) + " days"
 
 		return output
 
 	elif delta.months > 0:
 		if delta.months == 1:
-			output = str(delta.months) + " months, "
-		else:
 			output = str(delta.months) + " month, "
+		else:
+			output = str(delta.months) + " months, "
 		if delta.days == 1:
-			output += str(delta.days) + " days, "
-		else:
 			output += str(delta.days) + " day, "
-		if delta.hours == 1:
-			output += "and " + str(delta.hours) + " hours"
 		else:
+			output += str(delta.days) + " days, "
+		if delta.hours == 1:
 			output += "and " + str(delta.hours) + " hour"
+		else:
+			output += "and " + str(delta.hours) + " hours"
 
 		return output
 
 	elif delta.days > 0:
 		if delta.days == 1:
-			output = str(delta.days) + " days, "
-		else:
 			output = str(delta.days) + " day, "
+		else:
+			output = str(delta.days) + " days, "
 		if delta.hours == 1:
-			output += str(delta.hours) + " hours, "
-		else:
 			output += str(delta.hours) + " hour, "
-		if delta.minutes == 1:
-			output += "and " + str(delta.minutes) + " minutes"
 		else:
+			output += str(delta.hours) + " hours, "
+		if delta.minutes == 1:
 			output += "and " + str(delta.minutes) + " minute"
+		else:
+			output += "and " + str(delta.minutes) + " minutes"
 
 		return output
 
 	elif delta.hours > 0:
 		if delta.hours == 1:
-			output = str(delta.hours) + " hours, "
-		else:
 			output = str(delta.hours) + " hour, "
+		else:
+			output = str(delta.hours) + " hours, "
 		if delta.minutes == 1:
-			output += str(delta.minutes) + " minutes, "
-		else:
 			output += str(delta.minutes) + " minute, "
-		if delta.seconds == 1:
-			output += "and " + str(delta.seconds) + " seconds"
 		else:
+			output += str(delta.minutes) + " minutes, "
+		if delta.seconds == 1:
 			output += "and " + str(delta.seconds) + " second"
+		else:
+			output += "and " + str(delta.seconds) + " seconds"
 
 		return output
 
 	elif delta.minutes > 0:
 		if delta.minutes == 1:
-			output = str(delta.minutes) + " minutes "
-		else:
 			output = str(delta.minutes) + " minute "
-		if delta.seconds > 1:
-			output += "and " + str(delta.seconds) + " seconds"
 		else:
+			output = str(delta.minutes) + " minutes "
+		if delta.seconds == 1:
 			output += "and " + str(delta.seconds) + " second"
+		else:
+			output += "and " + str(delta.seconds) + " seconds"
 
 		return output
 
 	elif delta.seconds > 0:
 		if delta.seconds == 1:
-			return str(delta.seconds) + " seconds"
-		else:
 			return str(delta.seconds) + " second"
+		else:
+			return str(delta.seconds) + " seconds"
 
 	return "!!DATETIME ERROR!!"
 
@@ -504,8 +505,7 @@ class Logging(commands.Cog):
 			roles = ""
 
 			for index in range(1, len(member.roles)):
-				roles += "<@&" + str(member.roles[index].id) + ">"
-
+				roles += "<@&" + str(member.roles[index].id) + "> "
 
 			self.embed.description = "<@" + str(member.id) + "> joined " + joinDelta + " ago\n**Roles: **" + roles
 			self.embed.set_footer(text="ID: " + str(member.id))
@@ -519,7 +519,74 @@ class Logging(commands.Cog):
 		Sends a logging message containing
 		the property of the member updated before and after
 		"""
-		return
+		loggingChannel = before.guild.get_channel(int(self.logs[str(before.guild.id)]["channel"]))
+
+
+		# Role checks
+		if len(before.roles) > len(after.roles):
+			for i in range(0, len(after.roles)):
+				if before.roles[i] != after.roles[i]:
+					self.embed = discord.Embed()
+					self.embed.colour = discord.Colour(0xbe4041)
+					self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+					self.embed.title = "Role removed"
+					self.embed.description = "<@&" + str(before.roles[i].id) + ">"
+
+					self.embed.set_footer(text="ID: " + str(after.id))
+					self.embed.timestamp = datetime.utcnow()
+
+					await loggingChannel.send(embed=self.embed)
+					break
+
+		elif len(before.roles) < len(after.roles):
+			if len(before.roles) == 1:
+				self.embed = discord.Embed()
+				self.embed.colour = discord.Colour(0x8899d4)
+				self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+				self.embed.title = "Role added"
+				self.embed.description = "<@&" + str(after.roles[1].id) + ">"
+
+				self.embed.set_footer(text="ID: " + str(after.id))
+				self.embed.timestamp = datetime.utcnow()
+
+				await loggingChannel.send(embed=self.embed)
+				return
+
+			for i in range(0, len(before.roles) + 1):
+				if before.roles[i] != after.roles[i]:
+					self.embed = discord.Embed()
+					self.embed.colour = discord.Colour(0x8899d4)
+					self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+					self.embed.title = "Role added"
+					self.embed.description = "<@&" + str(after.roles[i].id) + ">"
+
+					self.embed.set_footer(text="ID: " + str(after.id))
+					self.embed.timestamp = datetime.utcnow()
+
+					await loggingChannel.send(embed=self.embed)
+					break
+
+		# Nickname check
+		elif before.nick != after.nick:
+			self.embed = discord.Embed()
+			if before.nick is None:
+				self.embed.title = "Nickname added"
+				self.embed.description = "**Before: **\n**+After: **" + after.nick
+				self.embed.colour = discord.Colour(0x43b581)
+			elif after.nick is None:
+				self.embed.title = "Nickname removed"
+				self.embed.description = "**Before: **" + before.nick + "\n**+After: **"
+				self.embed.colour = discord.Colour(0xbe4041)
+			else:
+				self.embed.title = "Nickname changed"
+				self.embed.description = "**Before: **" + before.nick + "\n**+After: **" + after.nick
+				self.embed.colour = discord.Colour(0x8899d4)
+
+			self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+			self.embed.set_footer(text="ID: " + str(after.id))
+			self.embed.timestamp = datetime.utcnow()
+
+			await loggingChannel.send(embed=self.embed)
 
 	@commands.Cog.listener()
 	async def on_user_update(self, before, after):
@@ -591,7 +658,34 @@ class Logging(commands.Cog):
 		Sends a logging message containing
 		the id, name, and updated voice properties of the member
 		"""
-		return
+		loggingChannel = member.guild.get_channel(int(self.logs[str(member.guild.id)]["channel"]))
+
+		if before.channel is None:
+			self.embed = discord.Embed()
+			self.embed.title = "Member joined voice channel"
+			self.embed.description = "**" + member.display_name + "** joined #" + after.channel.name
+			self.embed.colour = discord.Colour(0x43b581)
+			self.embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
+			self.embed.set_footer(text="ID: " + str(member.id))
+			await loggingChannel.send(embed=self.embed)
+
+		elif after.channel is None:
+			self.embed = discord.Embed()
+			self.embed.title = "Member left voice channel"
+			self.embed.description = "**" + member.display_name + "** left #" + before.channel.name
+			self.embed.colour = discord.Colour(0xbe4041)
+			self.embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
+			self.embed.set_footer(text="ID: " + str(member.id))
+			await loggingChannel.send(embed=self.embed)
+
+		elif before.channel.id != after.channel.id:
+			self.embed = discord.Embed()
+			self.embed.title = "Member changed voice channel"
+			self.embed.description = "**Before: **#" + before.channel.name + "\n**+After: **#" + after.channel.name
+			self.embed.colour = discord.Colour(0x8899d4)
+			self.embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
+			self.embed.set_footer(text="ID: " + str(member.id))
+			await loggingChannel.send(embed=self.embed)
 
 	@commands.Cog.listener()
 	async def on_member_ban(self, guild, user):
