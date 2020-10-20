@@ -1,9 +1,14 @@
 from datetime import datetime
 from datetime import timedelta
+
+import json
+
+import discord
 from dateutil import relativedelta
 from discord.ext import commands
 from pytimeparse import parse
 import asyncio
+import os
 
 
 def administrator_perms(ctx):
@@ -131,10 +136,29 @@ class Administration(commands.Cog):
 	"""
 
 	def __init__(self, bot):
+		self.warns = {}
 		self.bot = bot
+		self.load_warns()
 
+	def load_warns(self):
+		try:
+			with open(os.path.join("config", "warns.json"), "r+") as warnsFile:
+				self.warns = json.loads(warnsFile.read())
+		except (OSError, IOError) as e:
+			with open(os.path.join("config", "warns.json"), "r+") as warnsFile:
+				warnsFile.truncate(0)
+				warnsFile.seek(0)
+				json.dump(self.warns, warnsFile, indent=4)
+
+	def save_warns(self):
+		with open(os.path.join("config", "warns.json"), "r+") as warnsFile:
+			warnsFile.truncate(0)
+			warnsFile.seek(0)
+			json.dump(self.warns, warnsFile, indent=4)
+
+	@commands.guild_only()
 	@commands.command(pass_context=True)
-	@commands.check(administrator_perms)
+	@commands.check(moderator_perms)
 	async def echo(self, ctx, arg1):
 		"""
 		Forwards given message / attachments to given channel
@@ -150,9 +174,11 @@ class Administration(commands.Cog):
 
 			message = ctx.message.content[7 + len(arg1):]
 			if len(message) > 0:
-				await channel.send(message, files=attachments)
+				message = await channel.send(message, files=attachments)
+				await ctx.send("Message sent (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(message.channel.id) + "/" + str(message.id) + ">)")
 			elif len(attachments) > 0:
-				await channel.send(files=attachments)
+				message = await channel.send(files=attachments)
+				await ctx.send("Message sent (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(message.channel.id) + "/" + str(message.id) + ">)")
 			else:
 				await ctx.send("No content to send.")
 		else:
@@ -167,8 +193,33 @@ class Administration(commands.Cog):
 		else:
 			print(error)
 
+	@commands.guild_only()
 	@commands.command(pass_context=True)
-	@commands.check(administrator_perms)
+	@commands.check(moderator_perms)
+	async def echoEdit(self, ctx, messageLink):
+		messageID = int(messageLink[messageLink.rfind("/") + 1:])
+		shortLink = messageLink[:messageLink.rfind("/")]
+		channelID = int(shortLink[shortLink.rfind("/") + 1:])
+
+		channel = ctx.guild.get_channel(channelID)
+		if channel is None:
+			await ctx.send("Not a valid link to message")
+		else:
+			message = await channel.fetch_message(messageID)
+			if message is None:
+				await ctx.send("Not a valid link to message")
+			else:
+				if message.author.id != self.bot.user.id:
+					await ctx.send("Cannot edit a message that is not my own")
+				else:
+					newMessage = ctx.message.content[10 + len(messageLink):]
+
+					await message.edit(content=newMessage)
+					await ctx.send("Message edited (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(channelID) + "/" + str(messageID) + ">)")
+
+	@commands.guild_only()
+	@commands.command(pass_context=True, aliases=['pmEcho'])
+	@commands.check(moderator_perms)
 	async def echoPM(self, ctx, arg1):
 		"""
 		Fowards given message / attachments to give user
@@ -186,9 +237,11 @@ class Administration(commands.Cog):
 
 		message = ctx.message.content[9 + len(arg1):]
 		if len(message) > 0:
-			await member.send(message, files=attachments)
+			message = await member.send(message, files=attachments)
+			await ctx.send("Message sent (<https://discordapp.com/channels/@me/" + str(message.channel.id) + "/" + str(message.id) + ">)")
 		elif len(attachments) > 0:
-			await member.send(files=attachments)
+			message = await member.send(files=attachments)
+			await ctx.send("Message sent (<https://discordapp.com/channels/@me/" + str(message.channel.id) + "/" + str(message.id) + ">)")
 		else:
 			await ctx.send("No content to send")
 
@@ -203,6 +256,34 @@ class Administration(commands.Cog):
 		else:
 			print(error)
 
+	@commands.guild_only()
+	@commands.command(pass_context=True)
+	@commands.check(moderator_perms)
+	async def pmEdit(self, ctx, user, messageLink):
+		messageID = int(messageLink[messageLink.rfind("/") + 1:])
+		print(messageID)
+
+		member = ctx.guild.get_member(parse_id(user))
+		if member is None:
+			await ctx.send("Not a valid user")
+		else:
+			channel = member.dm_channel
+			if channel is None:
+				channel = await member.create_dm()
+
+			message = await channel.fetch_message(messageID)
+			if message is None:
+				await ctx.send("Not a valid link to message")
+			else:
+				if message.author.id != self.bot.user.id:
+					await ctx.send("Cannot edit a message that is not my own")
+				else:
+					newMessage = ctx.message.content[10 + len(messageLink) + len(user):]
+
+					await message.edit(content=newMessage)
+					await ctx.send("Message edited (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(channel.id) + "/" + str(messageID) + ">)")
+
+	@commands.guild_only()
 	@commands.command(pass_context=True)
 	@commands.check(moderator_perms)
 	async def purge(self, ctx, arg1):
@@ -221,6 +302,7 @@ class Administration(commands.Cog):
 		else:
 			print(error)
 
+	@commands.guild_only()
 	@commands.command(pass_context=True, name="spurge")
 	@commands.check(moderator_perms)
 	async def selective_purge(self, ctx, arg1, arg2):
@@ -257,6 +339,7 @@ class Administration(commands.Cog):
 		else:
 			print(error)
 
+	@commands.guild_only()
 	@commands.command(pass_context=True)
 	@commands.check(moderator_perms)
 	async def mute(self, ctx, arg1, arg2):
@@ -289,7 +372,7 @@ class Administration(commands.Cog):
 
 		await member.add_roles(mutedRole)
 		await ctx.send("**Muted** user **" + username + "** for **" + muteTime + "** for: **" + reason + "**")
-		await member.send("**You were muted in the WPI Discord Server for " + muteTime + "\nReason:** " + reason)
+		await member.send("**You were muted in the WPI Discord Server for " + muteTime + ". Reason:**\n> " + reason +"\n\nYou can repond here to contact WPI Discord staff.")
 
 		await asyncio.sleep(seconds)
 
@@ -302,3 +385,164 @@ class Administration(commands.Cog):
 			await ctx.send("Command is missing arguments: .mute <user> <minutes> <reason>")
 		if isinstance(error, commands.CommandInvokeError):
 			await ctx.send("Invalid mute time")
+
+	@commands.guild_only()
+	@commands.command(pass_context=True)
+	@commands.check(moderator_perms)
+	async def warn(self, ctx, user):
+		"""
+		Warns a specific user for given reason
+		"""
+		memberID = parse_id(user)
+		member = ctx.guild.get_member(memberID)
+
+		if member is None:
+			await ctx.send("Not a valid member")
+			return
+
+		attachments = []
+		if len(ctx.message.attachments) > 0:
+			for i in ctx.message.attachments:
+				attachments.append(await i.to_file())
+
+		message = ctx.message.content[7 + len(user):]
+		if len(message) > 0:
+			await member.send("You were warned in the WPI Discord Server. Reason:\n> " + message, files=attachments)
+		else:
+			await ctx.send("No warning to send")
+			return
+
+		if str(memberID) in self.warns:
+			self.warns[str(memberID)].append(message)
+		else:
+			self.warns[str(memberID)] = [message]
+
+		self.save_warns()
+
+		ordinal = lambda n: "%d%s" % (n, "tsnrhtdd"[(n // 10 % 10 != 1) * (n % 10 < 4) * n % 10::4])
+
+		await ctx.send("Warning sent to " + member.display_name + " (" + str(memberID) + "), this is their " + ordinal(len(self.warns[str(memberID)])) + " warning")
+
+	@warn.error
+	async def warn_error(self, ctx, error):
+		if isinstance(error, commands.CheckFailure):
+			print("!ERROR! " + str(ctx.author.id) + " did not have permissions for warn command")
+		elif isinstance(error, commands.MissingRequiredArgument):
+			await ctx.send("Command is missing arguments\n> warn [user/user_ID] [reason]")
+		else:
+			print(error)
+
+	@commands.guild_only()
+	@commands.command(pass_context=True)
+	@commands.check(moderator_perms)
+	async def warns(self, ctx, user=None):
+		message = ""
+		if user is None:
+			if len(self.warns) == 0:
+				message = "There are no warnings on this server"
+			for member in self.warns:
+				message += "Warnings for <@" + member + ">\n"
+				count = 1
+				for warn in self.warns[member]:
+					message += "__**" + str(count) + ".**__\n" + warn + "\n\n"
+					count += 1
+
+				message += "\n\n"
+		else:
+			memberID = parse_id(user)
+			if str(memberID) in self.warns:
+				message = "Warnings for <@" + str(memberID) + ">\n"
+				for warn in self.warns[str(memberID)]:
+					message += "> " + warn + "\n"
+			else:
+				message = "This user does not exist or has no warnings"
+
+		if len(message) > 2000:
+			n = 2000
+			for index in range(0, len(message), n):
+				await ctx.send(message[index: index + n])
+		else:
+			await ctx.send(message)
+
+	@commands.guild_only()
+	@commands.command(pass_context=True)
+	@commands.check(moderator_perms)
+	async def warnNote(self, ctx, user):
+		memberID = parse_id(user)
+		member = ctx.guild.get_member(memberID)
+
+		if member is None:
+			await ctx.send("Not a valid member")
+			return
+
+		attachments = []
+		if len(ctx.message.attachments) > 0:
+			for i in ctx.message.attachments:
+				attachments.append(await i.to_file())
+
+		message = ctx.message.content[11 + len(user):]
+
+		if str(memberID) in self.warns:
+			self.warns[str(memberID)].append(message)
+		else:
+			self.warns[str(memberID)] = [message]
+
+		self.save_warns()
+
+		ordinal = lambda n: "%d%s" % (n, "tsnrhtdd"[(n // 10 % 10 != 1) * (n % 10 < 4) * n % 10::4])
+
+		await ctx.send("Warning added for " + member.display_name + " (" + str(memberID) + "), this is their " + ordinal(len(self.warns[str(memberID)])) + " warning")
+
+	@commands.command(pass_context=True)
+	@commands.check(moderator_perms)
+	async def clearWarn(self, ctx, user):
+		memberID = parse_id(user)
+		if str(memberID) in self.warns:
+			del self.warns[str(memberID)]
+			await ctx.send("Cleared warnings for <@" + str(memberID) + ">")
+			self.save_warns()
+		else:
+			await ctx.send("This user does not exist or has no warnings")
+
+	@commands.guild_only()
+	@commands.command(pass_context=True)
+	@commands.check(moderator_perms)
+	async def lockdown(self, ctx):
+		if len(ctx.message.content) > 10:
+			lockChannel = ctx.guild.get_channel(parse_id(ctx.message.content[10:]))
+			if lockChannel is None:
+				await ctx.send("Not a valid channel to lockdown")
+				return
+		else:
+			lockChannel = ctx.channel
+
+		overwrite = lockChannel.overwrites_for(ctx.guild.default_role)
+		if overwrite.send_messages is False:
+			await ctx.send("Channel is already locked down!")
+		else:
+			overwrite.update(send_messages=False)
+			await lockChannel.send(":white_check_mark: **Locked down " + lockChannel.name + "**")
+			await lockChannel.set_permissions(ctx.guild.default_role, overwrite=overwrite)
+
+
+	@commands.guild_only()
+	@commands.command(pass_context=True)
+	@commands.check(moderator_perms)
+	async def unlock(self, ctx):
+		if len(ctx.message.content) > 8:
+			lockChannel = ctx.guild.get_channel(parse_id(ctx.message.content[8:]))
+			if lockChannel is None:
+				await ctx.send("Not a valid channel to unlock")
+				return
+		else:
+			lockChannel = ctx.channel
+
+		overwrite = lockChannel.overwrites_for(ctx.guild.default_role)
+		if overwrite.send_messages is False:
+			overwrite.update(send_messages=None)
+			await lockChannel.set_permissions(ctx.guild.default_role, overwrite=overwrite)
+			await lockChannel.send(":white_check_mark: **Unlocked " + lockChannel.name + "**")
+		else:
+			await ctx.send("Channel is not locked")
+
+
