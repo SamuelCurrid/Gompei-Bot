@@ -204,5 +204,70 @@ async def ping(ctx):
 	if isinstance(ctx.channel, discord.DMChannel) or ctx.channel.id == 567179438047887381:
 		await ctx.send(f'Pong! `{int(gompei.latency * 1000)}ms`')
 
+
+@gompei.command(pass_context=True)
+@commands.check(command_channel)
+async def lockout(ctx):
+	guild = gompei.get_guild(567169726250352640)
+	member = guild.get_member(ctx.message.author.id)
+
+	# Get lockout info
+	with open(os.path.join("config", "lockout.json"), "r+") as lockout:
+		lockoutInfo = json.loads(lockout.read())
+
+	if str(member.id) in lockoutInfo:
+		await ctx.send("You've already locked yourself out")
+	else:
+		# Get current roles
+		role_IDs = []
+		for role in member.roles:
+			role_IDs.append(role.id)
+
+		# Store roles
+		lockoutInfo[str(member.id)] = role_IDs
+		with open(os.path.join("config", "lockout.json"), "r+") as lockout:
+			lockout.truncate(0)
+			lockout.seek(0)
+			json.dump(lockoutInfo, lockout, indent=4)
+
+		# Remove members roles
+		await member.edit(roles=[])
+
+		# DM User
+		await member.send("Locked you out of the server. To get access back just type \".letmein\" here")
+
+
+@gompei.command(pass_context=True)
+@commands.check(command_channel)
+async def letmein(ctx):
+	guild = gompei.get_guild(567169726250352640)
+	member = guild.get_member(ctx.message.author.id)
+
+	# Get lockout info
+	with open(os.path.join("config", "lockout.json"), "r+") as lockout:
+		lockoutInfo = json.loads(lockout.read())
+
+	if member is None:
+		# Member is not in guild
+		await ctx.send("You are not in the WPI Discord Server")
+	else:
+		if str(member.id) not in lockoutInfo:
+			await ctx.send("You haven't locked yourself out")
+		else:
+			roleList = []
+			for roleID in lockoutInfo[str(member.id)]:
+				roleList.append(guild.get_role(roleID))
+
+			await member.edit(roles=roleList)
+
+			del lockoutInfo[str(member.id)]
+			with open(os.path.join("config", "lockout.json"), "r+") as lockout:
+				lockout.truncate(0)
+				lockout.seek(0)
+				json.dump(lockoutInfo, lockout, indent=4)
+
+			await member.send("Welcome back to the server :)")
+
+
 # Run the bot
 gompei.run(sys.argv[1])
