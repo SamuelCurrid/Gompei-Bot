@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 import os
 import sys
@@ -10,6 +11,7 @@ from Administration import Administration
 from MovieVoting import MovieVoting
 from Hangman import Hangman
 from Minesweeper import Minesweeper
+from ReactionRoles import ReactionRoles
 
 # from Democracy import Democracy
 from Logging import Logging
@@ -18,7 +20,7 @@ from Statistics import Statistics
 
 # State handling
 settings = {}
-class_roles = [664719508404961293, 567179738683015188, 578350297978634240, 578350427209203712, 578350479688466455, 692461531983511662, 599319106478669844, 638748298152509461, 638748298152509461, 630589807084699653]
+access_roles = [664719508404961293, 567179738683015188, 578350297978634240, 578350427209203712, 578350479688466455, 692461531983511662, 599319106478669844, 638748298152509461, 638748298152509461, 630589807084699653, 748941410639806554, 634223378773049365]
 
 
 async def load_state():
@@ -72,6 +74,10 @@ def get_prefix(client, message):
 	return settings[str(message.guild.id)]["prefix"]
 
 
+def command_channel(ctx):
+	return ctx.channel.id == 567179438047887381 or isinstance(ctx.message.channel, discord.DMChannel)
+
+
 # Initialize Bot
 gompei = commands.Bot(command_prefix=get_prefix, case_insensitive=True)
 
@@ -89,6 +95,7 @@ gompei.add_cog(Hangman(gompei))
 gompei.add_cog(Minesweeper(gompei))
 gompei.add_cog(Statistics(gompei))
 gompei.add_cog(Logging(gompei))
+gompei.add_cog(ReactionRoles(gompei))
 print("Cogs loaded")
 
 # Overwrite help command
@@ -107,12 +114,16 @@ async def on_ready():
 
 	print("Logged on as {0}".format(gompei.user))
 
+
 @gompei.event
 async def on_message(message):
 	"""
 	Forwards DMs to a channel
 	"""
 	if isinstance(message.channel, discord.channel.DMChannel) and not message.author.bot:
+		messageEmbed = discord.Embed(description=message.content, timestamp=datetime.utcnow())
+		messageEmbed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
+		messageEmbed.set_footer(text=message.author.id)
 		wpi_discord = gompei.get_guild(567169726250352640)
 		gompei_channel = wpi_discord.get_channel(746002454180528219)
 
@@ -121,13 +132,29 @@ async def on_message(message):
 			for i in message.attachments:
 				attachments.append(await i.to_file())
 
-		if len(message.content) > 0:
-			await gompei_channel.send(message.clean_content + "\n-<@" + str(message.author.id) + ">", files=attachments)
-		elif len(attachments) > 0:
-			await gompei_channel.send("<@" + str(message.author.id) + ">", files=attachments)
+		if len(attachments) > 0:
+			if len(message.content) > 0:
+				messageEmbed.description = message.content + "\n\n**<File(s) Attached>**"
+			else:
+				messageEmbed.description = message.content + "**<File(s) Attached>**"
+			await gompei_channel.send(embed=messageEmbed)
+			await gompei_channel.send(files=attachments)
+		else:
+			await gompei_channel.send(embed=messageEmbed)
+	else:
+		if not message.author.bot:
+			if "gompei" in message.content.lower() or "672453835863883787" in message.content.lower():
+				await message.add_reaction("👋")
 
 	await gompei.process_commands(message)
 
+
+@gompei.event
+async def on_typing(channel, user, when):
+	if isinstance(channel, discord.channel.DMChannel) and not user.bot:
+		wpi_discord = gompei.get_guild(567169726250352640)
+		gompei_channel = wpi_discord.get_channel(746002454180528219)
+		await gompei_channel.trigger_typing()
 
 
 @gompei.event
@@ -138,7 +165,7 @@ async def on_member_update(before, after):
 	if len(after.roles) < len(before.roles):
 		role_list = []
 		for role in after.roles:
-			if role.id in class_roles:
+			if role.id in access_roles:
 				return
 			if role.id != 725887796312801340:
 				role_list.append(role)
