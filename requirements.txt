@@ -1,4 +1,4 @@
-pytimeparse
-discord.py
 python-dateutil
 pytimeparse
+discord.py
+requests
