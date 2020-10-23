@@ -2,10 +2,7 @@ import discord
 from discord.ext import commands
 import json
 import os
-
-
-def moderator_perms(ctx):
-	return ctx.message.author.guild_permissions.administrator or ctx.message.author.top_role.id == 742118136458772551
+from Permissions import moderator_perms
 
 
 class ReactionRoles(commands.Cog):

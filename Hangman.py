@@ -4,13 +4,10 @@ from typing import Dict, List
 
 import discord
 from discord.ext import commands
+from Permissions import command_channels
 
 
 hangman_embed = discord.Embed(title="Reaction Hangman", color=discord.Color.red()).set_footer(text='Tip: search "regional" in the reaction menu')
-
-
-def module_perms(ctx):
-    return ctx.channel.id == 567179438047887381
 
 
 class HangmanGame:
@@ -64,7 +61,7 @@ class Hangman(commands.Cog):
             self.words = [s.lower() for s in dictionary.read().splitlines() if len(s) >= 6]
 
     @commands.command(pass_context=True, name="hangman")
-    @commands.check(module_perms)
+    @commands.check(command_channels)
     async def hangman(self, ctx: commands.Context):
         """
         Starts a game of hangman

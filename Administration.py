@@ -1,6 +1,6 @@
 from datetime import datetime
 from datetime import timedelta
-
+from Permissions import moderator_perms
 import json
 
 import discord
@@ -10,13 +10,6 @@ from pytimeparse import parse
 import asyncio
 import os
 
-
-def administrator_perms(ctx):
-	return ctx.message.author.guild_permissions.administrator
-
-
-def moderator_perms(ctx):
-	return ctx.message.author.guild_permissions.administrator or ctx.message.author.top_role.id == 742118136458772551
 
 
 def parse_id(arg):

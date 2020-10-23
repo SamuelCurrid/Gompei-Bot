@@ -7,10 +7,7 @@ import os
 from datetime import datetime
 from dateutil import relativedelta
 from discord.ext import commands
-
-
-def module_perms(ctx):
-	return ctx.message.author.guild_permissions.administrator
+from Permissions import command_channels
 
 
 def parse_id(arg):
@@ -157,7 +154,7 @@ class Logging(commands.Cog):
 		await self.update_guilds()
 
 	@commands.command(pass_context=True, name="logging")
-	@commands.check(module_perms)
+	@commands.check(command_channels)
 	async def change_logging(self, ctx, arg1):
 		"""
 		Changes the channel that the bot sends logging messages in

@@ -16,6 +16,7 @@ from ReactionRoles import ReactionRoles
 # from Democracy import Democracy
 from Logging import Logging
 from Statistics import Statistics
+from Permissions import command_channels
 
 
 # State handling
@@ -72,10 +73,6 @@ def get_prefix(client, message):
 		return "."
 
 	return settings[str(message.guild.id)]["prefix"]
-
-
-def command_channel(ctx):
-	return ctx.channel.id == 567179438047887381 or isinstance(ctx.message.channel, discord.DMChannel)
 
 
 # Initialize Bot
@@ -254,7 +251,7 @@ async def ping(ctx):
 
 
 @gompei.command(pass_context=True)
-@commands.check(command_channel)
+@commands.check(command_channels)
 async def lockout(ctx):
 	guild = gompei.get_guild(567169726250352640)
 	member = guild.get_member(ctx.message.author.id)

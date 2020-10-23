@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from Permissions import command_channels
 
 import os
 import json
@@ -407,31 +408,31 @@ class Leaderboards(commands.Cog):
 			await self.message_leaderboard(ctx, "quotes")
 
 	@commands.command(pass_context=True, name="messages")
+	@commands.check(command_channels)
 	async def messages(self, ctx):
 		"""
 		Sends the messages leaderboard
 		"""
-		if isinstance(ctx.channel, discord.DMChannel) or ctx.channel.id == 567179438047887381:
-			await ctx.channel.trigger_typing()
-			await self.message_leaderboard(ctx, "messages")
+		await ctx.channel.trigger_typing()
+		await self.message_leaderboard(ctx, "messages")
 
 	@commands.command(pass_context=True, name="reactions")
+	@commands.check(command_channels)
 	async def reactions(self, ctx):
 		"""
 		Sends the reactions leaderboard
 		"""
-		if isinstance(ctx.channel, discord.DMChannel) or ctx.channel.id == 567179438047887381:
-			await ctx.channel.trigger_typing()
-			await self.message_leaderboard(ctx, "reactions")
+		await ctx.channel.trigger_typing()
+		await self.message_leaderboard(ctx, "reactions")
 
 	@commands.command(pass_context=True, name="emojis")
+	@commands.check(command_channels)
 	async def emojis(self, ctx):
 		"""
 		Sends the emoji leaderboard
 		"""
-		if isinstance(ctx.channel, discord.DMChannel) or ctx.channel.id == 567179438047887381:
-			await ctx.channel.trigger_typing()
-			await self.message_leaderboard(ctx, "emojis")
+		await ctx.channel.trigger_typing()
+		await self.message_leaderboard(ctx, "emojis")
 
 	@commands.command(pass_context=True, name="set")
 	async def set_quote_channel(self, ctx):
