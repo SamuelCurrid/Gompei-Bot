@@ -124,6 +124,8 @@ async def on_message(message):
             await gompei_channel.send(embed=messageEmbed)
     else:
         if not message.author.bot:
+            if "769305840112762950" in message.content:
+                await message.add_reaction("❤")
             if "gompei" in message.content.lower() or "672453835863883787" in message.content.lower():
                 await message.add_reaction("👋")
 
