@@ -150,6 +150,54 @@ async def on_message(message):
 
 
 @gompei.event
+async def on_message_edit(before, after):
+	"""
+	Forwards messages edited in DMs to a channel
+	:param self:
+	:param before:
+	:param after:
+	:return:
+	"""
+	if isinstance(before.channel, discord.channel.DMChannel) and not before.author.bot:
+		if before.content is after.content:
+			return
+
+		messageEmbed = discord.Embed(timestamp=datetime.utcnow())
+		messageEmbed.colour = discord.Colour(0x8899d4)
+		messageEmbed.set_author(name=after.author.name + "#" + before.author.discriminator, icon_url=after.author.avatar_url)
+		messageEmbed.title = "Message edited by " + after.author.name + "#" + str(after.author.discriminator)
+		messageEmbed.description = "**Before:** " + before.content + "\n**+After:** " + after.content
+		messageEmbed.set_footer(text="ID: " + str(before.author.id))
+
+		wpi_discord = gompei.get_guild(567169726250352640)
+		gompei_channel = wpi_discord.get_channel(746002454180528219)
+
+		await gompei_channel.send(embed=messageEmbed)
+
+
+@gompei.event
+async def on_message_delete(message):
+	if isinstance(message.channel, discord.channel.DMChannel) and not message.author.bot:
+		messageEmbed = discord.Embed()
+		messageEmbed.colour = discord.Colour(0xbe4041)
+		messageEmbed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
+		messageEmbed.title = "Message deleted by " + message.author.name + "#" + str(message.author.discriminator)
+		messageEmbed.description = message.content
+
+		if len(message.attachments) > 0:  # Check for attachments
+			for attachment in message.attachments:
+				messageEmbed.add_field(name="Attachment", value=attachment.proxy_url)
+
+		messageEmbed.set_footer(text="ID: " + str(message.author.id))
+		messageEmbed.timestamp = datetime.utcnow()
+
+		wpi_discord = gompei.get_guild(567169726250352640)
+		gompei_channel = wpi_discord.get_channel(746002454180528219)
+
+		await gompei_channel.send(embed=messageEmbed)
+
+
+@gompei.event
 async def on_typing(channel, user, when):
 	if isinstance(channel, discord.channel.DMChannel) and not user.bot:
 		wpi_discord = gompei.get_guild(567169726250352640)
