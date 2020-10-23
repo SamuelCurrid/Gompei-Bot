@@ -1,3 +1,4 @@
+from GompeiFunctions import load_json, save_json
 from Administration import Administration
 from Permissions import command_channels
 from ReactionRoles import ReactionRoles
@@ -19,22 +20,6 @@ import sys
 # State handling
 settings = {}
 access_roles = [664719508404961293, 567179738683015188, 578350297978634240, 578350427209203712, 578350479688466455, 692461531983511662, 599319106478669844, 638748298152509461, 638748298152509461, 630589807084699653, 748941410639806554, 634223378773049365]
-
-
-async def load_state():
-    global settings
-
-    with open(os.path.join("config", "settings.json"), "r+") as settingsFile:
-        settings = json.loads(settingsFile.read())
-
-
-async def update_state():
-    global settings
-
-    with open(os.path.join("config", "settings.json"), "r+") as settingsFile:
-        settingsFile.truncate(0)
-        settingsFile.seek(0)
-        json.dump(settings, settingsFile, indent=4)
 
 
 async def update_guilds():
@@ -62,7 +47,7 @@ async def update_guilds():
     for guildID in removeGuilds:
         settings.pop(str(guildID))
 
-    await update_state()
+    save_json(os.path.join("config", "settings.json"), settings)
 
 
 def get_prefix(message):
@@ -102,7 +87,9 @@ async def on_ready():
     """
     Load state and update information since last run
     """
-    await load_state()
+    global settings
+
+    settings = load_json(os.path.join("config", "settings.json"))
     await gompei.change_presence(activity=discord.Game(name="Underwater Hockey"))
     await update_guilds()
 
@@ -234,7 +221,7 @@ async def change_prefix(ctx, prefix):
     if ctx.message.author.guild_permissions.administrator:
         settings[str(ctx.message.guild.id)]["prefix"] = str(prefix)
 
-        await update_state()
+        save_json(os.path.join("config", "settings.json"), settings)
 
 
 @gompei.command()

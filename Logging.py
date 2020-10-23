@@ -1,6 +1,5 @@
-from GompeiFunctions import make_ordinal
+from GompeiFunctions import make_ordinal, timeDeltaString
 from Permissions import command_channels
-from dateutil import relativedelta
 from discord.ext import commands
 from datetime import datetime
 
@@ -22,101 +21,6 @@ def parse_id(arg):
     # Using ID
     else:
         return int(arg)
-
-
-def timeDeltaString(date1, date2):
-    """
-    Returns a string with three most significant time deltas between date1 and date2
-    :param date1: datetime 1
-    :param date2: datetime 2
-    :return: string
-    """
-    delta = relativedelta.relativedelta(date2, date1)
-
-    if delta.years > 0:
-        if delta.years == 1:
-            output = str(delta.years) + " year, "
-        else:
-            output = str(delta.years) + " years, "
-        if delta.months == 1:
-            output += str(delta.months) + " month, "
-        else:
-            output += str(delta.months) + " months, "
-
-        if delta.days == 1:
-            output += "and " + str(delta.days) + " day"
-        else:
-            output += "and " + str(delta.days) + " days"
-
-        return output
-
-    elif delta.months > 0:
-        if delta.months == 1:
-            output = str(delta.months) + " month, "
-        else:
-            output = str(delta.months) + " months, "
-        if delta.days == 1:
-            output += str(delta.days) + " day, "
-        else:
-            output += str(delta.days) + " days, "
-        if delta.hours == 1:
-            output += "and " + str(delta.hours) + " hour"
-        else:
-            output += "and " + str(delta.hours) + " hours"
-
-        return output
-
-    elif delta.days > 0:
-        if delta.days == 1:
-            output = str(delta.days) + " day, "
-        else:
-            output = str(delta.days) + " days, "
-        if delta.hours == 1:
-            output += str(delta.hours) + " hour, "
-        else:
-            output += str(delta.hours) + " hours, "
-        if delta.minutes == 1:
-            output += "and " + str(delta.minutes) + " minute"
-        else:
-            output += "and " + str(delta.minutes) + " minutes"
-
-        return output
-
-    elif delta.hours > 0:
-        if delta.hours == 1:
-            output = str(delta.hours) + " hour, "
-        else:
-            output = str(delta.hours) + " hours, "
-        if delta.minutes == 1:
-            output += str(delta.minutes) + " minute, "
-        else:
-            output += str(delta.minutes) + " minutes, "
-        if delta.seconds == 1:
-            output += "and " + str(delta.seconds) + " second"
-        else:
-            output += "and " + str(delta.seconds) + " seconds"
-
-        return output
-
-    elif delta.minutes > 0:
-        if delta.minutes == 1:
-            output = str(delta.minutes) + " minute "
-        else:
-            output = str(delta.minutes) + " minutes "
-        if delta.seconds == 1:
-            output += "and " + str(delta.seconds) + " second"
-        else:
-            output += "and " + str(delta.seconds) + " seconds"
-
-        return output
-
-    elif delta.seconds > 0:
-        if delta.seconds == 1:
-            return str(delta.seconds) + " second"
-        else:
-            return str(delta.seconds) + " seconds"
-
-    return "!!DATETIME ERROR!!"
 
 
 class Logging(commands.Cog):

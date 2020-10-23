@@ -1,124 +1,12 @@
-from GompeiFunctions import make_ordinal
+from GompeiFunctions import make_ordinal, timeDeltaString, load_json, save_json, parse_id
 from Permissions import moderator_perms
-from dateutil import relativedelta
 from discord.ext import commands
 from datetime import timedelta
 from datetime import datetime
 from pytimeparse import parse
 
-import json
 import asyncio
 import os
-
-
-def parse_id(arg):
-    """
-    Parses an ID from a discord @
-    :param arg: @ or ID passed
-    :return: ID
-    """
-    if "<" in arg:
-        for i, c in enumerate(arg):
-            if c.isdigit():
-                return int(arg[i:-1])
-    # Using ID
-    else:
-        return int(arg)
-
-
-def timeDeltaString(date1, date2):
-    """
-    Returns a string with three most significant time deltas between date1 and date2
-    :param date1: datetime 1
-    :param date2: datetime 2
-    :return: string
-    """
-    delta = relativedelta.relativedelta(date2, date1)
-
-    if delta.years > 0:
-        if delta.years == 1:
-            output = str(delta.years) + " year, "
-        else:
-            output = str(delta.years) + " years, "
-        if delta.months == 1:
-            output += str(delta.months) + " month, "
-        else:
-            output += str(delta.months) + " months, "
-
-        if delta.days == 1:
-            output += "and " + str(delta.days) + " day"
-        else:
-            output += "and " + str(delta.days) + " days"
-
-        return output
-
-    elif delta.months > 0:
-        if delta.months == 1:
-            output = str(delta.months) + " month, "
-        else:
-            output = str(delta.months) + " months, "
-        if delta.days == 1:
-            output += str(delta.days) + " day, "
-        else:
-            output += str(delta.days) + " days, "
-        if delta.hours == 1:
-            output += "and " + str(delta.hours) + " hour"
-        else:
-            output += "and " + str(delta.hours) + " hours"
-
-        return output
-
-    elif delta.days > 0:
-        if delta.days == 1:
-            output = str(delta.days) + " day, "
-        else:
-            output = str(delta.days) + " days, "
-        if delta.hours == 1:
-            output += str(delta.hours) + " hour, "
-        else:
-            output += str(delta.hours) + " hours, "
-        if delta.minutes == 1:
-            output += "and " + str(delta.minutes) + " minute"
-        else:
-            output += "and " + str(delta.minutes) + " minutes"
-
-        return output
-
-    elif delta.hours > 0:
-        if delta.hours == 1:
-            output = str(delta.hours) + " hour, "
-        else:
-            output = str(delta.hours) + " hours, "
-        if delta.minutes == 1:
-            output += str(delta.minutes) + " minute, "
-        else:
-            output += str(delta.minutes) + " minutes, "
-        if delta.seconds == 1:
-            output += "and " + str(delta.seconds) + " second"
-        else:
-            output += "and " + str(delta.seconds) + " seconds"
-
-        return output
-
-    elif delta.minutes > 0:
-        if delta.minutes == 1:
-            output = str(delta.minutes) + " minute "
-        else:
-            output = str(delta.minutes) + " minutes "
-        if delta.seconds == 1:
-            output += "and " + str(delta.seconds) + " second"
-        else:
-            output += "and " + str(delta.seconds) + " seconds"
-
-        return output
-
-    elif delta.seconds > 0:
-        if delta.seconds == 1:
-            return str(delta.seconds) + " second"
-        else:
-            return str(delta.seconds) + " seconds"
-
-    return "!!DATETIME ERROR!!"
 
 
 class Administration(commands.Cog):
@@ -127,43 +15,31 @@ class Administration(commands.Cog):
     """
 
     def __init__(self, bot):
-        self.warns = {}
+        self.warns = load_json(os.path.join("config", "warns.json"))
         self.bot = bot
-        self.load_warns()
-
-    def load_warns(self):
-        try:
-            with open(os.path.join("config", "warns.json"), "r+") as warnsFile:
-                self.warns = json.loads(warnsFile.read())
-        except (OSError, IOError):
-            with open(os.path.join("config", "warns.json"), "r+") as warnsFile:
-                warnsFile.truncate(0)
-                warnsFile.seek(0)
-                json.dump(self.warns, warnsFile, indent=4)
-
-    def save_warns(self):
-        with open(os.path.join("config", "warns.json"), "r+") as warnsFile:
-            warnsFile.truncate(0)
-            warnsFile.seek(0)
-            json.dump(self.warns, warnsFile, indent=4)
 
     @commands.guild_only()
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
-    async def echo(self, ctx, arg1):
+    async def echo(self, ctx, channel):
         """
-        Forwards given message / attachments to given channel
+        Forwards message / attachments appended to the command to the given channel
+        :param ctx: context object
+        :param channel: channel to send the message to
         """
-        channel = ctx.guild.get_channel(int(arg1[2:-1]))
+        channel = ctx.guild.get_channel(int(channel[2:-1]))
 
+        # Check if the channel exists
         if channel is not None:
-            attachments = []
 
+            # Check for attachments to forward
+            attachments = []
             if len(ctx.message.attachments) > 0:
                 for i in ctx.message.attachments:
                     attachments.append(await i.to_file())
 
-            message = ctx.message.content[7 + len(arg1):]
+            # Get message content and check length
+            message = ctx.message.content[7 + len(channel):]
             if len(message) > 0:
                 message = await channel.send(message, files=attachments)
                 await ctx.send("Message sent (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(message.channel.id) + "/" + str(message.id) + ">)")
@@ -447,7 +323,7 @@ class Administration(commands.Cog):
         else:
             self.warns[str(memberID)] = [message]
 
-        self.save_warns()
+        save_json(os.path.join("config", "warns.json"), self.warns)
 
         await ctx.send("Warning sent to " + member.display_name + " (" + str(memberID) + "), this is their " + make_ordinal(len(self.warns[str(memberID)])) + " warning")
 
@@ -515,7 +391,7 @@ class Administration(commands.Cog):
         else:
             self.warns[str(memberID)] = [message]
 
-        self.save_warns()
+        save_json(os.path.join("config", "warns.json"), self.warns)
 
         await ctx.send("Warning added for " + member.display_name + " (" + str(memberID) + "), this is their " + make_ordinal(len(self.warns[str(memberID)])) + " warning")
 
@@ -526,7 +402,7 @@ class Administration(commands.Cog):
         if str(memberID) in self.warns:
             del self.warns[str(memberID)]
             await ctx.send("Cleared warnings for <@" + str(memberID) + ">")
-            self.save_warns()
+            save_json(os.path.join("config", "warns.json"), self.warns)
         else:
             await ctx.send("This user does not exist or has no warnings")
 
