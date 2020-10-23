@@ -1,10 +1,10 @@
+from Permissions import command_channels
 from discord.ext import commands
-import os
-import math
-import json
 import requests
 import discord
-from Permissions import command_channels
+import math
+import json
+import os
 
 
 class MovieVoting(commands.Cog):

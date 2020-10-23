@@ -1,8 +1,8 @@
-import random
+from Permissions import command_channels
+from discord.ext import commands
 
 import discord
-from discord.ext import commands
-from Permissions import command_channels
+import random
 
 
 bomb = ":anger:"

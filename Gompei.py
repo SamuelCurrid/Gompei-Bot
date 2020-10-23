@@ -1,22 +1,19 @@
+from Administration import Administration
+from Permissions import command_channels
+from ReactionRoles import ReactionRoles
+from Leaderboards import Leaderboards
+from MovieVoting import MovieVoting
+from Minesweeper import Minesweeper
+from Statistics import Statistics
+from discord.ext import commands
 from datetime import datetime
+from Hangman import Hangman
+from Logging import Logging
+
+import discord
 import json
 import os
 import sys
-
-import discord
-from discord.ext import commands
-
-from Leaderboards import Leaderboards
-from Administration import Administration
-from MovieVoting import MovieVoting
-from Hangman import Hangman
-from Minesweeper import Minesweeper
-from ReactionRoles import ReactionRoles
-
-# from Democracy import Democracy
-from Logging import Logging
-from Statistics import Statistics
-from Permissions import command_channels
 
 
 # State handling

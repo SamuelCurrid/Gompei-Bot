@@ -1,13 +1,11 @@
-# TODO: Implementation
-# IDEA: Track which invite a user joined off of
+from Permissions import command_channels
+from dateutil import relativedelta
+from discord.ext import commands
+from datetime import datetime
 
 import discord
 import json
 import os
-from datetime import datetime
-from dateutil import relativedelta
-from discord.ext import commands
-from Permissions import command_channels
 
 
 def parse_id(arg):

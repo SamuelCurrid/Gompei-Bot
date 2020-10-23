@@ -1,8 +1,9 @@
-import discord
+from Permissions import moderator_perms
 from discord.ext import commands
+
+import discord
 import json
 import os
-from Permissions import moderator_perms
 
 
 class ReactionRoles(commands.Cog):

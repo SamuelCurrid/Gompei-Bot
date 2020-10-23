@@ -1,10 +1,10 @@
-import random
-import os
+from Permissions import command_channels
+from discord.ext import commands
 from typing import Dict, List
 
 import discord
-from discord.ext import commands
-from Permissions import command_channels
+import random
+import os
 
 
 hangman_embed = discord.Embed(title="Reaction Hangman", color=discord.Color.red()).set_footer(text='Tip: search "regional" in the reaction menu')

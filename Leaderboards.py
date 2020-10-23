@@ -1,10 +1,11 @@
-import discord
-from discord.ext import commands
 from Permissions import command_channels
-
-import os
-import json
+from discord.ext import commands
 from datetime import datetime
+
+import discord
+import json
+import os
+
 
 defaultLeaderboard = {"lastUpdate": None, "quotesChannel": None, "messageLeaderboard": {}, "reactionLeaderboard": {}, "emojiLeaderboard": {}, "quoteLeaderboard": {}}
 embeds = {"messageLeaderboard": discord.Embed(title="Message leaderboard", colour=discord.Colour.red()), "reactionLeaderboard": discord.Embed(title="Reaction Usage Leaderboard", colour=discord.Colour.red()), "quoteLeaderboard": discord.Embed(title="Quotes Leaderboard", description="Calculated from mentions", colour=discord.Colour.red()), "emojiLeaderboard": discord.Embed(title="Emoji leaderboard", colour=discord.Colour.red())}
