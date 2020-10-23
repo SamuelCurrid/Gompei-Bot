@@ -1,4 +1,5 @@
 from datetime import datetime
+import re
 import json
 import os
 import sys
@@ -143,7 +144,9 @@ async def on_message(message):
 			await gompei_channel.send(embed=messageEmbed)
 	else:
 		if not message.author.bot:
-			if "gompei" in message.content.lower() or "672453835863883787" in message.content.lower():
+			if "769305840112762950" in message.content:
+				await message.add_reaction("❤")
+			elif "gompei" in message.content.lower() or "672453835863883787" in message.content:
 				await message.add_reaction("👋")
 
 	await gompei.process_commands(message)
