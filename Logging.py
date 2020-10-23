@@ -300,6 +300,7 @@ class Logging(commands.Cog):
 
 				await loggingChannel.send(embed=self.embed)
 
+
 	@commands.Cog.listener()
 	async def on_raw_message_edit(self, payload):
 		"""
@@ -308,24 +309,23 @@ class Logging(commands.Cog):
 		:param payload:
 		:return:
 		"""
+		guild = self.bot.get_guild(payload.guild_id)
 
-	# FIXME: Cannot get guild from payload
-	# guild = self.bot.get_guild(payload.guild_id)
-	#
-	# if self.logs[str(guild.id)]["channel"] is not None and payload.cached_message is None:
-	# 	loggingChannel = guild.get_channel(int(self.logs[str(guild.id)]["channel"]))
-	# 	channel = guild.get_channel(payload.channel_id)
-	# 	message = channel.fetch_message(payload.message_id)
-	#
-	# 	self.embed = discord.Embed()
-	# 	self.embed.colour = discord.Colour(0x8899d4)
-	# 	self.embed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
-	# 	self.embed.title = "Message edited in " + "#" + channel.name
-	# 	self.embed.description = "\n**+After:** " + message.content
-	# 	self.embed.set_footer(text="ID: " + str(message.author.id))
-	# 	self.embed.timestamp = datetime.utcnow()
-	#
-	# 	await loggingChannel.send(embed=self.embed)
+		if self.logs[str(guild.id)]["channel"] is not None and payload.cached_message is None:
+			channel = guild.get_channel(payload.channel_id)
+			message = await channel.fetch_message(payload.message_id)
+
+			loggingChannel = guild.get_channel(int(self.logs[str(guild.id)]["channel"]))
+
+			self.embed = discord.Embed(url=message.jump_url)
+			self.embed.colour = discord.Colour(0x8899d4)
+			self.embed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
+			self.embed.title = "Message edited in #" + channel.name
+			self.embed.description = "**Uncached Message**\n**+After:** " + message.content
+			self.embed.set_footer(text="ID: " + str(message.author.id))
+			self.embed.timestamp = datetime.utcnow()
+
+			await loggingChannel.send(embed=self.embed)
 
 	@commands.Cog.listener()
 	async def on_guild_channel_create(self, channel):
