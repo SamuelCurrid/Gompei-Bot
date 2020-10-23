@@ -18,7 +18,7 @@ class MovieVoting(commands.Cog):
 		self.userList = {}
 		self.loadMovieList()
 		self.loadUserList()
-		self.emojiList = {"1️⃣": 1, "2️⃣": 2, "3️⃣": 3, "4️⃣": 4, "5️⃣": 5, "6️⃣": 6, "7️⃣": 7, "8️⃣": 8, "9️⃣": 9, "➡️" : 1, "⬅️": -1}
+		self.emojiList = {"1️⃣": 1, "2️⃣": 2, "3️⃣": 3, "4️⃣": 4, "5️⃣": 5, "6️⃣": 6, "7️⃣": 7, "8️⃣": 8, "9️⃣": 9, "➡️": 1, "⬅️": -1}
 
 	def loadMovieList(self):
 		"""

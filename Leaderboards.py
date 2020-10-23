@@ -38,7 +38,7 @@ class Leaderboards(commands.Cog):
 			await self.update_state()
 
 	@commands.Cog.listener()
-	async def on_guild_emojis_update(self, guild, before, after):
+	async def on_guild_emojis_update(self, before, after):
 
 		emojiLeaderboard = self.leaderboards["emojiLeaderboard"]
 
@@ -287,9 +287,7 @@ class Leaderboards(commands.Cog):
 									else:
 										leaderboard["reactionLeaderboard"][str(reaction.emoji)] += reaction.count
 
-
-
-							#Emoji check
+							# Emoji check
 							for emoji in self.bot.emojis:
 								emojiName = "<:" + emoji.name + ":" + str(emoji.id) + ">"
 								for index in range(0, message.content.count(emojiName)):

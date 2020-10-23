@@ -54,7 +54,7 @@ class Minesweeper(commands.Cog):
                     board[y][x] = None
                     break
 
-        embed = discord.Embed(title="Spoiler Minesweeper", color=discord.Color.red()).set_footer(text=f'Find all {bomb_count} bombs!')
+        embed = discord.Embed(title="Spoiler Minesweeper", color=discord.Color.red()).set_footer(text=f"Find all {bomb_count} bombs!")
         embed.add_field(name="Minefield", value="\n".join(["".join([numbers[0] if cell is None else f"||{cell}||" for cell in row]) for row in board]))
 
         await ctx.send(embed=embed)

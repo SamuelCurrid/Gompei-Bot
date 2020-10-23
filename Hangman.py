@@ -78,7 +78,7 @@ class Hangman(commands.Cog):
         guild = self.bot.get_guild(payload.guild_id)
         if payload.message_id in self.games and guild is not None and len(payload.emoji.name) == 1:
             letter = chr(ord(payload.emoji.name) - 127365)
-            if letter >= 'a' and letter <= 'z':
+            if 'a' <= letter <= 'z':
                 channel = guild.get_channel(payload.channel_id)
                 message = await channel.fetch_message(payload.message_id)
                 hangman = self.games[payload.message_id]
@@ -87,7 +87,6 @@ class Hangman(commands.Cog):
                     del self.games[payload.message_id]
                 await message.edit(embed=self.render_embed(hangman))
                 await message.clear_reaction(payload.emoji)
-
     
     def render_embed(self, hangman: HangmanGame):
         """
@@ -107,7 +106,7 @@ class Hangman(commands.Cog):
         embed.add_field(name="Diagram", value=diagram)
         embed.add_field(name="Word", value=' '.join("🟦" if c == '*' else chr(ord(c) + 127365) for c in hangman.visible))
 
-        #padding
+        # padding
         embed.add_field(name="\u200b", value="\u200b")
 
         if len(hangman.guesses) > 0:

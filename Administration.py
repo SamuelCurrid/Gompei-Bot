@@ -32,7 +32,6 @@ def timeDeltaString(date1, date2):
 	:param date2: datetime 2
 	:return: string
 	"""
-	output = ""
 	delta = relativedelta.relativedelta(date2, date1)
 
 	if delta.years > 0:
@@ -135,7 +134,7 @@ class Administration(commands.Cog):
 		try:
 			with open(os.path.join("config", "warns.json"), "r+") as warnsFile:
 				self.warns = json.loads(warnsFile.read())
-		except (OSError, IOError) as e:
+		except (OSError, IOError):
 			with open(os.path.join("config", "warns.json"), "r+") as warnsFile:
 				warnsFile.truncate(0)
 				warnsFile.seek(0)
@@ -317,6 +316,7 @@ class Administration(commands.Cog):
 	async def purge(self, ctx, arg1):
 		"""
 		Purges a number of messages in channel used
+		:param ctx: context object
 		:param arg1: number of messages to purge
 		"""
 		await ctx.channel.purge(limit=int(arg1) + 1)
@@ -336,6 +336,7 @@ class Administration(commands.Cog):
 	async def selective_purge(self, ctx, arg1, arg2):
 		"""
 		Purges messages from a specific user in the channel
+		:param ctx: context object
 		:param arg1: user to purge
 		:param arg2: number of messages to purge
 		"""

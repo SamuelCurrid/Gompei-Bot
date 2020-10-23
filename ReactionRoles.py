@@ -16,7 +16,7 @@ class ReactionRoles(commands.Cog):
 		try:
 			with open(os.path.join("config", "reactionMessages.json"), "r+") as reaction_messages_file:
 				self.reaction_messages = json.loads(reaction_messages_file.read())
-		except (OSError, IOError) as e:
+		except (OSError, IOError):
 			with open(os.path.join("config", "reactionMessages.json"), "r+") as reaction_messages_file:
 				reaction_messages_file.truncate(0)
 				reaction_messages_file.seek(0)

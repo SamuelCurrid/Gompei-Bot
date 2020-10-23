@@ -30,7 +30,6 @@ def timeDeltaString(date1, date2):
 	:param date2: datetime 2
 	:return: string
 	"""
-	output = ""
 	delta = relativedelta.relativedelta(date2, date1)
 
 	if delta.years > 0:
@@ -157,6 +156,7 @@ class Logging(commands.Cog):
 	async def change_logging(self, ctx, arg1):
 		"""
 		Changes the channel that the bot sends logging messages in
+		:param ctx: context object
 		:param arg1: channel ID or mention
 		"""
 		channel = ctx.guild.get_channel(parse_id(arg1))

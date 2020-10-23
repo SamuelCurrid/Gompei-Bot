@@ -2,7 +2,7 @@
 moderator_id = 742118136458772551
 
 # Command channels
-command_channels = [567179438047887381, 594579572855537765, 576475633870307330]
+channels = [567179438047887381, 594579572855537765, 576475633870307330]
 
 
 def administrator_perms(ctx):
@@ -14,4 +14,4 @@ def moderator_perms(ctx):
 
 
 def command_channels(ctx):
-	return ctx.channel.id in command_channels
+	return ctx.channel.id in channels

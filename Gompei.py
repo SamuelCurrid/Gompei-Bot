@@ -37,7 +37,7 @@ async def update_state():
 		json.dump(settings, settingsFile, indent=4)
 
 
-async def update_guilds(self):
+async def update_guilds():
 	"""
 	Updates guilds included in leaderboards.json
 	"""
@@ -65,7 +65,7 @@ async def update_guilds(self):
 	await update_state()
 
 
-def get_prefix(client, message):
+def get_prefix(message):
 	if isinstance(message.channel, discord.DMChannel):
 		return "."
 
@@ -104,7 +104,7 @@ async def on_ready():
 	"""
 	await load_state()
 	await gompei.change_presence(activity=discord.Game(name="Underwater Hockey"))
-	await update_guilds(gompei)
+	await update_guilds()
 
 	print("Logged on as {0}".format(gompei.user))
 
@@ -147,7 +147,6 @@ async def on_message(message):
 async def on_message_edit(before, after):
 	"""
 	Forwards messages edited in DMs to a channel
-	:param self:
 	:param before:
 	:param after:
 	:return:
@@ -192,7 +191,7 @@ async def on_message_delete(message):
 
 
 @gompei.event
-async def on_typing(channel, user, when):
+async def on_typing(channel, user):
 	if isinstance(channel, discord.channel.DMChannel) and not user.bot:
 		wpi_discord = gompei.get_guild(567169726250352640)
 		gompei_channel = wpi_discord.get_channel(746002454180528219)
@@ -254,8 +253,8 @@ async def lockout(ctx):
 	member = guild.get_member(ctx.message.author.id)
 
 	# Get lockout info
-	with open(os.path.join("config", "lockout.json"), "r+") as lockout:
-		lockoutInfo = json.loads(lockout.read())
+	with open(os.path.join("config", "lockout.json"), "r+") as lockoutFile:
+		lockoutInfo = json.loads(lockoutFile.read())
 
 	if str(member.id) in lockoutInfo:
 		await ctx.send("You've already locked yourself out")
@@ -267,10 +266,10 @@ async def lockout(ctx):
 
 		# Store roles
 		lockoutInfo[str(member.id)] = role_IDs
-		with open(os.path.join("config", "lockout.json"), "r+") as lockout:
-			lockout.truncate(0)
-			lockout.seek(0)
-			json.dump(lockoutInfo, lockout, indent=4)
+		with open(os.path.join("config", "lockout.json"), "r+") as lockoutFile:
+			lockoutFile.truncate(0)
+			lockoutFile.seek(0)
+			json.dump(lockoutInfo, lockoutFile, indent=4)
 
 		# Remove members roles
 		await member.edit(roles=[])
@@ -286,8 +285,8 @@ async def letmein(ctx):
 	member = guild.get_member(ctx.message.author.id)
 
 	# Get lockout info
-	with open(os.path.join("config", "lockout.json"), "r+") as lockout:
-		lockoutInfo = json.loads(lockout.read())
+	with open(os.path.join("config", "lockout.json"), "r+") as lockoutFile:
+		lockoutInfo = json.loads(lockoutFile.read())
 
 	if member is None:
 		# Member is not in guild
@@ -303,10 +302,10 @@ async def letmein(ctx):
 			await member.edit(roles=roleList)
 
 			del lockoutInfo[str(member.id)]
-			with open(os.path.join("config", "lockout.json"), "r+") as lockout:
-				lockout.truncate(0)
-				lockout.seek(0)
-				json.dump(lockoutInfo, lockout, indent=4)
+			with open(os.path.join("config", "lockout.json"), "r+") as lockoutFile:
+				lockoutFile.truncate(0)
+				lockoutFile.seek(0)
+				json.dump(lockoutInfo, lockoutFile, indent=4)
 
 			await member.send("Welcome back to the server :)")
 
