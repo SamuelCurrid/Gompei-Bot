@@ -261,7 +261,6 @@ class Administration(commands.Cog):
 	@commands.check(moderator_perms)
 	async def pmEdit(self, ctx, user, messageLink):
 		messageID = int(messageLink[messageLink.rfind("/") + 1:])
-		print(messageID)
 
 		member = ctx.guild.get_member(parse_id(user))
 		if member is None:
@@ -282,6 +281,44 @@ class Administration(commands.Cog):
 
 					await message.edit(content=newMessage)
 					await ctx.send("Message edited (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(channel.id) + "/" + str(messageID) + ">)")
+
+	@commands.guild_only()
+	@commands.command(pass_context=True, aliases=['react'])
+	@commands.check(moderator_perms)
+	async def echoReact(self, ctx, message_link, emote):
+		messageID = int(message_link[message_link.rfind("/") + 1:])
+		shortLink = message_link[:message_link.rfind("/")]
+		channelID = int(shortLink[shortLink.rfind("/") + 1:])
+
+		channel = ctx.guild.get_channel(channelID)
+		if channel is None:
+			await ctx.send("Not a valid link to message")
+		else:
+			message = await channel.fetch_message(messageID)
+			if message is None:
+				await ctx.send("Not a valid link to message")
+			else:
+				await message.add_reaction(emote)
+				await ctx.message.add_reaction("👍")
+
+	@commands.guild_only()
+	@commands.command(pass_context=True, aliases=['reactRemove'])
+	@commands.check(moderator_perms)
+	async def echoRemoveReact(self, ctx, message_link, emote):
+		messageID = int(message_link[message_link.rfind("/") + 1:])
+		shortLink = message_link[:message_link.rfind("/")]
+		channelID = int(shortLink[shortLink.rfind("/") + 1:])
+
+		channel = ctx.guild.get_channel(channelID)
+		if channel is None:
+			await ctx.send("Not a valid link to message")
+		else:
+			message = await channel.fetch_message(messageID)
+			if message is None:
+				await ctx.send("Not a valid link to message")
+			else:
+				await message.remove_reaction(emote)
+				await ctx.message.add_reaction("👍")
 
 	@commands.guild_only()
 	@commands.command(pass_context=True)
@@ -544,5 +581,3 @@ class Administration(commands.Cog):
 			await lockChannel.send(":white_check_mark: **Unlocked " + lockChannel.name + "**")
 		else:
 			await ctx.send("Channel is not locked")
-
-
