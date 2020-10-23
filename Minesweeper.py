@@ -27,7 +27,7 @@ class Minesweeper(commands.Cog):
 
     @commands.command(pass_context=True, name="minesweeper")
     @commands.check(command_channels)
-    async def new_minesweeper(self, ctx, x_str = "8", y_str = "8"):
+    async def new_minesweeper(self, ctx, x_str="8", y_str="8"):
         if not (x_str.isdecimal() and y_str.isdecimal()):
             await ctx.send(f"Either {x_str} or {y_str} is not a valid dimension for a minesweeper board. Please use the format `minesweeper x y`.")
             return

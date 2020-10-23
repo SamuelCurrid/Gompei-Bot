@@ -47,7 +47,6 @@ class Leaderboards(commands.Cog):
 		for emoji in addEmoji:
 			emojiLeaderboard[str(emoji.id)] == 0
 
-
 	@commands.Cog.listener()
 	async def on_guild_remove(self, guild):
 		"""
@@ -86,7 +85,6 @@ class Leaderboards(commands.Cog):
 					emojiName = "<:" + emoji.name + ":" + str(emoji.id) + ">"
 					for index in range(0, message.content.count(emojiName)):
 						leaderboard["emojiLeaderboard"][str(emoji.id)] += 1
-
 
 			leaderboard["lastUpdate"] = message.created_at.isoformat()
 			await self.update_state()
@@ -151,8 +149,6 @@ class Leaderboards(commands.Cog):
 								reactionLeaderboard["<:" + str(payload.emoji.name) + ":" + str(payload.emoji.id) + ">"] = 1
 							else:
 								reactionLeaderboard["<:" + str(payload.emoji.name) + ":" + str(payload.emoji.id) + ">"] += 1
-
-
 
 							break
 				else:
@@ -298,7 +294,6 @@ class Leaderboards(commands.Cog):
 								emojiName = "<:" + emoji.name + ":" + str(emoji.id) + ">"
 								for index in range(0, message.content.count(emojiName)):
 									leaderboard["emojiLeaderboard"][str(emoji.id)] += 1
-
 
 				except discord.Forbidden:
 					print("Do not have read message history permissions for: " + str(channel))

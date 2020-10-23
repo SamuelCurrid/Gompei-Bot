@@ -142,7 +142,6 @@ class MovieVoting(commands.Cog):
 		else:
 			await ctx.send("Please include a movie title.")
 
-
 	@commands.command(pass_context=True)
 	@commands.check(command_channels)
 	async def resetMovies(self, ctx):
@@ -158,7 +157,6 @@ class MovieVoting(commands.Cog):
 			await ctx.send("Movie voting data successfully cleared.")
 		else:
 			await ctx.send("Only administrators have permission to use this command.")
-
 
 	@commands.command(pass_context=True)
 	@commands.check(command_channels)

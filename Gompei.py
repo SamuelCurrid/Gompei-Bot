@@ -280,7 +280,7 @@ async def lockout(ctx):
 
 
 @gompei.command(pass_context=True)
-@commands.check(command_channel)
+@commands.check(command_channels)
 async def letmein(ctx):
 	guild = gompei.get_guild(567169726250352640)
 	member = guild.get_member(ctx.message.author.id)

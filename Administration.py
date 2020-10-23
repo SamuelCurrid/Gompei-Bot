@@ -400,7 +400,7 @@ class Administration(commands.Cog):
 
 		await member.add_roles(mutedRole)
 		await ctx.send("**Muted** user **" + username + "** for **" + muteTime + "** for: **" + reason + "**")
-		await member.send("**You were muted in the WPI Discord Server for " + muteTime + ". Reason:**\n> " + reason +"\n\nYou can repond here to contact WPI Discord staff.")
+		await member.send("**You were muted in the WPI Discord Server for " + muteTime + ". Reason:**\n> " + reason + "\n\nYou can repond here to contact WPI Discord staff.")
 
 		await asyncio.sleep(seconds)
 
@@ -551,7 +551,6 @@ class Administration(commands.Cog):
 			overwrite.update(send_messages=False)
 			await lockChannel.send(":white_check_mark: **Locked down " + lockChannel.name + "**")
 			await lockChannel.set_permissions(ctx.guild.default_role, overwrite=overwrite)
-
 
 	@commands.guild_only()
 	@commands.command(pass_context=True)

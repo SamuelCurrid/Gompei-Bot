@@ -118,6 +118,7 @@ def timeDeltaString(date1, date2):
 
 	return "!!DATETIME ERROR!!"
 
+
 class Logging(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
@@ -208,7 +209,7 @@ class Logging(commands.Cog):
 				self.embed.title = "Message deleted in " + "#" + channel.name
 				self.embed.description = message.content
 
-				if len(message.attachments) > 0: # Check for attachments
+				if len(message.attachments) > 0:  # Check for attachments
 					for attachment in message.attachments:
 						self.embed.add_field(name="Attachment", value=attachment.proxy_url)
 
@@ -294,7 +295,6 @@ class Logging(commands.Cog):
 				self.embed.timestamp = datetime.utcnow()
 
 				await loggingChannel.send(embed=self.embed)
-
 
 	@commands.Cog.listener()
 	async def on_raw_message_edit(self, payload):
@@ -515,7 +515,6 @@ class Logging(commands.Cog):
 		the property of the member updated before and after
 		"""
 		loggingChannel = before.guild.get_channel(int(self.logs[str(before.guild.id)]["channel"]))
-
 
 		# Role checks
 		if len(before.roles) > len(after.roles):
