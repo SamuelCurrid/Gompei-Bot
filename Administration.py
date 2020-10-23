@@ -1,3 +1,4 @@
+from GompeiFunctions import make_ordinal
 from Permissions import moderator_perms
 from dateutil import relativedelta
 from discord.ext import commands
@@ -448,9 +449,7 @@ class Administration(commands.Cog):
 
 		self.save_warns()
 
-		ordinal = lambda n: "%d%s" % (n, "tsnrhtdd"[(n // 10 % 10 != 1) * (n % 10 < 4) * n % 10::4])
-
-		await ctx.send("Warning sent to " + member.display_name + " (" + str(memberID) + "), this is their " + ordinal(len(self.warns[str(memberID)])) + " warning")
+		await ctx.send("Warning sent to " + member.display_name + " (" + str(memberID) + "), this is their " + make_ordinal(len(self.warns[str(memberID)])) + " warning")
 
 	@warn.error
 	async def warn_error(self, ctx, error):
@@ -518,9 +517,7 @@ class Administration(commands.Cog):
 
 		self.save_warns()
 
-		ordinal = lambda n: "%d%s" % (n, "tsnrhtdd"[(n // 10 % 10 != 1) * (n % 10 < 4) * n % 10::4])
-
-		await ctx.send("Warning added for " + member.display_name + " (" + str(memberID) + "), this is their " + ordinal(len(self.warns[str(memberID)])) + " warning")
+		await ctx.send("Warning added for " + member.display_name + " (" + str(memberID) + "), this is their " + make_ordinal(len(self.warns[str(memberID)])) + " warning")
 
 	@commands.command(pass_context=True)
 	@commands.check(moderator_perms)

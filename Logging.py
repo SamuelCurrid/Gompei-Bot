@@ -1,3 +1,4 @@
+from GompeiFunctions import make_ordinal
 from Permissions import command_channels
 from dateutil import relativedelta
 from discord.ext import commands
@@ -467,7 +468,6 @@ class Logging(commands.Cog):
 		"""
 		if self.logs[str(member.guild.id)]["channel"] is not None:
 			loggingChannel = member.guild.get_channel(int(self.logs[str(member.guild.id)]["channel"]))
-			ordinal = lambda n: "%d%s" % (n, "tsnrhtdd"[(n / 10 % 10 != 1) * (n % 10 < 4) * n % 10::4])
 
 			self.embed = discord.Embed()
 			self.embed.colour = discord.Colour(0x43b581)
@@ -476,7 +476,7 @@ class Logging(commands.Cog):
 
 			creationDelta = timeDeltaString(member.created_at, datetime.utcnow())
 
-			self.embed.description = "<@" + str(member.id) + "> " + ordinal(member.guild.member_count) + " to join\ncreated " + creationDelta + " ago"
+			self.embed.description = "<@" + str(member.id) + "> " + make_ordinal(member.guild.member_count) + " to join\ncreated " + creationDelta + " ago"
 			self.embed.set_footer(text="ID: " + str(member.id))
 			self.embed.timestamp = datetime.utcnow()
 
