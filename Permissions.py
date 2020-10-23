@@ -6,12 +6,12 @@ channels = [567179438047887381, 594579572855537765, 576475633870307330]
 
 
 def administrator_perms(ctx):
-	return ctx.message.author.guild_permissions.administrator
+    return ctx.message.author.guild_permissions.administrator
 
 
 def moderator_perms(ctx):
-	return ctx.message.author.guild_permissions.administrator or ctx.message.author.top_role.id == moderator_id
+    return ctx.message.author.guild_permissions.administrator or ctx.message.author.top_role.id == moderator_id
 
 
 def command_channels(ctx):
-	return ctx.channel.id in channels
+    return ctx.channel.id in channels
