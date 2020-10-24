@@ -1,3 +1,5 @@
+import discord
+
 # Mod role ID
 moderator_id = 742118136458772551
 
@@ -15,3 +17,7 @@ def moderator_perms(ctx):
 
 def command_channels(ctx):
     return ctx.channel.id in channels
+
+
+def dm_commands(ctx):
+    return type(ctx.message.channel) is discord.DMChannel or command_channels(ctx)

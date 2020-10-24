@@ -1,6 +1,6 @@
 from GompeiFunctions import load_json, save_json
 from Administration import Administration
-from Permissions import command_channels
+from Permissions import command_channels, dm_commands
 from ReactionRoles import ReactionRoles
 from Leaderboards import Leaderboards
 from MovieVoting import MovieVoting
@@ -62,7 +62,7 @@ async def update_guilds():
     save_json(os.path.join("config", "settings.json"), settings)
 
 
-def get_prefix(message):
+def get_prefix(client, message):
     if isinstance(message.channel, discord.DMChannel):
         return "."
 
@@ -283,7 +283,7 @@ async def ping(ctx):
 
 
 @gompei.command(pass_context=True)
-@commands.check(command_channels)
+@commands.check(dm_commands)
 async def lockout(ctx):
     guild = gompei.get_guild(567169726250352640)
     member = guild.get_member(ctx.message.author.id)
@@ -311,8 +311,8 @@ async def lockout(ctx):
         await member.send("Locked you out of the server. To get access back just type \".letmein\" here")
 
 
-@gompei.command(pass_context=True)
-@commands.check(command_channels)
+@gompei.command(pass_context=True, aliases=["letMeIn"])
+@commands.check(dm_commands)
 async def let_me_in(ctx):
     guild = gompei.get_guild(567169726250352640)
     member = guild.get_member(ctx.message.author.id)
