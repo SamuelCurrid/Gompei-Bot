@@ -1,8 +1,8 @@
+from GompeiFunctions import load_json, save_json
 from Permissions import moderator_perms
 from discord.ext import commands
 
 import discord
-import json
 import os
 
 
@@ -10,36 +10,20 @@ class ReactionRoles(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.reaction_messages = {}
-        self.load_reaction_messages()
-
-    def load_reaction_messages(self):
-        try:
-            with open(os.path.join("config", "reactionMessages.json"), "r+") as reaction_messages_file:
-                self.reaction_messages = json.loads(reaction_messages_file.read())
-        except (OSError, IOError):
-            with open(os.path.join("config", "reactionMessages.json"), "r+") as reaction_messages_file:
-                reaction_messages_file.truncate(0)
-                reaction_messages_file.seek(0)
-                json.dump(self.reaction_messages, reaction_messages_file, indent=4)
-
-    def save_reaction_messages(self):
-        with open(os.path.join("config", "reactionMessages.json"), "r+") as reaction_messages_file:
-            reaction_messages_file.truncate(0)
-            reaction_messages_file.seek(0)
-            json.dump(self.reaction_messages, reaction_messages_file, indent=4)
+        self.load_reaction_message = load_json(os.path.join("config", "reaction_messages.json"))
 
     @commands.check(moderator_perms)
     @commands.command(pass_context=True, aliases=['rradd'])
     async def add_reaction_role(self, ctx, message_link, role_id, emoji):
-        messageID = int(message_link[message_link.rfind("/") + 1:])
-        shortLink = message_link[:message_link.rfind("/")]
-        channelID = int(shortLink[shortLink.rfind("/") + 1:])
+        message_id = int(message_link[message_link.rfind("/") + 1:])
+        short_link = message_link[:message_link.rfind("/")]
+        channel_id = int(short_link[short_link.rfind("/") + 1:])
 
-        channel = ctx.guild.get_channel(channelID)
+        channel = ctx.guild.get_channel(channel_id)
         if channel is None:
             await ctx.send("Not a valid link to message")
         else:
-            message = await channel.fetch_message(messageID)
+            message = await channel.fetch_message(message_id)
             if message is None:
                 await ctx.send("Not a valid link to message")
             else:
@@ -69,24 +53,24 @@ class ReactionRoles(commands.Cog):
                                     reactions.append(user.id)
                                 break
 
-                        combinedID = str(channelID) + str(messageID)
+                        combined_id = str(channel_id) + str(message_id)
 
-                        if combinedID in self.reaction_messages:
-                            self.reaction_messages[combinedID][emoji] = {"id": role_id, "users": reactions}
+                        if combined_id in self.reaction_messages:
+                            self.reaction_messages[combined_id][emoji] = {"id": role_id, "users": reactions}
                         else:
-                            self.reaction_messages[combinedID] = {emoji: {"id": role_id, "users": reactions}}
+                            self.reaction_messages[combined_id] = {emoji: {"id": role_id, "users": reactions}}
 
-                        self.save_reaction_messages()
+                        save_json(os.path.join("config", "reaction_messages.json"), self.reaction_messages)
                         await ctx.send("Created reaction role")
 
     @commands.check(moderator_perms)
     @commands.command(pass_context=True, aliases=['rrdelete', 'rremove'])
     async def remove_reaction_role(self, ctx, message_link, emoji):
-        messageID = int(message_link[message_link.rfind("/") + 1:])
-        shortLink = message_link[:message_link.rfind("/")]
-        channelID = int(shortLink[shortLink.rfind("/") + 1:])
+        message_id = int(message_link[message_link.rfind("/") + 1:])
+        short_link = message_link[:message_link.rfind("/")]
+        channel_id = int(short_link[short_link.rfind("/") + 1:])
 
-        key = str(channelID) + str(messageID)
+        key = str(channel_id) + str(message_id)
         if key not in self.reaction_messages:
             await ctx.send("There are no reaction roles on this message")
         else:
@@ -94,9 +78,9 @@ class ReactionRoles(commands.Cog):
                 await ctx.send("This emoji is not used on this reaction role")
             else:
                 del self.reaction_messages[key][emoji]
-                self.save_reaction_messages()
-                channel = ctx.guild.get_channel(channelID)
-                message = await channel.fetch_message(messageID)
+                save_json(os.path.join("config", "reaction_messages.json"), self.reaction_messages)
+                channel = ctx.guild.get_channel(channel_id)
+                message = await channel.fetch_message(message_id)
 
                 await message.remove_reaction(emoji, self.bot.user)
                 await ctx.send("Removed reaction role")
@@ -115,7 +99,7 @@ class ReactionRoles(commands.Cog):
                     roles.append(role)
 
                     self.reaction_messages[key][str(payload.emoji)]["users"].append(member.id)
-                    self.save_reaction_messages()
+                    save_json(os.path.join("config", "reaction_messages.json"), self.reaction_messages)
 
                     await payload.member.edit(roles=roles)
 

@@ -16,7 +16,7 @@ def make_ordinal(number):
     return str(number) + suffix
 
 
-def timeDeltaString(before, after):
+def time_delta_string(before, after):
     """
     Returns a string with three most significant time deltas between date1 and date2
     :param before: datetime 1

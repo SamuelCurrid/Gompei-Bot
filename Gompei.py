@@ -17,9 +17,21 @@ import os
 import sys
 
 
-# State handling
 settings = {}
-access_roles = [664719508404961293, 567179738683015188, 578350297978634240, 578350427209203712, 578350479688466455, 692461531983511662, 599319106478669844, 638748298152509461, 638748298152509461, 630589807084699653, 748941410639806554, 634223378773049365]
+access_roles = [
+    664719508404961293,
+    567179738683015188,
+    578350297978634240,
+    578350427209203712,
+    578350479688466455,
+    692461531983511662,
+    599319106478669844,
+    638748298152509461,
+    638748298152509461,
+    630589807084699653,
+    748941410639806554,
+    634223378773049365
+]
 
 
 async def update_guilds():
@@ -28,24 +40,24 @@ async def update_guilds():
     """
     global settings
 
-    savedGuilds = []
-    for guildID in settings:
-        savedGuilds.append(int(guildID))
+    saved_guilds = []
+    for guild_id in settings:
+        saved_guilds.append(int(guild_id))
 
     guilds = []
     for guild in gompei.guilds:
         guilds.append(guild.id)
 
-    addGuilds = [x for x in guilds if x not in savedGuilds]
-    removeGuilds = [x for x in savedGuilds if x not in guilds]
+    add_guilds = [x for x in guilds if x not in saved_guilds]
+    remove_guilds = [x for x in saved_guilds if x not in guilds]
 
     # Add new guilds
-    for guildID in addGuilds:
-        settings[str(guildID)] = {"prefix": "."}
+    for guild_id in add_guilds:
+        settings[str(guild_id)] = {"prefix": "."}
 
     # Remove disconnected guilds
-    for guildID in removeGuilds:
-        settings.pop(str(guildID))
+    for guild_id in remove_guilds:
+        settings.pop(str(guild_id))
 
     save_json(os.path.join("config", "settings.json"), settings)
 
@@ -102,9 +114,9 @@ async def on_message(message):
     Forwards DMs to a channel
     """
     if isinstance(message.channel, discord.channel.DMChannel) and not message.author.bot:
-        messageEmbed = discord.Embed(description=message.content, timestamp=datetime.utcnow())
-        messageEmbed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
-        messageEmbed.set_footer(text=message.author.id)
+        message_embed = discord.Embed(description=message.content, timestamp=datetime.utcnow())
+        message_embed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
+        message_embed.set_footer(text=message.author.id)
         wpi_discord = gompei.get_guild(567169726250352640)
         gompei_channel = wpi_discord.get_channel(746002454180528219)
 
@@ -115,13 +127,13 @@ async def on_message(message):
 
         if len(attachments) > 0:
             if len(message.content) > 0:
-                messageEmbed.description = message.content + "\n\n**<File(s) Attached>**"
+                message_embed.description = message.content + "\n\n**<File(s) Attached>**"
             else:
-                messageEmbed.description = message.content + "**<File(s) Attached>**"
-            await gompei_channel.send(embed=messageEmbed)
+                message_embed.description = message.content + "**<File(s) Attached>**"
+            await gompei_channel.send(embed=message_embed)
             await gompei_channel.send(files=attachments)
         else:
-            await gompei_channel.send(embed=messageEmbed)
+            await gompei_channel.send(embed=message_embed)
     else:
         if not message.author.bot:
             if "769305840112762950" in message.content:
@@ -144,39 +156,39 @@ async def on_message_edit(before, after):
         if before.content is after.content:
             return
 
-        messageEmbed = discord.Embed(timestamp=datetime.utcnow())
-        messageEmbed.colour = discord.Colour(0x8899d4)
-        messageEmbed.set_author(name=after.author.name + "#" + before.author.discriminator, icon_url=after.author.avatar_url)
-        messageEmbed.title = "Message edited by " + after.author.name + "#" + str(after.author.discriminator)
-        messageEmbed.description = "**Before:** " + before.content + "\n**+After:** " + after.content
-        messageEmbed.set_footer(text="ID: " + str(before.author.id))
+        message_embed = discord.Embed(timestamp=datetime.utcnow())
+        message_embed.colour = discord.Colour(0x8899d4)
+        message_embed.set_author(name=after.author.name + "#" + before.author.discriminator, icon_url=after.author.avatar_url)
+        message_embed.title = "Message edited by " + after.author.name + "#" + str(after.author.discriminator)
+        message_embed.description = "**Before:** " + before.content + "\n**+After:** " + after.content
+        message_embed.set_footer(text="ID: " + str(before.author.id))
 
         wpi_discord = gompei.get_guild(567169726250352640)
         gompei_channel = wpi_discord.get_channel(746002454180528219)
 
-        await gompei_channel.send(embed=messageEmbed)
+        await gompei_channel.send(embed=message_embed)
 
 
 @gompei.event
 async def on_message_delete(message):
     if isinstance(message.channel, discord.channel.DMChannel) and not message.author.bot:
-        messageEmbed = discord.Embed()
-        messageEmbed.colour = discord.Colour(0xbe4041)
-        messageEmbed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
-        messageEmbed.title = "Message deleted by " + message.author.name + "#" + str(message.author.discriminator)
-        messageEmbed.description = message.content
+        message_embed = discord.Embed()
+        message_embed.colour = discord.Colour(0xbe4041)
+        message_embed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
+        message_embed.title = "Message deleted by " + message.author.name + "#" + str(message.author.discriminator)
+        message_embed.description = message.content
 
         if len(message.attachments) > 0:  # Check for attachments
             for attachment in message.attachments:
-                messageEmbed.add_field(name="Attachment", value=attachment.proxy_url)
+                message_embed.add_field(name="Attachment", value=attachment.proxy_url)
 
-        messageEmbed.set_footer(text="ID: " + str(message.author.id))
-        messageEmbed.timestamp = datetime.utcnow()
+        message_embed.set_footer(text="ID: " + str(message.author.id))
+        message_embed.timestamp = datetime.utcnow()
 
         wpi_discord = gompei.get_guild(567169726250352640)
         gompei_channel = wpi_discord.get_channel(746002454180528219)
 
-        await gompei_channel.send(embed=messageEmbed)
+        await gompei_channel.send(embed=message_embed)
 
 
 @gompei.event
@@ -210,12 +222,12 @@ async def help(ctx):
     Sends help information
     """
     if isinstance(ctx.channel, discord.DMChannel) or ctx.channel.id == 567179438047887381:
-        helpEmbed = discord.Embed(title="Gompei Bot", colour=discord.Colour.blue())
-        helpEmbed.add_field(name="Documentation", value="https://samuelcurrid.github.io/Gompei-Bot/documentation.html")
-        helpEmbed.set_thumbnail(url="https://raw.githubusercontent.com/SamuelCurrid/Gompei-Bot/master/assets/gompei.png")
-        helpEmbed.set_footer(text="Source: https://github.com/SamuelCurrid/Gompei-Bot/")
+        help_embed = discord.Embed(title="Gompei Bot", colour=discord.Colour.blue())
+        help_embed.add_field(name="Documentation", value="https://samuelcurrid.github.io/Gompei-Bot/documentation.html")
+        help_embed.set_thumbnail(url="https://raw.githubusercontent.com/SamuelCurrid/Gompei-Bot/master/assets/gompei.png")
+        help_embed.set_footer(text="Source: https://github.com/SamuelCurrid/Gompei-Bot/")
 
-        await ctx.message.channel.send(embed=helpEmbed)
+        await ctx.message.channel.send(embed=help_embed)
 
 
 @gompei.command(pass_context=True, name="prefix")
@@ -242,23 +254,20 @@ async def lockout(ctx):
     member = guild.get_member(ctx.message.author.id)
 
     # Get lockout info
-    with open(os.path.join("config", "lockout.json"), "r+") as lockoutFile:
-        lockoutInfo = json.loads(lockoutFile.read())
+    with open(os.path.join("config", "lockout.json"), "r+") as lockout_file:
+        lockout_info = json.loads(lockout_file.read())
 
-    if str(member.id) in lockoutInfo:
+    if str(member.id) in lockout_info:
         await ctx.send("You've already locked yourself out")
     else:
         # Get current roles
-        role_IDs = []
+        role_ids = []
         for role in member.roles:
-            role_IDs.append(role.id)
+            role_ids.append(role.id)
 
         # Store roles
-        lockoutInfo[str(member.id)] = role_IDs
-        with open(os.path.join("config", "lockout.json"), "r+") as lockoutFile:
-            lockoutFile.truncate(0)
-            lockoutFile.seek(0)
-            json.dump(lockoutInfo, lockoutFile, indent=4)
+        lockout_info[str(member.id)] = role_ids
+        save_json(os.path.join("config", "lockout.json"), lockout_info)
 
         # Remove members roles
         await member.edit(roles=[])
@@ -269,32 +278,32 @@ async def lockout(ctx):
 
 @gompei.command(pass_context=True)
 @commands.check(command_channels)
-async def letmein(ctx):
+async def let_me_in(ctx):
     guild = gompei.get_guild(567169726250352640)
     member = guild.get_member(ctx.message.author.id)
 
     # Get lockout info
-    with open(os.path.join("config", "lockout.json"), "r+") as lockoutFile:
-        lockoutInfo = json.loads(lockoutFile.read())
+    with open(os.path.join("config", "lockout.json"), "r+") as lockout_file:
+        lockout_info = json.loads(lockout_file.read())
 
     if member is None:
         # Member is not in guild
         await ctx.send("You are not in the WPI Discord Server")
     else:
-        if str(member.id) not in lockoutInfo:
+        if str(member.id) not in lockout_info:
             await ctx.send("You haven't locked yourself out")
         else:
-            roleList = []
-            for roleID in lockoutInfo[str(member.id)]:
-                roleList.append(guild.get_role(roleID))
+            role_list = []
+            for role_id in lockout_info[str(member.id)]:
+                role_list.append(guild.get_role(role_id))
 
-            await member.edit(roles=roleList)
+            await member.edit(roles=role_list)
 
-            del lockoutInfo[str(member.id)]
-            with open(os.path.join("config", "lockout.json"), "r+") as lockoutFile:
-                lockoutFile.truncate(0)
-                lockoutFile.seek(0)
-                json.dump(lockoutInfo, lockoutFile, indent=4)
+            del lockout_info[str(member.id)]
+            with open(os.path.join("config", "lockout.json"), "r+") as lockout_file:
+                lockout_file.truncate(0)
+                lockout_file.seek(0)
+                json.dump(lockout_info, lockout_file, indent=4)
 
             await member.send("Welcome back to the server :)")
 

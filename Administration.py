@@ -1,4 +1,4 @@
-from GompeiFunctions import make_ordinal, timeDeltaString, load_json, save_json, parse_id
+from GompeiFunctions import make_ordinal, time_delta_string, load_json, save_json, parse_id
 from Permissions import moderator_perms
 from discord.ext import commands
 from datetime import timedelta
@@ -27,9 +27,8 @@ class Administration(commands.Cog):
         :param ctx: context object
         :param channel: channel to send the message to
         """
-        channel = ctx.guild.get_channel(int(channel[2:-1]))
-
         # Check if the channel exists
+        channel = ctx.guild.get_channel(int(channel[2:-1]))
         if channel is not None:
 
             # Check for attachments to forward
@@ -61,48 +60,57 @@ class Administration(commands.Cog):
             print(error)
 
     @commands.guild_only()
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True, aliases=["echoEdit"])
     @commands.check(moderator_perms)
-    async def echoEdit(self, ctx, messageLink):
-        messageID = int(messageLink[messageLink.rfind("/") + 1:])
-        shortLink = messageLink[:messageLink.rfind("/")]
-        channelID = int(shortLink[shortLink.rfind("/") + 1:])
+    async def echo_edit(self, ctx, message_link):
+        # Get message and channel ID from the message_link
+        message_id = int(message_link[message_link.rfind("/") + 1:])
+        shortLink = message_link[:message_link.rfind("/")]
+        channel_id = int(shortLink[shortLink.rfind("/") + 1:])
 
-        channel = ctx.guild.get_channel(channelID)
+        # Check if the channel exists
+        channel = ctx.guild.get_channel(channel_id)
         if channel is None:
             await ctx.send("Not a valid link to message")
         else:
-            message = await channel.fetch_message(messageID)
+            # Check if the message exists
+            message = await channel.fetch_message(message_id)
             if message is None:
                 await ctx.send("Not a valid link to message")
             else:
+                # Check if Gompei is author of the message
                 if message.author.id != self.bot.user.id:
                     await ctx.send("Cannot edit a message that is not my own")
                 else:
-                    newMessage = ctx.message.content[10 + len(messageLink):]
+                    # Read new message content and edit message
+                    newMessage = ctx.message.content[10 + len(message_link):]
 
                     await message.edit(content=newMessage)
-                    await ctx.send("Message edited (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(channelID) + "/" + str(messageID) + ">)")
+                    await ctx.send("Message edited (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(channel_id) + "/" + str(message_id) + ">)")
 
     @commands.guild_only()
-    @commands.command(pass_context=True, aliases=['pmEcho'])
+    @commands.command(pass_context=True, aliases=["pmEcho", "echoPM"])
     @commands.check(moderator_perms)
-    async def echoPM(self, ctx, arg1):
+    async def echo_pm(self, ctx, user):
         """
-        Fowards given message / attachments to give user
+        Forwards given message / attachments to give user
         """
-        member = ctx.guild.get_member(parse_id(arg1))
+        # Get member
+        member = ctx.guild.get_member(parse_id(user))
 
         if member is None:
             await ctx.send("Not a valid member")
             return
 
+        # Read attachments and message
         attachments = []
         if len(ctx.message.attachments) > 0:
             for i in ctx.message.attachments:
                 attachments.append(await i.to_file())
 
-        message = ctx.message.content[9 + len(arg1):]
+        message = ctx.message.content[9 + len(user):]
+
+        # Send message to user via DM
         if len(message) > 0:
             message = await member.send(message, files=attachments)
             await ctx.send("Message sent (<https://discordapp.com/channels/@me/" + str(message.channel.id) + "/" + str(message.id) + ">)")
@@ -114,8 +122,8 @@ class Administration(commands.Cog):
 
         await ctx.message.add_reaction("👍")
 
-    @echoPM.error
-    async def echoPM_error(self, ctx, error):
+    @echo_pm.error
+    async def echo_pm_error(self, ctx, error):
         if isinstance(error, commands.CheckFailure):
             print("!ERROR! " + str(ctx.author.id) + " did not have permissions for echo command")
         elif isinstance(error, commands.MissingRequiredArgument):
@@ -124,10 +132,11 @@ class Administration(commands.Cog):
             print(error)
 
     @commands.guild_only()
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True, aliases=["pmEdit"])
     @commands.check(moderator_perms)
-    async def pmEdit(self, ctx, user, messageLink):
-        messageID = int(messageLink[messageLink.rfind("/") + 1:])
+    async def pm_edit(self, ctx, user, message_link):
+        # Get message ID from message_link
+        message_id = int(message_link[message_link.rfind("/") + 1:])
 
         member = ctx.guild.get_member(parse_id(user))
         if member is None:
@@ -137,31 +146,31 @@ class Administration(commands.Cog):
             if channel is None:
                 channel = await member.create_dm()
 
-            message = await channel.fetch_message(messageID)
+            message = await channel.fetch_message(message_id)
             if message is None:
                 await ctx.send("Not a valid link to message")
             else:
                 if message.author.id != self.bot.user.id:
                     await ctx.send("Cannot edit a message that is not my own")
                 else:
-                    newMessage = ctx.message.content[10 + len(messageLink) + len(user):]
+                    new_message = ctx.message.content[10 + len(message_link) + len(user):]
 
-                    await message.edit(content=newMessage)
-                    await ctx.send("Message edited (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(channel.id) + "/" + str(messageID) + ">)")
+                    await message.edit(content=new_message)
+                    await ctx.send("Message edited (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(channel.id) + "/" + str(message_id) + ">)")
 
     @commands.guild_only()
-    @commands.command(pass_context=True, aliases=['react'])
+    @commands.command(pass_context=True, aliases=["react", "echoReact"])
     @commands.check(moderator_perms)
-    async def echoReact(self, ctx, message_link, emote):
-        messageID = int(message_link[message_link.rfind("/") + 1:])
-        shortLink = message_link[:message_link.rfind("/")]
-        channelID = int(shortLink[shortLink.rfind("/") + 1:])
+    async def echo_react(self, ctx, message_link, emote):
+        message_id = int(message_link[message_link.rfind("/") + 1:])
+        short_link = message_link[:message_link.rfind("/")]
+        channel_id = int(short_link[short_link.rfind("/") + 1:])
 
-        channel = ctx.guild.get_channel(channelID)
+        channel = ctx.guild.get_channel(channel_id)
         if channel is None:
             await ctx.send("Not a valid link to message")
         else:
-            message = await channel.fetch_message(messageID)
+            message = await channel.fetch_message(message_id)
             if message is None:
                 await ctx.send("Not a valid link to message")
             else:
@@ -172,15 +181,15 @@ class Administration(commands.Cog):
     @commands.command(pass_context=True, aliases=['reactRemove'])
     @commands.check(moderator_perms)
     async def echoRemoveReact(self, ctx, message_link, emote):
-        messageID = int(message_link[message_link.rfind("/") + 1:])
-        shortLink = message_link[:message_link.rfind("/")]
-        channelID = int(shortLink[shortLink.rfind("/") + 1:])
+        message_id = int(message_link[message_link.rfind("/") + 1:])
+        short_link = message_link[:message_link.rfind("/")]
+        channel_id = int(short_link[short_link.rfind("/") + 1:])
 
-        channel = ctx.guild.get_channel(channelID)
+        channel = ctx.guild.get_channel(channel_id)
         if channel is None:
             await ctx.send("Not a valid link to message")
         else:
-            message = await channel.fetch_message(messageID)
+            message = await channel.fetch_message(message_id)
             if message is None:
                 await ctx.send("Not a valid link to message")
             else:
@@ -190,13 +199,13 @@ class Administration(commands.Cog):
     @commands.guild_only()
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
-    async def purge(self, ctx, arg1):
+    async def purge(self, ctx, number):
         """
         Purges a number of messages in channel used
         :param ctx: context object
-        :param arg1: number of messages to purge
+        :param number: number of messages to purge
         """
-        await ctx.channel.purge(limit=int(arg1) + 1)
+        await ctx.channel.purge(limit=int(number) + 1)
 
     @purge.error
     async def purge_error(self, ctx, error):
@@ -210,29 +219,29 @@ class Administration(commands.Cog):
     @commands.guild_only()
     @commands.command(pass_context=True, name="spurge")
     @commands.check(moderator_perms)
-    async def selective_purge(self, ctx, arg1, arg2):
+    async def selective_purge(self, ctx, user, number):
         """
         Purges messages from a specific user in the channel
         :param ctx: context object
-        :param arg1: user to purge
-        :param arg2: number of messages to purge
+        :param user: user to purge
+        :param number: number of messages to purge
         """
-        member = ctx.guild.get_member(parse_id(arg1))
+        member = ctx.guild.get_member(parse_id(user))
 
         messages = [ctx.message]
-        oldMessage = ctx.message
+        old_message = ctx.message
         count = 0
 
-        while count < int(arg2):
-            async for message in ctx.message.channel.history(limit=int(arg2), before=oldMessage, oldest_first=False):
+        while count < int(number):
+            async for message in ctx.message.channel.history(limit=int(number), before=old_message, oldest_first=False):
                 if message.author == member:
                     count += 1
                     messages.append(message)
 
-                    if count == int(arg2):
+                    if count == int(number):
                         break
 
-                oldMessage = message.created_at
+                old_message = message.created_at
 
         await ctx.channel.delete_messages(messages)
 
@@ -250,10 +259,10 @@ class Administration(commands.Cog):
     @commands.check(moderator_perms)
     async def mute(self, ctx, arg1, arg2):
         member = ctx.guild.get_member(parse_id(arg1))
-        mutedRole = ctx.guild.get_role(615956736616038432)
+        muted_role = ctx.guild.get_role(615956736616038432)
 
         # Is user already muted
-        if mutedRole in member.roles:
+        if muted_role in member.roles:
             await ctx.send("This member is already muted")
             return
 
@@ -274,15 +283,15 @@ class Administration(commands.Cog):
             await ctx.send("You must include a reason for the mute")
             return
 
-        muteTime = timeDeltaString(datetime.utcnow(), datetime.utcnow() + delta)
+        mute_time = time_delta_string(datetime.utcnow(), datetime.utcnow() + delta)
 
-        await member.add_roles(mutedRole)
-        await ctx.send("**Muted** user **" + username + "** for **" + muteTime + "** for: **" + reason + "**")
-        await member.send("**You were muted in the WPI Discord Server for " + muteTime + ". Reason:**\n> " + reason + "\n\nYou can repond here to contact WPI Discord staff.")
+        await member.add_roles(muted_role)
+        await ctx.send("**Muted** user **" + username + "** for **" + mute_time + "** for: **" + reason + "**")
+        await member.send("**You were muted in the WPI Discord Server for " + mute_time + ". Reason:**\n> " + reason + "\n\nYou can repond here to contact WPI Discord staff.")
 
         await asyncio.sleep(seconds)
 
-        await member.remove_roles(mutedRole)
+        await member.remove_roles(muted_role)
         await ctx.send("**Unmuted** user **" + username + "**")
 
     @mute.error
@@ -299,8 +308,8 @@ class Administration(commands.Cog):
         """
         Warns a specific user for given reason
         """
-        memberID = parse_id(user)
-        member = ctx.guild.get_member(memberID)
+        member_id = parse_id(user)
+        member = ctx.guild.get_member(member_id)
 
         if member is None:
             await ctx.send("Not a valid member")
@@ -318,14 +327,14 @@ class Administration(commands.Cog):
             await ctx.send("No warning to send")
             return
 
-        if str(memberID) in self.warns:
-            self.warns[str(memberID)].append(message)
+        if str(member_id) in self.warns:
+            self.warns[str(member_id)].append(message)
         else:
-            self.warns[str(memberID)] = [message]
+            self.warns[str(member_id)] = [message]
 
         save_json(os.path.join("config", "warns.json"), self.warns)
 
-        await ctx.send("Warning sent to " + member.display_name + " (" + str(memberID) + "), this is their " + make_ordinal(len(self.warns[str(memberID)])) + " warning")
+        await ctx.send("Warning sent to " + member.display_name + " (" + str(member_id) + "), this is their " + make_ordinal(len(self.warns[str(member_id)])) + " warning")
 
     @warn.error
     async def warn_error(self, ctx, error):
@@ -353,10 +362,10 @@ class Administration(commands.Cog):
 
                 message += "\n\n"
         else:
-            memberID = parse_id(user)
-            if str(memberID) in self.warns:
-                message = "Warnings for <@" + str(memberID) + ">\n"
-                for warn in self.warns[str(memberID)]:
+            member_id = parse_id(user)
+            if str(member_id) in self.warns:
+                message = "Warnings for <@" + str(member_id) + ">\n"
+                for warn in self.warns[str(member_id)]:
                     message += "> " + warn + "\n"
             else:
                 message = "This user does not exist or has no warnings"
@@ -369,11 +378,11 @@ class Administration(commands.Cog):
             await ctx.send(message)
 
     @commands.guild_only()
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True, aliases=["warnNote"])
     @commands.check(moderator_perms)
-    async def warnNote(self, ctx, user):
-        memberID = parse_id(user)
-        member = ctx.guild.get_member(memberID)
+    async def warn_note(self, ctx, user):
+        member_id = parse_id(user)
+        member = ctx.guild.get_member(member_id)
 
         if member is None:
             await ctx.send("Not a valid member")
@@ -386,22 +395,22 @@ class Administration(commands.Cog):
 
         message = ctx.message.content[11 + len(user):]
 
-        if str(memberID) in self.warns:
-            self.warns[str(memberID)].append(message)
+        if str(member_id) in self.warns:
+            self.warns[str(member_id)].append(message)
         else:
-            self.warns[str(memberID)] = [message]
+            self.warns[str(member_id)] = [message]
 
         save_json(os.path.join("config", "warns.json"), self.warns)
 
-        await ctx.send("Warning added for " + member.display_name + " (" + str(memberID) + "), this is their " + make_ordinal(len(self.warns[str(memberID)])) + " warning")
+        await ctx.send("Warning added for " + member.display_name + " (" + str(member_id) + "), this is their " + make_ordinal(len(self.warns[str(member_id)])) + " warning")
 
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True, aliases=["clearWarn"])
     @commands.check(moderator_perms)
     async def clearWarn(self, ctx, user):
-        memberID = parse_id(user)
-        if str(memberID) in self.warns:
-            del self.warns[str(memberID)]
-            await ctx.send("Cleared warnings for <@" + str(memberID) + ">")
+        member_id = parse_id(user)
+        if str(member_id) in self.warns:
+            del self.warns[str(member_id)]
+            await ctx.send("Cleared warnings for <@" + str(member_id) + ">")
             save_json(os.path.join("config", "warns.json"), self.warns)
         else:
             await ctx.send("This user does not exist or has no warnings")
@@ -411,37 +420,37 @@ class Administration(commands.Cog):
     @commands.check(moderator_perms)
     async def lockdown(self, ctx):
         if len(ctx.message.content) > 10:
-            lockChannel = ctx.guild.get_channel(parse_id(ctx.message.content[10:]))
-            if lockChannel is None:
+            lock_channel = ctx.guild.get_channel(parse_id(ctx.message.content[10:]))
+            if lock_channel is None:
                 await ctx.send("Not a valid channel to lockdown")
                 return
         else:
-            lockChannel = ctx.channel
+            lock_channel = ctx.channel
 
-        overwrite = lockChannel.overwrites_for(ctx.guild.default_role)
+        overwrite = lock_channel.overwrites_for(ctx.guild.default_role)
         if overwrite.send_messages is False:
             await ctx.send("Channel is already locked down!")
         else:
             overwrite.update(send_messages=False)
-            await lockChannel.send(":white_check_mark: **Locked down " + lockChannel.name + "**")
-            await lockChannel.set_permissions(ctx.guild.default_role, overwrite=overwrite)
+            await lock_channel.send(":white_check_mark: **Locked down " + lock_channel.name + "**")
+            await lock_channel.set_permissions(ctx.guild.default_role, overwrite=overwrite)
 
     @commands.guild_only()
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
     async def unlock(self, ctx):
         if len(ctx.message.content) > 8:
-            lockChannel = ctx.guild.get_channel(parse_id(ctx.message.content[8:]))
-            if lockChannel is None:
+            lock_channel = ctx.guild.get_channel(parse_id(ctx.message.content[8:]))
+            if lock_channel is None:
                 await ctx.send("Not a valid channel to unlock")
                 return
         else:
-            lockChannel = ctx.channel
+            lock_channel = ctx.channel
 
-        overwrite = lockChannel.overwrites_for(ctx.guild.default_role)
+        overwrite = lock_channel.overwrites_for(ctx.guild.default_role)
         if overwrite.send_messages is False:
             overwrite.update(send_messages=None)
-            await lockChannel.set_permissions(ctx.guild.default_role, overwrite=overwrite)
-            await lockChannel.send(":white_check_mark: **Unlocked " + lockChannel.name + "**")
+            await lock_channel.set_permissions(ctx.guild.default_role, overwrite=overwrite)
+            await lock_channel.send(":white_check_mark: **Unlocked " + lock_channel.name + "**")
         else:
             await ctx.send("Channel is not locked")

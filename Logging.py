@@ -1,10 +1,9 @@
-from GompeiFunctions import make_ordinal, timeDeltaString
+from GompeiFunctions import make_ordinal, time_delta_string, load_json, save_json
 from Permissions import command_channels
 from discord.ext import commands
 from datetime import datetime
 
 import discord
-import json
 import os
 
 
@@ -30,30 +29,30 @@ class Logging(commands.Cog):
         self.logs = None
 
     async def update_guilds(self):
-        savedGuilds = []
-        for guildID in self.logs:
-            savedGuilds.append(guildID)
+        saved_guilds = []
+        for guild_id in self.logs:
+            saved_guilds.append(guild_id)
 
         guilds = []
         for guild in self.bot.guilds:
             guilds.append(str(guild.id))
 
-        addGuilds = [x for x in guilds if x not in savedGuilds]
-        removeGuilds = [x for x in savedGuilds if x not in guilds]
+        add_guilds = [x for x in guilds if x not in saved_guilds]
+        remove_guilds = [x for x in saved_guilds if x not in guilds]
 
         # Add new guilds
-        for guildID in addGuilds:
-            self.logs[str(guildID)] = {"channel": None}
+        for guild_id in add_guilds:
+            self.logs[str(guild_id)] = {"channel": None}
 
         # Remove disconnected guilds
-        for guildID in removeGuilds:
-            self.logs.pop(str(guildID))
+        for guild_id in remove_guilds:
+            self.logs.pop(str(guild_id))
 
-        await self.update_state()
+        save_json(os.path.join("config", "logging.json"), self.logs)
 
     @commands.Cog.listener()
     async def on_ready(self):
-        await self.load_state()
+        self.logs = load_json(os.path.join("config", "logging.json"))
         await self.update_guilds()
 
     @commands.command(pass_context=True, name="logging")
@@ -72,7 +71,7 @@ class Logging(commands.Cog):
 
             print("Updating guild " + str(ctx.message.guild.id) + " to use logging channel " + str(channel.id))
 
-            await self.update_state()
+            save_json(os.path.join("config", "logging.json"), self.logs)
             print("Finished updating logging channel")
             await ctx.send("Successfully updated logging channel to <#" + str(channel.id) + ">")
 
@@ -85,17 +84,6 @@ class Logging(commands.Cog):
         else:
             print(error)
 
-    async def load_state(self):
-        with open(os.path.join("config", "logging.json"), "r+") as loggingFile:
-            logs = loggingFile.read()
-            self.logs = json.loads(logs)
-
-    async def update_state(self):
-        with open(os.path.join("config", "logging.json"), "r+") as loggingFile:
-            loggingFile.truncate(0)
-            loggingFile.seek(0)
-            json.dump(self.logs, loggingFile, indent=4)
-
     @commands.Cog.listener()
     async def on_message_delete(self, message):
         """
@@ -105,7 +93,7 @@ class Logging(commands.Cog):
         """
         if not message.author.bot:
             if self.logs[str(message.guild.id)]["channel"] is not None:
-                loggingChannel = message.guild.get_channel(int(self.logs[str(message.guild.id)]["channel"]))
+                logging_channel = message.guild.get_channel(int(self.logs[str(message.guild.id)]["channel"]))
                 channel = message.channel
 
                 self.embed = discord.Embed()
@@ -121,7 +109,7 @@ class Logging(commands.Cog):
                 self.embed.set_footer(text="ID: " + str(message.author.id))
                 self.embed.timestamp = datetime.utcnow()
 
-                await loggingChannel.send(embed=self.embed)
+                await logging_channel.send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload):
@@ -134,7 +122,7 @@ class Logging(commands.Cog):
         guild = self.bot.get_guild(payload.guild_id)
 
         if self.logs[str(guild.id)]["channel"] is not None and payload.cached_message is None:
-            loggingChannel = guild.get_channel(int(self.logs[str(guild.id)]["channel"]))
+            logging_channel = guild.get_channel(int(self.logs[str(guild.id)]["channel"]))
             channel = guild.get_channel(payload.channel_id)
 
             self.embed = discord.Embed()
@@ -143,7 +131,7 @@ class Logging(commands.Cog):
             self.embed.set_footer(text="Uncached message: " + str(payload.message_id))
             self.embed.timestamp = datetime.utcnow()
 
-            await loggingChannel.send(embed=self.embed)
+            await logging_channel.send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_raw_bulk_message_delete(self, payload):
@@ -157,7 +145,7 @@ class Logging(commands.Cog):
 
         if self.logs[str(guild.id)]["channel"] is not None:
 
-            loggingChannel = guild.get_channel(int(self.logs[str(guild.id)]["channel"]))
+            logging_channel = guild.get_channel(int(self.logs[str(guild.id)]["channel"]))
             channel = guild.get_channel(payload.channel_id)
             content = ""
             count = 0
@@ -172,7 +160,7 @@ class Logging(commands.Cog):
             self.embed.description = content
             self.embed.timestamp = datetime.utcnow()
 
-            await loggingChannel.send(embed=self.embed)
+            await logging_channel.send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
@@ -188,7 +176,7 @@ class Logging(commands.Cog):
                 if before.content is after.content:
                     return
 
-                loggingChannel = before.guild.get_channel(int(self.logs[str(before.guild.id)]["channel"]))
+                logging_channel = before.guild.get_channel(int(self.logs[str(before.guild.id)]["channel"]))
                 channel = before.channel
 
                 self.embed = discord.Embed(url=before.jump_url)
@@ -199,7 +187,7 @@ class Logging(commands.Cog):
                 self.embed.set_footer(text="ID: " + str(before.author.id))
                 self.embed.timestamp = datetime.utcnow()
 
-                await loggingChannel.send(embed=self.embed)
+                await logging_channel.send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_raw_message_edit(self, payload):
@@ -215,7 +203,7 @@ class Logging(commands.Cog):
             channel = guild.get_channel(payload.channel_id)
             message = await channel.fetch_message(payload.message_id)
 
-            loggingChannel = guild.get_channel(int(self.logs[str(guild.id)]["channel"]))
+            logging_channel = guild.get_channel(int(self.logs[str(guild.id)]["channel"]))
 
             self.embed = discord.Embed(url=message.jump_url)
             self.embed.colour = discord.Colour(0x8899d4)
@@ -225,7 +213,7 @@ class Logging(commands.Cog):
             self.embed.set_footer(text="ID: " + str(message.author.id))
             self.embed.timestamp = datetime.utcnow()
 
-            await loggingChannel.send(embed=self.embed)
+            await logging_channel.send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_guild_channel_create(self, channel):
@@ -235,7 +223,7 @@ class Logging(commands.Cog):
         :param channel:
         """
         if self.logs[str(channel.guild.id)]["channel"] is not None:
-            loggingChannel = channel.guild.get_channel(int(self.logs[str(channel.guild.id)]["channel"]))
+            logging_channel = channel.guild.get_channel(int(self.logs[str(channel.guild.id)]["channel"]))
             self.embed = discord.Embed()
             self.embed.colour = discord.Colour(0x43b581)
             permissions = ""
@@ -257,8 +245,7 @@ class Logging(commands.Cog):
                             permissions += "**Connect:** :x:"
 
             else:
-                description = "**Name:** " + channel.name + "\n**Position:** " + str(
-                    channel.position) + "\n**Category:** "
+                description = "**Name:** " + channel.name + "\n**Position:** " + str(channel.position) + "\n**Category:** "
                 if channel.category is not None:
                     description += channel.category.name
                 else:
@@ -292,7 +279,7 @@ class Logging(commands.Cog):
             self.embed.set_footer(text="ID: " + str(channel.id))
             self.embed.timestamp = datetime.utcnow()
 
-            await loggingChannel.send(embed=self.embed)
+            await logging_channel.send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel):
@@ -301,7 +288,7 @@ class Logging(commands.Cog):
         the name, category, and permissions of the channel
         """
         if self.logs[str(channel.guild.id)]["channel"] is not None:
-            loggingChannel = channel.guild.get_channel(int(self.logs[str(channel.guild.id)]["channel"]))
+            logging_channel = channel.guild.get_channel(int(self.logs[str(channel.guild.id)]["channel"]))
             self.embed = discord.Embed()
             self.embed.colour = discord.Colour(0xbe4041)
 
@@ -323,7 +310,7 @@ class Logging(commands.Cog):
                     description += "None"
 
             self.embed.description = description
-            await loggingChannel.send(embed=self.embed)
+            await logging_channel.send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_guild_channel_update(self, before, after):
@@ -371,20 +358,20 @@ class Logging(commands.Cog):
         the name, avatar, id, join position, account age
         """
         if self.logs[str(member.guild.id)]["channel"] is not None:
-            loggingChannel = member.guild.get_channel(int(self.logs[str(member.guild.id)]["channel"]))
+            logging_channel = member.guild.get_channel(int(self.logs[str(member.guild.id)]["channel"]))
 
             self.embed = discord.Embed()
             self.embed.colour = discord.Colour(0x43b581)
             self.embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
             self.embed.title = "Member joined"
 
-            creationDelta = timeDeltaString(member.created_at, datetime.utcnow())
+            creation_delta = time_delta_string(member.created_at, datetime.utcnow())
 
-            self.embed.description = "<@" + str(member.id) + "> " + make_ordinal(member.guild.member_count) + " to join\ncreated " + creationDelta + " ago"
+            self.embed.description = "<@" + str(member.id) + "> " + make_ordinal(member.guild.member_count) + " to join\ncreated " + creation_delta + " ago"
             self.embed.set_footer(text="ID: " + str(member.id))
             self.embed.timestamp = datetime.utcnow()
 
-            await loggingChannel.send(embed=self.embed)
+            await logging_channel.send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
@@ -393,24 +380,24 @@ class Logging(commands.Cog):
         the name, avatar, id, time spent on the server
         """
         if self.logs[str(member.guild.id)]["channel"] is not None:
-            loggingChannel = member.guild.get_channel(int(self.logs[str(member.guild.id)]["channel"]))
+            logging_channel = member.guild.get_channel(int(self.logs[str(member.guild.id)]["channel"]))
 
             self.embed = discord.Embed()
             self.embed.colour = discord.Colour(0xbe4041)
             self.embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
             self.embed.title = "Member left"
 
-            joinDelta = timeDeltaString(member.joined_at, datetime.utcnow())
+            join_delta = time_delta_string(member.joined_at, datetime.utcnow())
             roles = ""
 
             for index in range(1, len(member.roles)):
                 roles += "<@&" + str(member.roles[index].id) + "> "
 
-            self.embed.description = "<@" + str(member.id) + "> joined " + joinDelta + " ago\n**Roles: **" + roles
+            self.embed.description = "<@" + str(member.id) + "> joined " + join_delta + " ago\n**Roles: **" + roles
             self.embed.set_footer(text="ID: " + str(member.id))
             self.embed.timestamp = datetime.utcnow()
 
-            await loggingChannel.send(embed=self.embed)
+            await logging_channel.send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
@@ -418,7 +405,7 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the property of the member updated before and after
         """
-        loggingChannel = before.guild.get_channel(int(self.logs[str(before.guild.id)]["channel"]))
+        logging_channel = before.guild.get_channel(int(self.logs[str(before.guild.id)]["channel"]))
 
         # Role checks
         if len(before.roles) > len(after.roles):
@@ -433,7 +420,7 @@ class Logging(commands.Cog):
                     self.embed.set_footer(text="ID: " + str(after.id))
                     self.embed.timestamp = datetime.utcnow()
 
-                    await loggingChannel.send(embed=self.embed)
+                    await logging_channel.send(embed=self.embed)
                     break
 
         elif len(before.roles) < len(after.roles):
@@ -447,7 +434,7 @@ class Logging(commands.Cog):
                 self.embed.set_footer(text="ID: " + str(after.id))
                 self.embed.timestamp = datetime.utcnow()
 
-                await loggingChannel.send(embed=self.embed)
+                await logging_channel.send(embed=self.embed)
                 return
 
             for i in range(0, len(before.roles) + 1):
@@ -461,7 +448,7 @@ class Logging(commands.Cog):
                     self.embed.set_footer(text="ID: " + str(after.id))
                     self.embed.timestamp = datetime.utcnow()
 
-                    await loggingChannel.send(embed=self.embed)
+                    await logging_channel.send(embed=self.embed)
                     break
 
         # Nickname check
@@ -484,7 +471,7 @@ class Logging(commands.Cog):
             self.embed.set_footer(text="ID: " + str(after.id))
             self.embed.timestamp = datetime.utcnow()
 
-            await loggingChannel.send(embed=self.embed)
+            await logging_channel.send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_user_update(self, before, after):
@@ -494,7 +481,7 @@ class Logging(commands.Cog):
         """
         if self.logs["567169726250352640"]["channel"] is not None:
 
-            loggingChannel = self.bot.get_guild(567169726250352640).get_channel(738536336016801793)
+            logging_channel = self.bot.get_guild(567169726250352640).get_channel(738536336016801793)
 
             # Check for avatar update
             if before.avatar != after.avatar:
@@ -508,7 +495,7 @@ class Logging(commands.Cog):
                 self.embed.set_footer(text="ID: " + str(after.id))
                 self.embed.timestamp = datetime.utcnow()
 
-                await loggingChannel.send(embed=self.embed)
+                await logging_channel.send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_guild_update(self, before, after):
@@ -556,7 +543,7 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the id, name, and updated voice properties of the member
         """
-        loggingChannel = member.guild.get_channel(int(self.logs[str(member.guild.id)]["channel"]))
+        logging_channel = member.guild.get_channel(int(self.logs[str(member.guild.id)]["channel"]))
 
         if before.channel is None:
             self.embed = discord.Embed()
@@ -565,7 +552,7 @@ class Logging(commands.Cog):
             self.embed.colour = discord.Colour(0x43b581)
             self.embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
             self.embed.set_footer(text="ID: " + str(member.id))
-            await loggingChannel.send(embed=self.embed)
+            await logging_channel.send(embed=self.embed)
 
         elif after.channel is None:
             self.embed = discord.Embed()
@@ -574,7 +561,7 @@ class Logging(commands.Cog):
             self.embed.colour = discord.Colour(0xbe4041)
             self.embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
             self.embed.set_footer(text="ID: " + str(member.id))
-            await loggingChannel.send(embed=self.embed)
+            await logging_channel.send(embed=self.embed)
 
         elif before.channel.id != after.channel.id:
             self.embed = discord.Embed()
@@ -583,7 +570,7 @@ class Logging(commands.Cog):
             self.embed.colour = discord.Colour(0x8899d4)
             self.embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
             self.embed.set_footer(text="ID: " + str(member.id))
-            await loggingChannel.send(embed=self.embed)
+            await logging_channel.send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_member_ban(self, guild, user):
