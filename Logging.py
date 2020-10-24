@@ -1,5 +1,5 @@
 from GompeiFunctions import make_ordinal, time_delta_string, load_json, save_json
-from Permissions import command_channels
+from Permissions import administrator_perms
 from discord.ext import commands
 from datetime import datetime
 
@@ -56,7 +56,7 @@ class Logging(commands.Cog):
         await self.update_guilds()
 
     @commands.command(pass_context=True, name="logging")
-    @commands.check(command_channels)
+    @commands.check(administrator_perms)
     async def change_logging(self, ctx, arg1):
         """
         Changes the channel that the bot sends logging messages in
@@ -119,19 +119,21 @@ class Logging(commands.Cog):
         :param payload:
         :return:
         """
-        guild = self.bot.get_guild(payload.guild_id)
+        # If not a DM message
+        if hasattr(payload, "guild_id"):
+            guild = self.bot.get_guild(payload.guild_id)
 
-        if self.logs[str(guild.id)]["channel"] is not None and payload.cached_message is None:
-            logging_channel = guild.get_channel(int(self.logs[str(guild.id)]["channel"]))
-            channel = guild.get_channel(payload.channel_id)
+            if self.logs[str(guild.id)]["channel"] is not None and payload.cached_message is None:
+                logging_channel = guild.get_channel(int(self.logs[str(guild.id)]["channel"]))
+                channel = guild.get_channel(payload.channel_id)
 
-            self.embed = discord.Embed()
-            self.embed.colour = discord.Colour(0xbe4041)
-            self.embed.title = "Message deleted in " + "#" + channel.name
-            self.embed.set_footer(text="Uncached message: " + str(payload.message_id))
-            self.embed.timestamp = datetime.utcnow()
+                self.embed = discord.Embed()
+                self.embed.colour = discord.Colour(0xbe4041)
+                self.embed.title = "Message deleted in " + "#" + channel.name
+                self.embed.set_footer(text="Uncached message: " + str(payload.message_id))
+                self.embed.timestamp = datetime.utcnow()
 
-            await logging_channel.send(embed=self.embed)
+                await logging_channel.send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_raw_bulk_message_delete(self, payload):
@@ -141,26 +143,28 @@ class Logging(commands.Cog):
         May be limited if message is not in the cache
         :param payload:
         """
-        guild = self.bot.get_guild(payload.guild_id)
+        # If not DM messages
+        if hasattr(payload, "guild_id"):
+            guild = self.bot.get_guild(payload.guild_id)
 
-        if self.logs[str(guild.id)]["channel"] is not None:
+            if self.logs[str(guild.id)]["channel"] is not None:
 
-            logging_channel = guild.get_channel(int(self.logs[str(guild.id)]["channel"]))
-            channel = guild.get_channel(payload.channel_id)
-            content = ""
-            count = 0
+                logging_channel = guild.get_channel(int(self.logs[str(guild.id)]["channel"]))
+                channel = guild.get_channel(payload.channel_id)
+                content = ""
+                count = 0
 
-            for message in payload.cached_messages:
-                count += 1
-                content += "[" + message.author.name + "#" + message.author.discriminator + "]: " + message.content + "\n"
+                for message in payload.cached_messages:
+                    count += 1
+                    content += "[" + message.author.name + "#" + message.author.discriminator + "]: " + message.content + "\n"
 
-            self.embed = discord.Embed()
-            self.embed.colour = discord.Colour(0xbe4041)
-            self.embed.title = str(count) + " Messages bulk deleted in " + "#" + channel.name
-            self.embed.description = content
-            self.embed.timestamp = datetime.utcnow()
+                self.embed = discord.Embed()
+                self.embed.colour = discord.Colour(0xbe4041)
+                self.embed.title = str(count) + " Messages bulk deleted in " + "#" + channel.name
+                self.embed.description = content
+                self.embed.timestamp = datetime.utcnow()
 
-            await logging_channel.send(embed=self.embed)
+                await logging_channel.send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
@@ -197,23 +201,25 @@ class Logging(commands.Cog):
         :param payload:
         :return:
         """
-        guild = self.bot.get_guild(payload.guild_id)
+        # If not a DM message
+        if hasattr(payload, "guild_id"):
+            guild = self.bot.get_guild(payload.guild_id)
 
-        if self.logs[str(guild.id)]["channel"] is not None and payload.cached_message is None:
-            channel = guild.get_channel(payload.channel_id)
-            message = await channel.fetch_message(payload.message_id)
+            if self.logs[str(guild.id)]["channel"] is not None and payload.cached_message is None:
+                channel = guild.get_channel(payload.channel_id)
+                message = await channel.fetch_message(payload.message_id)
 
-            logging_channel = guild.get_channel(int(self.logs[str(guild.id)]["channel"]))
+                logging_channel = guild.get_channel(int(self.logs[str(guild.id)]["channel"]))
 
-            self.embed = discord.Embed(url=message.jump_url)
-            self.embed.colour = discord.Colour(0x8899d4)
-            self.embed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
-            self.embed.title = "Message edited in #" + channel.name
-            self.embed.description = "**Uncached Message**\n**+After:** " + message.content
-            self.embed.set_footer(text="ID: " + str(message.author.id))
-            self.embed.timestamp = datetime.utcnow()
+                self.embed = discord.Embed(url=message.jump_url)
+                self.embed.colour = discord.Colour(0x8899d4)
+                self.embed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
+                self.embed.title = "Message edited in #" + channel.name
+                self.embed.description = "**Uncached Message**\n**+After:** " + message.content
+                self.embed.set_footer(text="ID: " + str(message.author.id))
+                self.embed.timestamp = datetime.utcnow()
 
-            await logging_channel.send(embed=self.embed)
+                await logging_channel.send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_guild_channel_create(self, channel):

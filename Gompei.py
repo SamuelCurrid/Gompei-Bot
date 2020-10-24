@@ -170,6 +170,24 @@ async def on_message_edit(before, after):
 
 
 @gompei.event
+async def on_raw_message_edit(payload):
+    # If a DM message
+    if not hasattr(payload, "guild_id"):
+        # If the message is not cached
+        if payload.cached_message is None:
+            wpi_discord = gompei.get_guild(567169726250352640)
+            gompei_channel = wpi_discord.get_channel(746002454180528219)
+
+            message_embed = discord.Embed()
+            message_embed.colour = discord.Colour(0x8899d4)
+            message_embed.title = "Message edited by ???"
+            message_embed.set_footer(text="Uncached message: " + str(payload.message_id))
+            message_embed.timestamp = datetime.utcnow()
+
+            await gompei_channel.send(embed=message_embed)
+
+
+@gompei.event
 async def on_message_delete(message):
     if isinstance(message.channel, discord.channel.DMChannel) and not message.author.bot:
         message_embed = discord.Embed()
@@ -189,6 +207,23 @@ async def on_message_delete(message):
         gompei_channel = wpi_discord.get_channel(746002454180528219)
 
         await gompei_channel.send(embed=message_embed)
+
+@gompei.event
+async def on_raw_message_delete(payload):
+    # If a DM message
+    if not hasattr(payload, "guild_id"):
+        # If the message is not cached
+        if payload.cached_message is None:
+            wpi_discord = gompei.get_guild(567169726250352640)
+            gompei_channel = wpi_discord.get_channel(746002454180528219)
+
+            message_embed = discord.Embed()
+            message_embed.colour = discord.Colour(0xbe4041)
+            message_embed.title = "Message deleted by ???"
+            message_embed.set_footer(text="Uncached message: " + str(payload.message_id))
+            message_embed.timestamp = datetime.utcnow()
+
+            await gompei_channel.send(embed=message_embed)
 
 
 @gompei.event
