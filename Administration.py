@@ -178,9 +178,9 @@ class Administration(commands.Cog):
                 await ctx.message.add_reaction("👍")
 
     @commands.guild_only()
-    @commands.command(pass_context=True, aliases=['reactRemove'])
+    @commands.command(pass_context=True, aliases=["reactRemove", "echoRemoveReact"])
     @commands.check(moderator_perms)
-    async def echoRemoveReact(self, ctx, message_link, emote):
+    async def echo_remove_react(self, ctx, message_link, emote):
         message_id = int(message_link[message_link.rfind("/") + 1:])
         short_link = message_link[:message_link.rfind("/")]
         channel_id = int(short_link[short_link.rfind("/") + 1:])
@@ -406,7 +406,7 @@ class Administration(commands.Cog):
 
     @commands.command(pass_context=True, aliases=["clearWarn"])
     @commands.check(moderator_perms)
-    async def clearWarn(self, ctx, user):
+    async def clear_warn(self, ctx, user):
         member_id = parse_id(user)
         if str(member_id) in self.warns:
             del self.warns[str(member_id)]

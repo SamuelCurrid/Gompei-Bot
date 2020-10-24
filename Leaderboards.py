@@ -241,7 +241,7 @@ class Leaderboards(commands.Cog):
         for guild_id in remove_guilds:
             self.leaderboards.pop(str(guild_id))
 
-        await save_json(os.path.join("config", "leaderboards.json"), self.leaderboards)
+        save_json(os.path.join("config", "leaderboards.json"), self.leaderboards)
 
     async def update_leaderboards(self):
         """
