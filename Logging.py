@@ -42,11 +42,22 @@ class Logging(commands.Cog):
 
         # Add new guilds
         for guild_id in add_guilds:
-            self.logs[str(guild_id)] = {"channel": None}
+            self.logs[str(guild_id)] = {"channel": None, "last_audit": None, "invites": None}
 
         # Remove disconnected guilds
         for guild_id in remove_guilds:
             self.logs.pop(str(guild_id))
+
+        # Update invite links for guilds
+        for guild_id in self.logs:
+            guild = self.bot.get_guild(int(guild_id))
+            invites = await guild.invites()
+            cached_invites = {}
+
+            for invite in invites:
+                cached_invites[invite.code] = {"inviter_id": invite.inviter.id, "uses": invite.uses}
+
+            self.logs[str(guild_id)]["invites"] = cached_invites
 
         save_json(os.path.join("config", "logging.json"), self.logs)
 
@@ -99,8 +110,16 @@ class Logging(commands.Cog):
                 self.embed = discord.Embed()
                 self.embed.colour = discord.Colour(0xbe4041)
                 self.embed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
+                entries = await message.guild.audit_logs(limit=1).flatten()
+
                 self.embed.title = "Message deleted in " + "#" + channel.name
-                self.embed.description = message.content
+                if entries[0].action == discord.AuditLogAction.message_delete and entries[0].id != self.logs[str(message.guild.id)]["last_audit"]:
+                    user_id = entries[0].user.id
+                    self.embed.description = message.content + "\n\n**Deleted by <@" + str(user_id) + ">**"
+                    self.logs[str(message.guild.id)]["last_audit"] = entries[0].id
+                    save_json(os.path.join("config", "logging.json"), self.logs)
+                else:
+                    self.embed.description = message.content
 
                 if len(message.attachments) > 0:  # Check for attachments
                     for attachment in message.attachments:
@@ -124,6 +143,7 @@ class Logging(commands.Cog):
             guild = self.bot.get_guild(payload.guild_id)
 
             if self.logs[str(guild.id)]["channel"] is not None and payload.cached_message is None:
+                entries = await guild.audit_logs(limit=1).flatten()
                 logging_channel = guild.get_channel(int(self.logs[str(guild.id)]["channel"]))
                 channel = guild.get_channel(payload.channel_id)
 
@@ -132,6 +152,12 @@ class Logging(commands.Cog):
                 self.embed.title = "Message deleted in " + "#" + channel.name
                 self.embed.set_footer(text="Uncached message: " + str(payload.message_id))
                 self.embed.timestamp = datetime.utcnow()
+
+                if entries[0].action == discord.AuditLogAction.message_delete and entries[0].id != self.logs[str(guild.id)]["last_audit"]:
+                    user_id = entries[0].user.id
+                    self.embed.description = "**Deleted by <@" + str(user_id) + ">**"
+                    self.logs[str(guild.id)]["last_audit"] = entries[0].id
+                    save_json(os.path.join("config", "logging.json"), self.logs)
 
                 await logging_channel.send(embed=self.embed)
 
@@ -365,6 +391,13 @@ class Logging(commands.Cog):
         """
         if self.logs[str(member.guild.id)]["channel"] is not None:
             logging_channel = member.guild.get_channel(int(self.logs[str(member.guild.id)]["channel"]))
+            invites = await member.guild.invites()
+
+            for invite in invites:
+                if self.logs[str(member.guild.id)]["invites"][invite.code]["uses"] != invite.uses:
+                    inviter_id = self.logs[str(member.guild.id)]["invites"][invite.code]["inviter_id"]
+                    invite_code = invite.code
+                    self.logs[str(member.guild.id)]["invites"][invite.code]["uses"] = invite.uses
 
             self.embed = discord.Embed()
             self.embed.colour = discord.Colour(0x43b581)
@@ -373,7 +406,7 @@ class Logging(commands.Cog):
 
             creation_delta = time_delta_string(member.created_at, datetime.utcnow())
 
-            self.embed.description = "<@" + str(member.id) + "> " + make_ordinal(member.guild.member_count) + " to join\ncreated " + creation_delta + " ago"
+            self.embed.description = "<@" + str(member.id) + "> " + make_ordinal(member.guild.member_count) + " to join\ncreated " + creation_delta + " ago\n\nInvite link created by <@" + str(inviter_id) + "> (" + invite_code + ")"
             self.embed.set_footer(text="ID: " + str(member.id))
             self.embed.timestamp = datetime.utcnow()
 
@@ -598,15 +631,46 @@ class Logging(commands.Cog):
     async def on_invite_create(self, invite):
         """
         Sends a logging message containing
-        the invite code, inviter name, inviter id, expiration time
+        the invite code, inviter name, inviter id, expiration time, invite max uses
         """
 
-        return
+        logging_channel = invite.guild.get_channel(int(self.logs[str(invite.guild.id)]["channel"]))
+        if invite.max_age == 0:
+            expires = "Never"
+        elif invite.max_age == 1800:
+            expires = "30 minutes"
+        elif invite.max_age == 3600:
+            expires = "1 hour"
+        elif invite.max_age == 21600:
+            expires = "6 hours"
+        elif invite.max_age == 43200:
+            expires = "12 hours"
+        else:
+            expires = "1 day"
+
+        self.logs[str(invite.guild.id)]["invites"][invite.code] = {"inviter_id": invite.inviter.id, "uses": invite.uses}
+        self.embed = discord.Embed()
+        self.embed.title = "Invite created to #" + invite.channel.name
+        self.embed.description = "Code: " + invite.code + "\nMax Uses: " + str(invite.max_uses) + "\nExpires: " + expires + "\nTemporary Membership: " + str(invite.temporary) + "\n\n**Creator: <@" + str(invite.inviter.id) + ">**"
+        self.embed.set_footer(text="ID: " + str(invite.inviter.id))
+        self.embed.colour = discord.Colour(0x43b581)
+
+        await logging_channel.send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_invite_delete(self, invite):
         """
         Sends a logging message containing
-        the invite code, inviter name, and expiration time
+        the invite code and moderator responsible for deleting it
         """
-        return
+        logging_channel = invite.guild.get_channel(int(self.logs[str(invite.guild.id)]["channel"]))
+        entries = await invite.guild.audit_logs(limit=1).flatten()
+        deleter = entries[0].user.id
+
+        self.logs[str(invite.guild.id)]["invites"].pop(invite.code)
+        self.embed = discord.Embed()
+        self.embed.title = "Invite deleted to #" + invite.channel.name
+        self.embed.description = "Code: " + invite.code + "\n\n**Deleted by <@" + str(deleter) + ">**"
+        self.embed.colour = discord.Colour(0xbe4041)
+
+        await logging_channel.send(embed=self.embed)
