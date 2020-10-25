@@ -28,8 +28,8 @@ class Administration(commands.Cog):
         :param channel: channel to send the message to
         """
         # Check if the channel exists
-        channel = ctx.guild.get_channel(int(channel[2:-1]))
-        if channel is not None:
+        echo_channel = ctx.guild.get_channel(int(channel[2:-1]))
+        if echo_channel is not None:
 
             # Check for attachments to forward
             attachments = []
@@ -40,10 +40,10 @@ class Administration(commands.Cog):
             # Get message content and check length
             message = ctx.message.content[7 + len(channel):]
             if len(message) > 0:
-                message = await channel.send(message, files=attachments)
+                message = await echo_channel.send(message, files=attachments)
                 await ctx.send("Message sent (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(message.channel.id) + "/" + str(message.id) + ">)")
             elif len(attachments) > 0:
-                message = await channel.send(files=attachments)
+                message = await echo_channel.send(files=attachments)
                 await ctx.send("Message sent (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(message.channel.id) + "/" + str(message.id) + ">)")
             else:
                 await ctx.send("No content to send.")
