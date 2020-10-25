@@ -447,48 +447,68 @@ class Logging(commands.Cog):
         logging_channel = before.guild.get_channel(int(self.logs[str(before.guild.id)]["channel"]))
 
         # Role checks
-        if len(before.roles) > len(after.roles):
-            for i in range(0, len(after.roles)):
-                if before.roles[i] != after.roles[i]:
+        added_roles = [x for x in after.roles if x not in before.roles]
+        removed_roles = [x for x in before.roles if x not in after.roles]
+
+        # If roles edited
+        if len(added_roles) + len(removed_roles) > 0:
+            if len(added_roles) > 0:
+                # Roles have been added and removed
+                if len(removed_roles) > 0:
                     self.embed = discord.Embed()
-                    self.embed.colour = discord.Colour(0xbe4041)
+                    self.embed.colour = discord.Colour(0x8899d4)
                     self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
-                    self.embed.title = "Role removed"
-                    self.embed.description = "<@&" + str(before.roles[i].id) + ">"
+                    self.embed.title = "Roles updated"
+
+                    self.embed.description = "**Added:** "
+                    for role in added_roles:
+                        self.embed.description += "<@&" + str(role.id) + "> "
+                    self.embed.description += "\n**Removed:** "
+                    for role in removed_roles:
+                        self.embed.description += "<@&" + str(role.id) + "> "
 
                     self.embed.set_footer(text="ID: " + str(after.id))
                     self.embed.timestamp = datetime.utcnow()
 
                     await logging_channel.send(embed=self.embed)
-                    break
+                    return
+                else:
+                    # Roles have only been added
+                    self.embed = discord.Embed()
+                    self.embed.colour = discord.Colour(0x43b581)
+                    self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+                    if len(added_roles) > 1:
+                        self.embed.title = "Roles added"
+                    else:
+                        self.embed.title = "Role added"
+                    self.embed.description = ""
+                    for role in added_roles:
+                        self.embed.description += "<@&" + str(role.id) + "> "
 
-        elif len(before.roles) < len(after.roles):
-            if len(before.roles) == 1:
+                    self.embed.set_footer(text="ID: " + str(after.id))
+                    self.embed.timestamp = datetime.utcnow()
+
+                    await logging_channel.send(embed=self.embed)
+                    return
+
+            else:
+                # Roles have only been removed
                 self.embed = discord.Embed()
-                self.embed.colour = discord.Colour(0x8899d4)
+                self.embed.colour = discord.Colour(0xbe4041)
                 self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
-                self.embed.title = "Role added"
-                self.embed.description = "<@&" + str(after.roles[1].id) + ">"
+                if len(removed_roles) > 1:
+                    self.embed.title = "Roles removed"
+                else:
+                    self.embed.title = "Role removed"
+                self.embed.description = ""
+                for role in removed_roles:
+                    self.embed.description += "<@&" + str(role.id) + "> "
 
                 self.embed.set_footer(text="ID: " + str(after.id))
                 self.embed.timestamp = datetime.utcnow()
 
                 await logging_channel.send(embed=self.embed)
                 return
-
-            for i in range(0, len(before.roles) + 1):
-                if before.roles[i] != after.roles[i]:
-                    self.embed = discord.Embed()
-                    self.embed.colour = discord.Colour(0x8899d4)
-                    self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
-                    self.embed.title = "Role added"
-                    self.embed.description = "<@&" + str(after.roles[i].id) + ">"
-
-                    self.embed.set_footer(text="ID: " + str(after.id))
-                    self.embed.timestamp = datetime.utcnow()
-
-                    await logging_channel.send(embed=self.embed)
-                    break
 
         # Nickname check
         elif before.nick != after.nick:
