@@ -136,9 +136,9 @@ async def on_message(message):
             await gompei_channel.send(embed=message_embed)
     else:
         if not message.author.bot:
-            if "769305840112762950" in message.content:
+            if "wpiGompeiHug" in message.content:
                 await message.add_reaction("❤")
-            if "gompei" in message.content.lower() or "672453835863883787" in message.content.lower():
+            elif "gompei" in message.content.lower() or "672453835863883787" in message.content.lower():
                 await message.add_reaction("👋")
 
     await gompei.process_commands(message)
@@ -208,6 +208,7 @@ async def on_message_delete(message):
 
         await gompei_channel.send(embed=message_embed)
 
+
 @gompei.event
 async def on_raw_message_delete(payload):
     # If a DM message
@@ -227,7 +228,7 @@ async def on_raw_message_delete(payload):
 
 
 @gompei.event
-async def on_typing(channel, user):
+async def on_typing(channel, user, when):
     if isinstance(channel, discord.channel.DMChannel) and not user.bot:
         wpi_discord = gompei.get_guild(567169726250352640)
         gompei_channel = wpi_discord.get_channel(746002454180528219)
