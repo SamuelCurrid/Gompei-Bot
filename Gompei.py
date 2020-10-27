@@ -32,10 +32,11 @@ access_roles = [
     748941410639806554,
     634223378773049365
 ]
-greetings = ["hello", "hi", "greetings", "howdy", "salutations", "hey", "oi", "dear", "yo ", "morning", "afternoon", "evening"]
+greetings = ["hello", "hi", "greetings", "howdy", "salutations", "hey", "oi", "dear", "yo ", "morning", "afternoon", "evening", "sup", "G'day", "good day"]
 gompei_references = ["gompei", "672453835863883787", "goat"]
 love_references = ["gompeiHug", "love", "ily", "<3", "❤"]
-hate_references = ["fuck you", "sucks", "fucker", "idiot", "shithead", "eat shit"]
+hate_references = ["fuck you", "sucks", "fucker", "idiot", "shithead", "eat shit", "hate"]
+violent_references = ["kill", "murder", "attack", "skin", "ambush", "stab"]
 
 
 async def update_guilds():
@@ -117,6 +118,8 @@ async def on_message(message):
     """
     Forwards DMs to a channel
     """
+    await gompei.process_commands(message)
+
     if isinstance(message.channel, discord.channel.DMChannel) and not message.author.bot:
         message_embed = discord.Embed(description=message.content, timestamp=datetime.utcnow())
         message_embed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
@@ -148,9 +151,8 @@ async def on_message(message):
                     await message.add_reaction("😢")
                 elif any(x in message.content.lower() for x in greetings):
                     await message.add_reaction("👋")
-
-
-    await gompei.process_commands(message)
+                elif any(x in message.content.lower() for x in violent_references):
+                    await message.add_reaction("😨")
 
 
 @gompei.event
