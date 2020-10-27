@@ -32,6 +32,10 @@ access_roles = [
     748941410639806554,
     634223378773049365
 ]
+greetings = ["hello", "hi", "greetings", "howdy", "salutations", "hey", "oi", "dear", "yo ", "morning", "afternoon", "evening"]
+gompei_references = ["gompei", "672453835863883787", "goat"]
+love_references = ["gompeiHug", "love", "ily", "<3", "❤"]
+hate_references = ["fuck you", "sucks", "fucker", "idiot", "shithead", "eat shit"]
 
 
 async def update_guilds():
@@ -136,10 +140,15 @@ async def on_message(message):
             await gompei_channel.send(embed=message_embed)
     else:
         if not message.author.bot:
-            if "wpiGompeiHug" in message.content:
-                await message.add_reaction("❤")
-            elif "gompei" in message.content.lower() or "672453835863883787" in message.content.lower():
-                await message.add_reaction("👋")
+
+            if any(x in message.content.lower() for x in gompei_references):
+                if any(x in message.content.lower() for x in love_references):
+                    await message.add_reaction("❤")
+                elif any(x in message.content.lower() for x in hate_references):
+                    await message.add_reaction("😢")
+                elif any(x in message.content.lower() for x in greetings):
+                    await message.add_reaction("👋")
+
 
     await gompei.process_commands(message)
 
