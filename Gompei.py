@@ -149,7 +149,6 @@ async def on_message(message):
                 elif any(x in message.content.lower() for x in greetings):
                     await message.add_reaction("👋")
 
-
     await gompei.process_commands(message)
 
 
@@ -263,17 +262,17 @@ async def on_member_update(before, after):
 
 # Commands
 @gompei.command(pass_context=True)
+@commands.check(dm_commands)
 async def help(ctx):
     """
     Sends help information
     """
-    if isinstance(ctx.channel, discord.DMChannel) or ctx.channel.id == 567179438047887381:
-        help_embed = discord.Embed(title="Gompei Bot", colour=discord.Colour.blue())
-        help_embed.add_field(name="Documentation", value="https://samuelcurrid.github.io/Gompei-Bot/documentation.html")
-        help_embed.set_thumbnail(url="https://raw.githubusercontent.com/SamuelCurrid/Gompei-Bot/master/assets/gompei.png")
-        help_embed.set_footer(text="Source: https://github.com/SamuelCurrid/Gompei-Bot/")
+    help_embed = discord.Embed(title="Gompei Bot", colour=discord.Colour.blue())
+    help_embed.add_field(name="Documentation", value="https://samuelcurrid.github.io/Gompei-Bot/documentation.html")
+    help_embed.set_thumbnail(url="https://raw.githubusercontent.com/SamuelCurrid/Gompei-Bot/master/assets/gompei.png")
+    help_embed.set_footer(text="Source: https://github.com/SamuelCurrid/Gompei-Bot/")
 
-        await ctx.message.channel.send(embed=help_embed)
+    await ctx.message.channel.send(embed=help_embed)
 
 
 @gompei.command(pass_context=True, name="prefix")
