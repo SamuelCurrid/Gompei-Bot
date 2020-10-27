@@ -287,7 +287,7 @@ async def ping(ctx):
 @commands.check(dm_commands)
 async def lockout(ctx):
     guild = gompei.get_guild(567169726250352640)
-    member = guild.get_member(ctx.message.author.id)
+    member = await guild.fetch_member(ctx.message.author.id)
 
     # Get lockout info
     with open(os.path.join("config", "lockout.json"), "r+") as lockout_file:
@@ -316,7 +316,7 @@ async def lockout(ctx):
 @commands.check(dm_commands)
 async def let_me_in(ctx):
     guild = gompei.get_guild(567169726250352640)
-    member = guild.get_member(ctx.message.author.id)
+    member = await guild.fetch_member(ctx.message.author.id)
 
     # Get lockout info
     with open(os.path.join("config", "lockout.json"), "r+") as lockout_file:
