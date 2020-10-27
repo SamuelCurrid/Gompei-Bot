@@ -75,15 +75,11 @@ class Logging(commands.Cog):
         :param arg1: channel ID or mention
         """
         channel = ctx.guild.get_channel(parse_id(arg1))
-        print(parse_id(arg1))
 
         if self.logs[str(ctx.message.guild.id)]["channel"] != channel.id:
             self.logs[str(ctx.message.guild.id)]["channel"] = channel.id
 
-            print("Updating guild " + str(ctx.message.guild.id) + " to use logging channel " + str(channel.id))
-
             save_json(os.path.join("config", "logging.json"), self.logs)
-            print("Finished updating logging channel")
             await ctx.send("Successfully updated logging channel to <#" + str(channel.id) + ">")
 
     @change_logging.error
@@ -228,24 +224,26 @@ class Logging(commands.Cog):
         :return:
         """
         # If not a DM message
-        if hasattr(payload, "guild_id"):
-            guild = self.bot.get_guild(payload.guild_id)
+        guild = self.bot.get_guild(567169726250352640)
 
-            if self.logs[str(guild.id)]["channel"] is not None and payload.cached_message is None:
-                channel = guild.get_channel(payload.channel_id)
-                message = await channel.fetch_message(payload.message_id)
+        if self.logs[str(guild.id)]["channel"] is not None and payload.cached_message is None:
+            channel = guild.get_channel(payload.channel_id)
+            # If a dm message
+            if channel is None:
+                return
+            message = await channel.fetch_message(payload.message_id)
 
-                logging_channel = guild.get_channel(int(self.logs[str(guild.id)]["channel"]))
+            logging_channel = guild.get_channel(int(self.logs[str(guild.id)]["channel"]))
 
-                self.embed = discord.Embed(url=message.jump_url)
-                self.embed.colour = discord.Colour(0x8899d4)
-                self.embed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
-                self.embed.title = "Message edited in #" + channel.name
-                self.embed.description = "**Uncached Message**\n**+After:** " + message.content
-                self.embed.set_footer(text="ID: " + str(message.author.id))
-                self.embed.timestamp = datetime.utcnow()
+            self.embed = discord.Embed(url=message.jump_url)
+            self.embed.colour = discord.Colour(0x8899d4)
+            self.embed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
+            self.embed.title = "Message edited in #" + channel.name
+            self.embed.description = "**Uncached Message**\n**+After:** " + message.content
+            self.embed.set_footer(text="ID: " + str(message.author.id))
+            self.embed.timestamp = datetime.utcnow()
 
-                await logging_channel.send(embed=self.embed)
+            await logging_channel.send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_guild_channel_create(self, channel):
