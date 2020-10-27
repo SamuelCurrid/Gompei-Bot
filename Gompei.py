@@ -171,13 +171,14 @@ async def on_message_edit(before, after):
 
 @gompei.event
 async def on_raw_message_edit(payload):
-    # If a DM message
-    if not hasattr(payload, "guild_id"):
-        # If the message is not cached
-        if payload.cached_message is None:
-            wpi_discord = gompei.get_guild(567169726250352640)
-            gompei_channel = wpi_discord.get_channel(746002454180528219)
+    # If the message is not cached
+    if payload.cached_message is None:
+        wpi_discord = gompei.get_guild(567169726250352640)
+        gompei_channel = wpi_discord.get_channel(746002454180528219)
+        channel = wpi_discord.get_channel(payload.channel_id)
 
+        # If not in the WPI discord
+        if channel is None:
             message_embed = discord.Embed()
             message_embed.colour = discord.Colour(0x8899d4)
             message_embed.title = "Message edited by ???"
@@ -301,12 +302,16 @@ async def lockout(ctx):
         for role in member.roles:
             role_ids.append(role.id)
 
+        # Remove members roles (check if nitro booster)
+        if member.premium_since is None:
+            await member.edit(roles=[])
+            role_ids.remove(620478981946212363)
+        else:
+            await member.edit(roles=[guild.get_role(620478981946212363)])
+
         # Store roles
         lockout_info[str(member.id)] = role_ids
         save_json(os.path.join("config", "lockout.json"), lockout_info)
-
-        # Remove members roles
-        await member.edit(roles=[])
 
         # DM User
         await member.send("Locked you out of the server. To get access back just type \".letmein\" here")
