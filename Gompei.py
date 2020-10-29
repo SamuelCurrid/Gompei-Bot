@@ -75,7 +75,9 @@ def get_prefix(client, message):
 
 
 # Initialize Bot
-gompei = commands.Bot(command_prefix=get_prefix, case_insensitive=True)
+intents = discord.Intents.default()
+intents.members = True
+gompei = commands.Bot(command_prefix=get_prefix, case_insensitive=True, intents=intents)
 
 # Load Extensions
 print("Loading cogs...")
@@ -118,41 +120,42 @@ async def on_message(message):
     """
     Forwards DMs to a channel
     """
-    await gompei.process_commands(message)
+    if not message.author.bot:
+        await gompei.process_commands(message)
 
-    if isinstance(message.channel, discord.channel.DMChannel) and not message.author.bot:
-        message_embed = discord.Embed(description=message.content, timestamp=datetime.utcnow())
-        message_embed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
-        message_embed.set_footer(text=message.author.id)
-        wpi_discord = gompei.get_guild(567169726250352640)
-        gompei_channel = wpi_discord.get_channel(746002454180528219)
+        if isinstance(message.channel, discord.channel.DMChannel):
+            message_embed = discord.Embed(description=message.content, timestamp=datetime.utcnow())
+            message_embed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
+            message_embed.set_footer(text=message.author.id)
+            wpi_discord = gompei.get_guild(567169726250352640)
+            gompei_channel = wpi_discord.get_channel(746002454180528219)
 
-        attachments = []
-        if len(message.attachments) > 0:
-            for i in message.attachments:
-                attachments.append(await i.to_file())
+            attachments = []
+            if len(message.attachments) > 0:
+                for i in message.attachments:
+                    attachments.append(await i.to_file())
 
-        if len(attachments) > 0:
-            if len(message.content) > 0:
-                message_embed.description = message.content + "\n\n**<File(s) Attached>**"
+            if len(attachments) > 0:
+                if len(message.content) > 0:
+                    message_embed.description = message.content + "\n\n**<File(s) Attached>**"
+                else:
+                    message_embed.description = message.content + "**<File(s) Attached>**"
+                await gompei_channel.send(embed=message_embed)
+                await gompei_channel.send(files=attachments)
             else:
-                message_embed.description = message.content + "**<File(s) Attached>**"
-            await gompei_channel.send(embed=message_embed)
-            await gompei_channel.send(files=attachments)
+                await gompei_channel.send(embed=message_embed)
         else:
-            await gompei_channel.send(embed=message_embed)
-    else:
-        if not message.author.bot:
+            if not message.author.bot:
 
-            if any(x in message.content.lower() for x in gompei_references):
-                if any(x in message.content.lower() for x in love_references):
-                    await message.add_reaction("❤")
-                elif any(x in message.content.lower() for x in hate_references):
-                    await message.add_reaction("😢")
-                elif any(x in message.content.lower() for x in greetings):
-                    await message.add_reaction("👋")
-                elif any(x in message.content.lower() for x in violent_references):
-                    await message.add_reaction("😨")
+                if any(x in message.content.lower() for x in gompei_references):
+                    if any(x in message.content.lower() for x in love_references):
+                        await message.add_reaction("❤")
+                    elif any(x in message.content.lower() for x in hate_references):
+                        await message.add_reaction("😢")
+                    elif any(x in message.content.lower() for x in greetings):
+                        await message.add_reaction("👋")
+                    elif any(x in message.content.lower() for x in violent_references):
+                        await message.add_reaction("😨")
 
 
 @gompei.event
@@ -316,7 +319,6 @@ async def lockout(ctx):
         # Remove members roles (check if nitro booster)
         if member.premium_since is None:
             await member.edit(roles=[])
-            role_ids.remove(620478981946212363)
         else:
             await member.edit(roles=[guild.get_role(620478981946212363)])
 
