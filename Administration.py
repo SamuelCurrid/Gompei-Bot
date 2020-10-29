@@ -454,3 +454,20 @@ class Administration(commands.Cog):
             await lock_channel.send(":white_check_mark: **Unlocked " + lock_channel.name + "**")
         else:
             await ctx.send("Channel is not locked")
+
+    @commands.guild_only()
+    @commands.command(pass_context=True)
+    @commands.check(moderator_perms)
+    async def slowmode(self, ctx, channel, time):
+        channel = ctx.guild.get_channel(parse_id(channel))
+        if channel is None:
+            await ctx.send("Not a valid channel")
+        else:
+            seconds = parse(time)
+            if seconds is None:
+                await ctx.send("Not a valid time format, try again")
+            elif seconds > 21600:
+                await ctx.send("Slowmode delay is too long")
+            else:
+                await channel.edit(slowmode_delay=seconds)
+                await ctx.send("Successfully set slowmode delay to " + str(seconds) + " seconds in #" + channel.name)
