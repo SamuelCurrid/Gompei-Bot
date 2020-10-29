@@ -5,7 +5,6 @@ from ReactionRoles import ReactionRoles
 from Leaderboards import Leaderboards
 from MovieVoting import MovieVoting
 from Minesweeper import Minesweeper
-from Statistics import Statistics
 from discord.ext import commands
 from datetime import datetime
 from Hangman import Hangman
