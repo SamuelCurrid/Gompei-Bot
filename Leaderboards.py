@@ -1,8 +1,9 @@
 from GompeiFunctions import load_json, save_json
 from Permissions import command_channels
-from discord.ext import commands
 from datetime import datetime
+from discord.ext import commands
 
+import dateutil.parser
 import discord
 import os
 
@@ -137,7 +138,7 @@ class Leaderboards(commands.Cog):
         if guild is not None:
             channel = guild.get_channel(payload.channel_id)
             message = await channel.fetch_message(payload.message_id)
-            user = guild.get_member(payload.user_id)
+            user = await guild.fetch_member(payload.user_id)
 
             # Update cached leaderboards
             if not payload.member.bot:
@@ -252,8 +253,8 @@ class Leaderboards(commands.Cog):
             leaderboard = self.leaderboards[guild_id]
             lastUpdate = leaderboard["last_update"]
 
-            if leaderboard["lastUpdate"] is not None:
-                lastUpdate = datetime.fromisoformat(leaderboard["last_update"])
+            if lastUpdate is not None:
+                lastUpdate = dateutil.parser.parse(leaderboard["last_update"])
 
             for channel in self.bot.get_guild(int(guild_id)).text_channels:
 
@@ -448,7 +449,7 @@ class Leaderboards(commands.Cog):
         if ctx.message.author.guild_permissions.administrator:
             guild = ctx.message.guild
 
-            print("Resetting leaderboards for " + str(guild.id))
+            await ctx.send("Resetting leaderboards...")
 
             self.leaderboards[str(guild.id)]["last_update"] = None
 
@@ -462,7 +463,7 @@ class Leaderboards(commands.Cog):
 
             save_json(os.path.join("config", "leaderboards.json"), self.leaderboards)
             await self.update_leaderboards()
-            print("Successfully reset leaderboards")
+            await ctx.send("Successfully reset leaderboards")
 
     async def score_leaderboard(self, guild, leaderboard, leaderboardType):
         leaderboard = {k: v for k, v in sorted(leaderboard.items(), key=lambda a: a[1], reverse=True)}
