@@ -233,17 +233,18 @@ class Logging(commands.Cog):
                 return
             message = await channel.fetch_message(payload.message_id)
 
-            logging_channel = guild.get_channel(int(self.logs[str(guild.id)]["channel"]))
+            if not message.author.bot:
+                logging_channel = guild.get_channel(int(self.logs[str(guild.id)]["channel"]))
 
-            self.embed = discord.Embed(url=message.jump_url)
-            self.embed.colour = discord.Colour(0x8899d4)
-            self.embed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
-            self.embed.title = "Message edited in #" + channel.name
-            self.embed.description = "**Uncached Message**\n**+After:** " + message.content
-            self.embed.set_footer(text="ID: " + str(message.author.id))
-            self.embed.timestamp = datetime.utcnow()
+                self.embed = discord.Embed(url=message.jump_url)
+                self.embed.colour = discord.Colour(0x8899d4)
+                self.embed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
+                self.embed.title = "Message edited in #" + channel.name
+                self.embed.description = "**Uncached Message**\n**+After:** " + message.content
+                self.embed.set_footer(text="ID: " + str(message.author.id))
+                self.embed.timestamp = datetime.utcnow()
 
-            await logging_channel.send(embed=self.embed)
+                await logging_channel.send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_guild_channel_create(self, channel):
@@ -536,23 +537,22 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the property of the user updated before and after
         """
-        if self.logs["567169726250352640"]["channel"] is not None:
 
-            logging_channel = self.bot.get_guild(567169726250352640).get_channel(738536336016801793)
+        logging_channel = self.bot.get_guild(567169726250352640).get_channel(738536336016801793)
 
-            # Check for avatar update
-            if before.avatar != after.avatar:
-                self.embed = discord.Embed()
-                self.embed.colour = discord.Colour(0x8899d4)
-                self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
-                self.embed.title = "Avatar update"
-                self.embed.set_image(url=after.avatar_url)
-                self.embed.description = "<@" + str(after.id) + ">"
+        # Check for avatar update
+        if before.avatar != after.avatar:
+            self.embed = discord.Embed()
+            self.embed.colour = discord.Colour(0x8899d4)
+            self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+            self.embed.title = "Avatar update"
+            self.embed.set_image(url=after.avatar_url)
+            self.embed.description = "<@" + str(after.id) + ">"
 
-                self.embed.set_footer(text="ID: " + str(after.id))
-                self.embed.timestamp = datetime.utcnow()
+            self.embed.set_footer(text="ID: " + str(after.id))
+            self.embed.timestamp = datetime.utcnow()
 
-                await logging_channel.send(embed=self.embed)
+            await logging_channel.send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_guild_update(self, before, after):
