@@ -609,6 +609,7 @@ class Logging(commands.Cog):
             self.embed.colour = discord.Colour(0x43b581)
             self.embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
             self.embed.set_footer(text="ID: " + str(member.id))
+            self.embed.timestamp = datetime.utcnow()
             await logging_channel.send(embed=self.embed)
 
         elif after.channel is None:
@@ -618,6 +619,7 @@ class Logging(commands.Cog):
             self.embed.colour = discord.Colour(0xbe4041)
             self.embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
             self.embed.set_footer(text="ID: " + str(member.id))
+            self.embed.timestamp = datetime.utcnow()
             await logging_channel.send(embed=self.embed)
 
         elif before.channel.id != after.channel.id:
@@ -627,6 +629,7 @@ class Logging(commands.Cog):
             self.embed.colour = discord.Colour(0x8899d4)
             self.embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
             self.embed.set_footer(text="ID: " + str(member.id))
+            self.embed.timestamp = datetime.utcnow()
             await logging_channel.send(embed=self.embed)
 
     @commands.Cog.listener()
