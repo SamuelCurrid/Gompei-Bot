@@ -17,20 +17,7 @@ import sys
 
 
 settings = {}
-access_roles = [
-    664719508404961293,
-    567179738683015188,
-    578350297978634240,
-    578350427209203712,
-    578350479688466455,
-    692461531983511662,
-    599319106478669844,
-    638748298152509461,
-    638748298152509461,
-    630589807084699653,
-    748941410639806554,
-    634223378773049365
-]
+
 greetings = ["hello", "hi", "greetings", "howdy", "salutations", "hey", "oi", "dear", "yo ", "morning", "afternoon", "evening", "sup", "G'day", "good day"]
 gompei_references = ["gompei", "672453835863883787", "goat"]
 love_references = ["gompeiHug", "love", "ily", "<3", "❤"]
@@ -353,6 +340,10 @@ async def set_dm_channel(ctx, channel):
 
         if channel is None:
             await ctx.send("Not a valid channel")
+        else:
+            settings["dm_channel"] = channel.id
+            save_json(os.path.join("config", "settings.json"), settings)
+            await ctx.send("Successfully updated DM channel to <#" + channel.id + ">")
 
 
 @gompei.command(pass_context=True, aliases=["addAccessRole"])
@@ -423,7 +414,14 @@ async def add_opt_in_role(ctx, *roles):
 async def set_status(ctx):
     message = ctx.message.content[ctx.message.content.find(" "):]
 
-    settings["status"]
+    if len(message) > 128:
+        await ctx.send("This status is too long! (128 character limit)")
+    else:
+        settings["status"] = message
+        await gompei.change_presence(activity=discord.Game(name=settings["status"]))
+        save_json(os.path.join("config", "settings.json"), settings)
+
+        await ctx.send("Successfully updated status")
 
 # Run the bot
 gompei.run(sys.argv[1])
