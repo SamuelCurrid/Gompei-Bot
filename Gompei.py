@@ -1,6 +1,6 @@
-from GompeiFunctions import load_json, save_json
+from GompeiFunctions import load_json, save_json, parse_id
 from Administration import Administration
-from Permissions import command_channels, dm_commands
+from Permissions import dm_commands, administrator_perms
 from ReactionRoles import ReactionRoles
 from Leaderboards import Leaderboards
 from MovieVoting import MovieVoting
@@ -38,39 +38,8 @@ hate_references = ["fuck you", "sucks", "fucker", "idiot", "shithead", "eat shit
 violent_references = ["kill", "murder", "attack", "skin", "ambush", "stab"]
 
 
-async def update_guilds():
-    """
-    Updates guilds included in leaderboards.json
-    """
-    global settings
-
-    saved_guilds = []
-    for guild_id in settings:
-        saved_guilds.append(int(guild_id))
-
-    guilds = []
-    for guild in gompei.guilds:
-        guilds.append(guild.id)
-
-    add_guilds = [x for x in guilds if x not in saved_guilds]
-    remove_guilds = [x for x in saved_guilds if x not in guilds]
-
-    # Add new guilds
-    for guild_id in add_guilds:
-        settings[str(guild_id)] = {"prefix": "."}
-
-    # Remove disconnected guilds
-    for guild_id in remove_guilds:
-        settings.pop(str(guild_id))
-
-    save_json(os.path.join("config", "settings.json"), settings)
-
-
 def get_prefix(client, message):
-    if isinstance(message.channel, discord.DMChannel):
-        return "."
-
-    return settings[str(message.guild.id)]["prefix"]
+    return settings["prefix"]
 
 
 # Initialize Bot
@@ -90,7 +59,6 @@ else:
 
 gompei.add_cog(Hangman(gompei))
 gompei.add_cog(Minesweeper(gompei))
-gompei.add_cog(Statistics(gompei))
 gompei.add_cog(Logging(gompei))
 gompei.add_cog(ReactionRoles(gompei))
 print("Cogs loaded")
@@ -108,8 +76,8 @@ async def on_ready():
     global settings
 
     settings = load_json(os.path.join("config", "settings.json"))
-    await gompei.change_presence(activity=discord.Game(name="Underwater Hockey"))
-    await update_guilds()
+    if settings["status"] is not None:
+        await gompei.change_presence(activity=discord.Game(name=settings["status"]))
 
     print("Logged on as {0}".format(gompei.user))
 
@@ -122,12 +90,12 @@ async def on_message(message):
     if not message.author.bot:
         await gompei.process_commands(message)
 
-        if isinstance(message.channel, discord.channel.DMChannel):
+        if isinstance(message.channel, discord.channel.DMChannel) and settings["dm_channel_id"] is not None:
             message_embed = discord.Embed(description=message.content, timestamp=datetime.utcnow())
             message_embed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
             message_embed.set_footer(text=message.author.id)
-            wpi_discord = gompei.get_guild(567169726250352640)
-            gompei_channel = wpi_discord.get_channel(746002454180528219)
+            guild = gompei.get_guild(settings["guild_id"])
+            dm_channel = guild.get_channel(settings["dm_channel_id"])
 
             attachments = []
             if len(message.attachments) > 0:
@@ -139,10 +107,12 @@ async def on_message(message):
                     message_embed.description = message.content + "\n\n**<File(s) Attached>**"
                 else:
                     message_embed.description = message.content + "**<File(s) Attached>**"
-                await gompei_channel.send(embed=message_embed)
-                await gompei_channel.send(files=attachments)
+
+                message_embed.timestamp = datetime.utcnow()
+                await dm_channel.send(embed=message_embed)
+                await dm_channel.send(files=attachments)
             else:
-                await gompei_channel.send(embed=message_embed)
+                await dm_channel.send(embed=message_embed)
         else:
             if not message.author.bot:
 
@@ -165,7 +135,7 @@ async def on_message_edit(before, after):
     :param after:
     :return:
     """
-    if isinstance(before.channel, discord.channel.DMChannel) and not before.author.bot:
+    if isinstance(before.channel, discord.channel.DMChannel) and not before.author.bot and settings["dm_channel_id"] is not None:
         if before.content is after.content:
             return
 
@@ -175,22 +145,23 @@ async def on_message_edit(before, after):
         message_embed.title = "Message edited by " + after.author.name + "#" + str(after.author.discriminator)
         message_embed.description = "**Before:** " + before.content + "\n**+After:** " + after.content
         message_embed.set_footer(text="ID: " + str(before.author.id))
+        message_embed.timestamp = datetime.utcnow()
 
-        wpi_discord = gompei.get_guild(567169726250352640)
-        gompei_channel = wpi_discord.get_channel(746002454180528219)
+        guild = gompei.get_guild(settings["guild_id"])
+        dm_channel = guild.get_channel(settings["dm_channel_id"])
 
-        await gompei_channel.send(embed=message_embed)
+        await dm_channel.send(embed=message_embed)
 
 
 @gompei.event
 async def on_raw_message_edit(payload):
     # If the message is not cached
     if payload.cached_message is None:
-        wpi_discord = gompei.get_guild(567169726250352640)
-        gompei_channel = wpi_discord.get_channel(746002454180528219)
-        channel = wpi_discord.get_channel(payload.channel_id)
+        guild = gompei.get_guild(settings["guild_id"])
+        dm_channel = guild.get_channel(settings["dm_channel_id"])
+        channel = guild.get_channel(payload.channel_id)
 
-        # If not in the WPI discord
+        # If not in the guild
         if channel is None:
             message_embed = discord.Embed()
             message_embed.colour = discord.Colour(0x8899d4)
@@ -198,12 +169,13 @@ async def on_raw_message_edit(payload):
             message_embed.set_footer(text="Uncached message: " + str(payload.message_id))
             message_embed.timestamp = datetime.utcnow()
 
-            await gompei_channel.send(embed=message_embed)
+            await dm_channel.send(embed=message_embed)
 
 
 @gompei.event
 async def on_message_delete(message):
-    if isinstance(message.channel, discord.channel.DMChannel) and not message.author.bot:
+    # If a DM message
+    if isinstance(message.channel, discord.channel.DMChannel) and not message.author.bot and settings["dm_channel_id"] is not None:
         message_embed = discord.Embed()
         message_embed.colour = discord.Colour(0xbe4041)
         message_embed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
@@ -217,20 +189,20 @@ async def on_message_delete(message):
         message_embed.set_footer(text="ID: " + str(message.author.id))
         message_embed.timestamp = datetime.utcnow()
 
-        wpi_discord = gompei.get_guild(567169726250352640)
-        gompei_channel = wpi_discord.get_channel(746002454180528219)
+        guild = gompei.get_guild(settings["guild_id"])
+        dm_channel = guild.get_channel(settings["dm_channel_id"])
 
-        await gompei_channel.send(embed=message_embed)
+        await dm_channel.send(embed=message_embed)
 
 
 @gompei.event
 async def on_raw_message_delete(payload):
     # If a DM message
-    if not hasattr(payload, "guild_id"):
+    if not hasattr(payload, "guild_id") and settings["dm_channel_id"] is not None:
         # If the message is not cached
         if payload.cached_message is None:
-            wpi_discord = gompei.get_guild(567169726250352640)
-            gompei_channel = wpi_discord.get_channel(746002454180528219)
+            guild = gompei.get_guild(settings["guild_id"])
+            dm_channel = guild.get_channel(settings["dm_channel_id"])
 
             message_embed = discord.Embed()
             message_embed.colour = discord.Colour(0xbe4041)
@@ -238,28 +210,33 @@ async def on_raw_message_delete(payload):
             message_embed.set_footer(text="Uncached message: " + str(payload.message_id))
             message_embed.timestamp = datetime.utcnow()
 
-            await gompei_channel.send(embed=message_embed)
+            await dm_channel.send(embed=message_embed)
 
 
 @gompei.event
 async def on_typing(channel, user, when):
-    if isinstance(channel, discord.channel.DMChannel) and not user.bot:
-        wpi_discord = gompei.get_guild(567169726250352640)
-        gompei_channel = wpi_discord.get_channel(746002454180528219)
-        await gompei_channel.trigger_typing()
+    if isinstance(channel, discord.channel.DMChannel) and not user.bot and settings["dm_channel_id"] is not None:
+        guild = gompei.get_guild(settings["guild_id"])
+        dm_channel = guild.get_channel(settings["dm_channel_id"])
+        await dm_channel.trigger_typing()
 
 
 @gompei.event
 async def on_member_update(before, after):
     """
-    Load state and update information since last run
+    Removes opt in channel roles if losing access role
     """
-    if len(after.roles) < len(before.roles):
+    # Role checks
+    added_roles = [x for x in after.roles if x not in before.roles]
+    removed_roles = [x for x in before.roles if x not in after.roles]
+
+    # If roles edited
+    if len(added_roles) + len(removed_roles) > 0:
         role_list = []
         for role in after.roles:
-            if role.id in access_roles:
+            if role.id in settings["access_roles"]:
                 return
-            if role.id != 725887796312801340:
+            if role.id not in settings["opt_in_roles"]:
                 role_list.append(role)
 
         await after.edit(roles=role_list)
@@ -281,26 +258,30 @@ async def help(ctx):
 
 
 @gompei.command(pass_context=True, name="prefix")
+@commands.check(administrator_perms)
 async def change_prefix(ctx, prefix):
-    if ctx.message.author.guild_permissions.administrator:
-        settings[str(ctx.message.guild.id)]["prefix"] = str(prefix)
-
+    if " " in prefix:
+        await ctx.send("Not a valid prefix")
+    else:
+        settings["prefix"] = str(prefix)
         save_json(os.path.join("config", "settings.json"), settings)
+
+        await ctx.send("Update prefix to `" + str(prefix) + "`")
 
 
 @gompei.command()
+@commands.check(dm_commands)
 async def ping(ctx):
     """
     Sends bot latency
     """
-    if isinstance(ctx.channel, discord.DMChannel) or ctx.channel.id == 567179438047887381:
-        await ctx.send(f'Pong! `{int(gompei.latency * 1000)}ms`')
+    await ctx.send(f'Pong! `{int(gompei.latency * 1000)}ms`')
 
 
 @gompei.command(pass_context=True)
 @commands.check(dm_commands)
 async def lockout(ctx):
-    guild = gompei.get_guild(567169726250352640)
+    guild = gompei.get_guild(settings["guild_id"])
     member = await guild.fetch_member(ctx.message.author.id)
 
     # Get lockout info
@@ -332,7 +313,7 @@ async def lockout(ctx):
 @gompei.command(pass_context=True, aliases=["letMeIn"])
 @commands.check(dm_commands)
 async def let_me_in(ctx):
-    guild = gompei.get_guild(567169726250352640)
+    guild = gompei.get_guild(settings["guild_id"])
     member = await guild.fetch_member(ctx.message.author.id)
 
     # Get lockout info
@@ -360,6 +341,89 @@ async def let_me_in(ctx):
 
             await member.send("Welcome back to the server :)")
 
+
+@gompei.command(pass_context=True, aliases=["dmChannel"])
+@commands.check(administrator_perms)
+@commands.guild_only()
+async def set_dm_channel(ctx, channel):
+    if ctx.guild.id != settings["guild_id"]:
+        await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up here: <INSERT LINK>")
+    else:
+        channel = ctx.guild.get_channel(parse_id(channel))
+
+        if channel is None:
+            await ctx.send("Not a valid channel")
+
+
+@gompei.command(pass_context=True, aliases=["addAccessRole"])
+@commands.check(administrator_perms)
+@commands.guild_only()
+async def add_access_role(ctx, *roles):
+    if ctx.guild.id != settings["guild_id"]:
+        await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up here: <INSERT LINK>")
+    elif len(roles) == 0:
+        await ctx.send("You must ")
+    else:
+        failed = []
+        succeed = []
+        for role in roles:
+            role_object = ctx.guild.get_role(parse_id(role))
+            if role_object is None:
+                failed.append(role)
+            else:
+                succeed.append(role_object.name)
+                settings["access_roles"].append(role_object.id)
+
+        save_json(os.path.join("config", "settings.json"), settings)
+
+        if len(succeed) > 0:
+            response = "Successfully added access roles: " + " ".join(succeed)
+            if len(failed) > 0:
+                response += "\nFailed to add access roles: " + " ".join(failed)
+        else:
+            response = "Failed to add access roles"
+
+        await ctx.send(response)
+
+
+@gompei.command(pass_context=True, aliases=["addOptInRole"])
+@commands.check(administrator_perms)
+@commands.guild_only()
+async def add_opt_in_role(ctx, *roles):
+    if ctx.guild.id != settings["guild_id"]:
+        await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up here: <INSERT LINK>")
+    elif len(roles) == 0:
+        await ctx.send("You must ")
+    else:
+        failed = []
+        succeed = []
+        for role in roles:
+            role_object = ctx.guild.get_role(parse_id(role))
+            if role_object is None:
+                failed.append(role)
+            else:
+                succeed.append(role_object.name)
+                settings["access_roles"].append(role_object.id)
+
+        save_json(os.path.join("config", "settings.json"), settings)
+
+        if len(succeed) > 0:
+            response = "Successfully added opt-in roles: " + " ".join(succeed)
+            if len(failed) > 0:
+                response += "\nFailed to add opt-in roles: " + " ".join(failed)
+        else:
+            response = "Failed to add access roles"
+
+        await ctx.send(response)
+
+
+@gompei.command(pass_context=True, aliases=["status"])
+@commands.check(administrator_perms)
+@commands.guild_only()
+async def set_status(ctx):
+    message = ctx.message.content[ctx.message.content.find(" "):]
+
+    settings["status"]
 
 # Run the bot
 gompei.run(sys.argv[1])

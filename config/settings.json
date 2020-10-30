@@ -1,4 +1,8 @@
 {
-    "guild": GUILD_ID,
-    "prefix": "."
+    "guild_id": null,
+    "status": null,
+    "dm_channel_id": null,
+    "prefix": ".",
+    "access_roles": [],
+    "opt_in_roles": []
 }
