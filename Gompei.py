@@ -64,7 +64,7 @@ async def on_ready():
 
     settings = load_json(os.path.join("config", "settings.json"))
     if settings["status"] is not None:
-        await gompei.change_presence(activity=discord.Game(name=settings["status"]))
+        await gompei.change_presence(activity=discord.Game(name=settings["status"], start=datetime.utcnow()))
 
     print("Logged on as {0}".format(gompei.user))
 
@@ -336,14 +336,20 @@ async def set_dm_channel(ctx, channel):
     if ctx.guild.id != settings["guild_id"]:
         await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up here: <INSERT LINK>")
     else:
-        channel = ctx.guild.get_channel(parse_id(channel))
-
-        if channel is None:
-            await ctx.send("Not a valid channel")
-        else:
-            settings["dm_channel"] = channel.id
+        if channel.lower() == "clear":
+            settings["dm_channel"] = None
             save_json(os.path.join("config", "settings.json"), settings)
-            await ctx.send("Successfully updated DM channel to <#" + channel.id + ">")
+            await ctx.send("Disabled the DM channel")
+        else:
+            channel_object = ctx.guild.get_channel(parse_id(channel))
+
+            if channel_object is None:
+                await ctx.send("Not a valid channel")
+            else:
+                settings["dm_channel"] = channel_object.id
+                save_json(os.path.join("config", "settings.json"), settings)
+                await ctx.send("Successfully updated DM channel to <#" + channel_object.id + ">")
+
 
 
 @gompei.command(pass_context=True, aliases=["addAccessRole"])
@@ -418,10 +424,11 @@ async def set_status(ctx):
         await ctx.send("This status is too long! (128 character limit)")
     else:
         settings["status"] = message
-        await gompei.change_presence(activity=discord.Game(name=settings["status"]))
+        await gompei.change_presence(activity=discord.Game(name=settings["status"], start=datetime.utcnow()))
         save_json(os.path.join("config", "settings.json"), settings)
 
         await ctx.send("Successfully updated status")
+
 
 # Run the bot
 gompei.run(sys.argv[1])
