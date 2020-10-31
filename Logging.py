@@ -552,7 +552,27 @@ class Logging(commands.Cog):
             self.embed.set_footer(text="ID: " + str(after.id))
             self.embed.timestamp = datetime.utcnow()
 
-            await logging_channel.send(embed=self.embed)
+        # Check for name update
+        elif before.name != after.name:
+            self.embed = discord.Embed()
+            self.embed.colour = discord.Colour(0x8899d4)
+            self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+            self.embed.title = "Name change"
+            self.embed.description = "**Before: " + before.name + "\n**+After: " + after.name
+            self.embed.set_footer(text="ID: " + str(after.id))
+            self.embed.timestamp = datetime.utcnow()
+
+        # Check for discriminator update
+        elif before.discriminator != after.discriminator:
+            self.embed = discord.Embed()
+            self.embed.colour = discord.Colour(0x8899d4)
+            self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+            self.embed.title = "Discriminator update"
+            self.embed.description = "**Before: " + before.discriminator + "\n**+After: " + after.discriminator
+            self.embed.set_footer(text="ID: " + str(after.id))
+            self.embed.timestamp = datetime.utcnow()
+
+        await logging_channel.send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_guild_update(self, before, after):
