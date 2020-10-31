@@ -28,6 +28,7 @@ class Logging(commands.Cog):
         self.embed = discord.Embed()
         self.logs = None
 
+
     async def update_guilds(self):
         saved_guilds = []
         for guild_id in self.logs:
@@ -658,7 +659,17 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the id, name, and join date of the member
         """
-        return
+        logging_channel = guild.get_channel(int(self.logs[str(guild.id)]["channel"]))
+
+        self.embed = discord.Embed()
+        self.embed.title = "Member banned"
+        self.embed.description = "<@" + str(user.id) + ">"
+        self.embed.colour = discord.Colour(0xbe4041)
+        self.embed.set_author(name=user.name + "#" + user.discriminator, icon_url=user.avatar_url)
+        self.embed.set_footer(text="ID: " + str(user.id))
+        self.embed.timestamp = datetime.utcnow()
+
+        await logging_channel.send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_member_unban(self, guild, user):
@@ -666,6 +677,17 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the id and name of the member
         """
+        logging_channel = guild.get_channel(int(self.logs[str(guild.id)]["channel"]))
+
+        self.embed = discord.Embed()
+        self.embed.title = "Member unbanned"
+        self.embed.description = "<@" + str(user.id) + ">"
+        self.embed.colour = discord.Colour(0x43b581)
+        self.embed.set_author(name=user.name + "#" + user.discriminator, icon_url=user.avatar_url)
+        self.embed.set_footer(text="ID: " + str(user.id))
+        self.embed.timestamp = datetime.utcnow()
+
+        await logging_channel.send(embed=self.embed)
         return
 
     @commands.Cog.listener()
