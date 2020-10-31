@@ -62,9 +62,26 @@ async def on_ready():
     """
     global settings
 
+    # Load the settings
     settings = load_json(os.path.join("config", "settings.json"))
     if settings["status"] is not None:
         await gompei.change_presence(activity=discord.Game(name=settings["status"], start=datetime.utcnow()))
+
+    # Update the nitro booster role id for the guild; check if access / opt-in roles still exist
+    if settings["guild_id"] is not None:
+        guild = gompei.get_guild(settings["guild_id"])
+        for role in guild.roles:
+            if role.name == "Nitro Booster":
+                if settings["nitro_booster_id"] != role.id:
+                    settings["nitro_booster_id"] = role.id
+
+        for role_id in settings["opt_in_roles"]:
+            if guild.get_role(role_id) is None:
+                del role_id
+
+        for role_id in settings["access_roles"]:
+            if guild.get_role(role_id) is None:
+                del role_id
 
     print("Logged on as {0}".format(gompei.user))
 
@@ -268,6 +285,10 @@ async def ping(ctx):
 @gompei.command(pass_context=True)
 @commands.check(dm_commands)
 async def lockout(ctx):
+    """
+    Removes user roles and stores them to be returned alter
+    :param ctx: Context object
+    """
     guild = gompei.get_guild(settings["guild_id"])
     member = await guild.fetch_member(ctx.message.author.id)
 
@@ -287,7 +308,7 @@ async def lockout(ctx):
         if member.premium_since is None:
             await member.edit(roles=[])
         else:
-            await member.edit(roles=[guild.get_role(620478981946212363)])
+            await member.edit(roles=[guild.get_role(settings["nitro_booster_id"])])
 
         # Store roles
         lockout_info[str(member.id)] = role_ids
@@ -300,6 +321,10 @@ async def lockout(ctx):
 @gompei.command(pass_context=True, aliases=["letMeIn"])
 @commands.check(dm_commands)
 async def let_me_in(ctx):
+    """
+    Returns user roles from a lockout command
+    :param ctx: Context object
+    """
     guild = gompei.get_guild(settings["guild_id"])
     member = await guild.fetch_member(ctx.message.author.id)
 
@@ -333,6 +358,11 @@ async def let_me_in(ctx):
 @commands.check(administrator_perms)
 @commands.guild_only()
 async def set_dm_channel(ctx, channel):
+    """
+    Sets the channel for DM events to be forwarded to
+    :param ctx: Context object
+    :param channel: Channel ID / mention
+    """
     if ctx.guild.id != settings["guild_id"]:
         await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up here: <INSERT LINK>")
     else:
@@ -345,40 +375,96 @@ async def set_dm_channel(ctx, channel):
 
             if channel_object is None:
                 await ctx.send("Not a valid channel")
+            elif channel_object.id == settings["dm_channel"]:
+                await ctx.send("This is already the DM channel")
             else:
                 settings["dm_channel"] = channel_object.id
                 save_json(os.path.join("config", "settings.json"), settings)
-                await ctx.send("Successfully updated DM channel to <#" + channel_object.id + ">")
-
+                await ctx.send("Successfully updated DM channel to <#" + str(channel_object.id) + ">")
 
 
 @gompei.command(pass_context=True, aliases=["addAccessRole"])
 @commands.check(administrator_perms)
 @commands.guild_only()
 async def add_access_role(ctx, *roles):
+    """
+    Adds roles to the list that give read access to the server
+    :param ctx: Context object
+    :param roles: role(s) to add
+    """
     if ctx.guild.id != settings["guild_id"]:
         await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up here: <INSERT LINK>")
     elif len(roles) == 0:
-        await ctx.send("You must ")
+        await ctx.send("You must include a role to add")
+    elif roles[0].lower() == "clear":
+        settings["access_roles"] = []
+        save_json(os.path.join("config", "settings.json"), settings)
+        await ctx.send("Successfully cleared opt-in roles")
     else:
         failed = []
         succeed = []
+        already = []
         for role in roles:
             role_object = ctx.guild.get_role(parse_id(role))
             if role_object is None:
                 failed.append(role)
             else:
-                succeed.append(role_object.name)
-                settings["access_roles"].append(role_object.id)
+                if role_object.id not in settings["access_roles"]:
+                    succeed.append(role_object.name)
+                    settings["access_roles"].append(role_object.id)
+                else:
+                    already.append(role_object.name)
 
         save_json(os.path.join("config", "settings.json"), settings)
 
+        response = ""
         if len(succeed) > 0:
-            response = "Successfully added access roles: " + " ".join(succeed)
-            if len(failed) > 0:
-                response += "\nFailed to add access roles: " + " ".join(failed)
-        else:
-            response = "Failed to add access roles"
+            response += "\nSuccessfully added access role(s): " + " ".join(succeed)
+        if len(already) > 0:
+            response += "\nRole(s) " + " ".join(already) + " were already access roles"
+        if len(failed) > 0:
+            response += "\nFailed to add access role(s): " + " ".join(failed)
+
+        await ctx.send(response)
+
+
+@gompei.command(pass_context=True, aliases=["removeAccessRole"])
+@commands.check(administrator_perms)
+@commands.guild_only()
+async def remove_opt_in_role(ctx, *roles):
+    """
+    Removes roles from the access list
+    :param ctx: Context object
+    :param roles: Role(s) to remove
+    """
+    if ctx.guild.id != settings["guild_id"]:
+        await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up here: <INSERT LINK>")
+    elif len(roles) == 0:
+        await ctx.send("You must include a role to remove")
+    elif roles[0].lower() == "clear":
+        settings["access_roles"] = []
+        save_json(os.path.join("config", "settings.json"), settings)
+        await ctx.send("Successfully cleared access roles")
+    else:
+        failed = []
+        succeed = []
+        for role in roles:
+            if parse_id(role) in settings["access_roles"]:
+                settings["access_roles"].remove(parse_id(role))
+                role_object = ctx.guild.get_role(parse_id(role))
+
+                if role_object is None:
+                    succeed.append(role)
+                else:
+                    succeed.append(role_object.name)
+            else:
+                failed.append(role)
+
+        response = ""
+        if len(succeed) > 0:
+            response += "\nSuccessfully removed access role(s): " + " ".join(succeed)
+        if len(failed) > 0:
+            response += "\nFailed to remove access role(s): " + " ".join(failed)
 
         await ctx.send(response)
 
@@ -387,29 +473,84 @@ async def add_access_role(ctx, *roles):
 @commands.check(administrator_perms)
 @commands.guild_only()
 async def add_opt_in_role(ctx, *roles):
+    """
+    Adds roles to the opt in list that will be removed if a user loses an access role
+    :param ctx: Context object
+    :param roles: Role(s) to add
+    """
     if ctx.guild.id != settings["guild_id"]:
         await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up here: <INSERT LINK>")
     elif len(roles) == 0:
-        await ctx.send("You must ")
+        await ctx.send("You must include a role to add")
+    elif roles[0].lower() == "clear":
+        settings["opt_in_roles"] = []
+        save_json(os.path.join("config", "settings.json"), settings)
+        await ctx.send("Successfully cleared opt-in roles")
     else:
         failed = []
         succeed = []
+        already = []
         for role in roles:
             role_object = ctx.guild.get_role(parse_id(role))
             if role_object is None:
                 failed.append(role)
             else:
-                succeed.append(role_object.name)
-                settings["access_roles"].append(role_object.id)
+                if role_object.id not in settings["opt_in_roles"]:
+                    succeed.append(role_object.name)
+                    settings["opt_in_roles"].append(role_object.id)
+                else:
+                    already.append(role_object.name)
 
         save_json(os.path.join("config", "settings.json"), settings)
 
+        response = ""
         if len(succeed) > 0:
-            response = "Successfully added opt-in roles: " + " ".join(succeed)
-            if len(failed) > 0:
-                response += "\nFailed to add opt-in roles: " + " ".join(failed)
-        else:
-            response = "Failed to add access roles"
+            response += "\nSuccessfully added opt-in role(s): " + " ".join(succeed)
+        if len(already) > 0:
+            response += "\nRole(s) " + " ".join(already) + " were already opt-in roles"
+        if len(failed) > 0:
+            response += "\nFailed to add opt-in role(s): " + " ".join(failed)
+
+        await ctx.send(response)
+
+
+@gompei.command(pass_context=True, aliases=["removeOptInRole"])
+@commands.check(administrator_perms)
+@commands.guild_only()
+async def remove_opt_in_role(ctx, *roles):
+    """
+    Removes roles from the opt in list
+    :param ctx: Context object
+    :param roles: Role(s) to remove
+    """
+    if ctx.guild.id != settings["guild_id"]:
+        await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up here: <INSERT LINK>")
+    elif len(roles) == 0:
+        await ctx.send("You must include a role to remove")
+    elif roles[0].lower() == "clear":
+        settings["opt_in_roles"] = []
+        save_json(os.path.join("config", "settings.json"), settings)
+        await ctx.send("Successfully cleared opt-in roles")
+    else:
+        failed = []
+        succeed = []
+        for role in roles:
+            if parse_id(role) in settings["opt_in_roles"]:
+                settings["opt_in_roles"].remove(parse_id(role))
+                role_object = ctx.guild.get_role(parse_id(role))
+
+                if role_object is None:
+                    succeed.append(role)
+                else:
+                    succeed.append(role_object.name)
+            else:
+                failed.append(role)
+
+        response = ""
+        if len(succeed) > 0:
+            response += "\nSuccessfully removed opt-in role(s): " + " ".join(succeed)
+        if len(failed) > 0:
+            response += "\nFailed to remove opt-in role(s): " + " ".join(failed)
 
         await ctx.send(response)
 
@@ -418,6 +559,10 @@ async def add_opt_in_role(ctx, *roles):
 @commands.check(administrator_perms)
 @commands.guild_only()
 async def set_status(ctx):
+    """
+    Set the bots status ("Now playing <insert>")
+    :param ctx: Context object
+    """
     message = ctx.message.content[ctx.message.content.find(" "):]
 
     if len(message) > 128:

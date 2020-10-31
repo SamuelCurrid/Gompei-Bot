@@ -1,5 +1,6 @@
 {
     "guild_id": null,
+    "nitro_booster_id": null,
     "status": null,
     "dm_channel_id": null,
     "prefix": ".",
