@@ -431,7 +431,7 @@ async def add_access_role(ctx, *roles):
 @gompei.command(pass_context=True, aliases=["removeAccessRole"])
 @commands.check(administrator_perms)
 @commands.guild_only()
-async def remove_opt_in_role(ctx, *roles):
+async def remove_access_role(ctx, *roles):
     """
     Removes roles from the access list
     :param ctx: Context object
