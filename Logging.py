@@ -581,7 +581,7 @@ class Logging(commands.Cog):
                 self.embed.colour = discord.Colour(0x8899d4)
                 self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
                 self.embed.title = "Name change"
-                self.embed.description = "**Before: " + before.name + "\n**+After: " + after.name
+                self.embed.description = "**Before:** " + before.name + "\n**+After:** " + after.name
                 self.embed.set_footer(text="ID: " + str(after.id))
                 self.embed.timestamp = datetime.utcnow()
 
@@ -591,7 +591,7 @@ class Logging(commands.Cog):
                 self.embed.colour = discord.Colour(0x8899d4)
                 self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
                 self.embed.title = "Discriminator update"
-                self.embed.description = "**Before: " + before.discriminator + "\n**+After: " + after.discriminator
+                self.embed.description = "**Before:** " + before.discriminator + "\n**+After:** " + after.discriminator
                 self.embed.set_footer(text="ID: " + str(after.id))
                 self.embed.timestamp = datetime.utcnow()
 
