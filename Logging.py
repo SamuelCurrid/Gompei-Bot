@@ -2,6 +2,7 @@ from GompeiFunctions import make_ordinal, time_delta_string, load_json, save_jso
 from Permissions import administrator_perms
 from discord.ext import commands
 from datetime import datetime
+from Gompei import settings
 
 import discord
 import os
@@ -225,7 +226,7 @@ class Logging(commands.Cog):
         :return:
         """
         # If not a DM message
-        guild = self.bot.get_guild(567169726250352640)
+        guild = self.bot.get_guild(settings["guild_id"])
 
         if self.logs[str(guild.id)]["channel"] is not None and payload.cached_message is None:
             channel = guild.get_channel(payload.channel_id)
@@ -560,8 +561,8 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the property of the user updated before and after
         """
-        if self.logs[str(before.guild.id)]["channel"] is not None:
-            logging_channel = self.bot.get_guild(567169726250352640).get_channel(738536336016801793)
+        if self.logs[settings["guild_id"]]["channel"] is not None:
+            logging_channel = self.bot.get_guild(settings["guild_id"]).get_channel(int(self.logs[str(before.guild.id)]["channel"]))
 
             # Check for avatar update
             if before.avatar != after.avatar:
@@ -574,6 +575,10 @@ class Logging(commands.Cog):
 
                 self.embed.set_footer(text="ID: " + str(after.id))
                 self.embed.timestamp = datetime.utcnow()
+
+                avatar_channel = self.bot.get_guild(settings["guild_id"]).get_channel(738536336016801793)
+                await avatar_channel.send(embed=self.embed)
+                return
 
             # Check for name update
             elif before.name != after.name:
