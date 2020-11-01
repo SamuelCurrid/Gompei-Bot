@@ -1,5 +1,5 @@
 from GompeiFunctions import make_ordinal, time_delta_string, load_json, save_json, parse_id
-from Permissions import moderator_perms
+from Permissions import moderator_perms, administrator_perms
 from discord.ext import commands
 from datetime import timedelta
 from datetime import datetime
@@ -471,3 +471,47 @@ class Administration(commands.Cog):
             else:
                 await channel.edit(slowmode_delay=seconds)
                 await ctx.send("Successfully set slowmode delay to " + str(seconds) + " seconds in #" + channel.name)
+
+    @commands.guild_only()
+    @commands.command(pass_context=True)
+    @commands.check(administrator_perms)
+    async def kick(self, ctx, user):
+        """
+        Kicks a user from the server, requires a reason as well
+        :param ctx: Context object
+        :param user: User to kick
+        """
+        member = ctx.guild.get_member(parse_id(user))
+
+        if member is None:
+            await ctx.send("Could not find the member to kick")
+        else:
+            reason = ctx.message.content[ctx.message.content.find(" ") + len(user) + 2:]
+            if len(reason) < 1:
+                await ctx.send("Must include a reason with the kick")
+            else:
+                await member.send(member.guild.name + " kicked you for reason:\n> " + reason)
+                await member.kick(reason=reason)
+                await ctx.send("Successfully kicked user " + member.name + member.discriminator)
+
+    @commands.guild_only()
+    @commands.command(pass_context=True)
+    @commands.check(administrator_perms)
+    async def ban(self, ctx, user):
+        """
+        Bans a user from the server, requires a reason as well
+        :param ctx: Context object
+        :param user: User to ban
+        """
+        member = ctx.guild.get_member(parse_id(user))
+
+        if member is None:
+            await ctx.send("Could not find the member to kick")
+        else:
+            reason = ctx.message.content[ctx.message.content.find(" ") + len(user) + 2:]
+            if len(reason) < 1:
+                await ctx.send("Must include a reason with the ban")
+            else:
+                await member.send(member.guild.name + " banned you for reason:\n> " + reason)
+                await member.kick(reason=reason)
+                await ctx.send("Successfully banned user " + member.name + member.discriminator)
