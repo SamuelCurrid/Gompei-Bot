@@ -1,212 +1,701 @@
-<!doctype html>
-<html>
-<head>
-<meta charset="utf-8">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Gompei Bot</title>
-<link rel="shortcut icon" href="../assets/images/favicon.ico" />
-<link href="css/index.css" rel="stylesheet" type="text/css">
-<!--The following script tag downloads a font from the Adobe Edge Web Fonts server for use within the web page. We recommend that you do not modify it.-->
-<script>var __adobewebfontsappname__="dreamweaver"</script>
-<script src="http://use.edgefonts.net/source-sans-pro:n2:default.js" type="text/javascript"></script>
-</head>
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
+        <title>Gompei Bot Documentation</title>
+        <meta charset="UTF-8">
+        <link rel="icon" href="assets/favicon.ico" type="image/x-icon"/>
+    </head>
+    <body style="background-color:#A9B0B7">
+        <nav class="navbar navbar-expand-lg navbar-light" style="background-color:#AC2B37">    
+            <a class="navbar-brand" href="index.html">
+                <img src="assets/goat.svg" width="50" height="30" alt="Goat Emoji" loading="lazy" style="padding-right:20px">
+                Gompei Bot
+            </a>
+                
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span> 
+            </button>
 
-<body>
-<!-- Main Container -->
-<div class="container"> 
-  <!-- Navigation -->
-  <header class="nav"> <a href="../assets/index.html">
-    <h4 class="logo">Gompei Bot</h4>
-    </a>
-    <nav>
-      <ul>
-        <li><a href="index.html">Home</a></li>
-        <li><a href="documentation.html">Documentation</a></li>
-        <li><a href="https://github.com/SamuelCurrid/Gompei-Bot">GitHub</a></li>
-      </ul>
-    </nav>
-  </header>
-	
-  <section class="commands" id="commands">
-	<h3 class="title">Commands</h3>
-	  <h5 class="subTitle">Default prefix is "."</h5>
-  	<table class="table_commands" id="commandTable">
-  		<thead>
-    		<tr class="tableHeader">
-      			<th>Command</th>
-      			<th>Description</th>
-      			<th>Permissions Required</th>
-    			</tr>
-  			</thead>
-  		<tbody>
-			<tr class="dataRow">
-				<td>help</td>
-				<td>Standard help message</td>
-				<td>None</td>
-			</tr>
-			<tr class="dataRow">
-				<td>messages</td>
-				<td>Sends the messages leaderboard</td>
-				<td>None</td>
-    		</tr>
-			<tr class="dataRow">
-				<td>quotes</td>
-				<td>Sends the quotes leaderboard</td>
-				<td>None</td>
-			</tr>
-			<tr class="dataRow">
-				<td>reactions</td>
-				<td>Sends the reactions leaderboard</td>
-				<td>None</td>
-    		</tr>
-			<tr class="dataRow">
-				<td>emojis</td>
-				<td>Sends the emojis leaderboard</td>
-				<td>None</td>
-    		</tr>
-			<tr class="dataRow">
-				<td>echo CHANNEL_MENTION MESSAGE</td>
-				<td>Makes Gompei echo message to given channel</td>
-				<td>Administrator</td>
-    		</tr>
-			<tr class="dataRow">
-				<td>echoPM USER</td>
-				<td>Makes Gompei echo message to given user</td>
-				<td>Administrator</td>
-    		</tr>
-			<tr class="dataRow">
-				<td>reset</td>
-				<td>Resets all leaderboard values</td>
-				<td>Administrator</td>
-    		</tr>
-			<tr class="dataRow">
-				<td>set CHANNEL_MENTION</td>
-				<td>Sets the quotes channel for the guild</td>
-				<td>Administrator</td>
-    		</tr>
-			<tr class="dataRow">
-				<td>prefix NEW_PREFIX</td>
-				<td>Sets the command prefix</td>
-				<td>Administrator</td>
-    		</tr>
-  		</tbody>
-	</table>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+              <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                    <a class="nav-link" href="setup.html">Setup<span class="sr-only">(current)</span></a>
+                </li>
+                <li class="nav-item active">
+                  <a class="nav-link" href="#">Documentation<span class="sr-only">(current)</span></a>
+                </li>
+              </ul>
+            </div>
+          </nav>
 
-	<h4 class="subTitle">Movie Poll Commands</h4>
+        <div class="container-fluid" style="padding-top:30px;padding-bottom:2%;display:flex;justify-content:center">
+            <div class="card text-white bg-dark" style="width:85vw">
+                <div class="card-header">
+                  Commands
+                </div>
+            <ul class="nav nav-tabs" id="myTab" role="tablist" style="padding-top:20px;padding-left:20px">
+                <li class="nav-item" role="presentation">
+                <a class="nav-link active text-danger" id="moderation-tab" data-toggle="tab" href="#moderation" role="tab" aria-controls="home" aria-selected="true">Moderation</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                <a class="nav-link text-danger" id="utility-tab" data-toggle="tab" href="#utility" role="tab" aria-controls="profile" aria-selected="false">Utility</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link text-danger" id="logging-tab" data-toggle="tab" href="#logging" role="tab" aria-controls="contact" aria-selected="false">Logging</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                <a class="nav-link text-danger" id="contact-tab" data-toggle="tab" href="#games" role="tab" aria-controls="contact" aria-selected="false">Game</a>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link text-danger" id="movievoting-tab" data-toggle="tab" href="#movievoting" role="tab" aria-controls="contact" aria-selected="false">Movie Voting</a>
+                </li>
+                
+            </ul>
+            <div class="tab-content" id="myTabContent" style="padding:2%;display:flex">
+                <div class="tab-pane fade show active" id="moderation" role="tabpanel" aria-labelledby="moderation-tab" style="width:100%;justify-content:space-around">
+                    <div class="row row-cols-1 row-cols-md-4">
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">ban</h4>
+                                        </div>
+                                        <div class="col" style="text-align:right">
+                                            <h4 class="smalltitle"><span class="badge badge-pill badge-secondary">Admin</span></h4>
+                                        </div>
+                                        
+                                    </div>
+                                    <hr>
+                                    Bans a user from the server
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.ban &#60;user&#62;</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">clearWarn</h4>
+                                        </div>
+                                        <div class="col" style="text-align:right">
+                                            <h4 class="smalltitle"><span class="badge badge-pill badge-secondary">Mod</span></h4>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    Clears the warnings for a user
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.clearWarn &#60;user&#62;</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">kick</h4>
+                                        </div>
+                                        <div class="col" style="text-align:right">
+                                            <h4 class="smalltitle"><span class="badge badge-pill badge-secondary">Admin</span></h4>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    Kicks a user from the server
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.kick &#60;user&#62;</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">lockdown</h4>
+                                        </div>
+                                        <div class="col" style="text-align:right">
+                                            <h4 class="smalltitle"><span class="badge badge-pill badge-secondary">Mod</span></h4>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    Locksdown a channel so anyone without explicit send message permissions cannot send messages.
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.lockdown</li>
+                                        <li class="text-muted">.lockdown &#60;channel&#62;</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">mute</h4>
+                                        </div>
+                                        <div class="col" style="text-align:right">
+                                            <h4 class="smalltitle"><span class="badge badge-pill badge-secondary">Mod</span></h4>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    Gives the user the designated muted role for the amount of time given. Also DMs the reason for the mute.
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.mute &#60;user&#62; &#60;time&#62 &#60;reason&#62;</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">purge</h4>
+                                        </div>
+                                        <div class="col" style="text-align:right">
+                                            <h4 class="smalltitle"><span class="badge badge-pill badge-secondary">Mod</span></h4>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    Purges messages from a channel
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.purge &#60;number&#62;</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">slowmode</h4>
+                                        </div>
+                                        <div class="col" style="text-align:right">
+                                            <h4 class="smalltitle"><span class="badge badge-pill badge-secondary">Mod</span></h4>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    Sets the slowmode for a channel. Maximum slowmode is 6 hours.
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.slowmode &#60;channel&#62; &#60;time&#62;</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">spurge</h4>
+                                        </div>
+                                        <div class="col" style="text-align:right">
+                                            <h4 class="smalltitle"><span class="badge badge-pill badge-secondary">Mod</span></h4>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    Purges messages from a specific user - "specific purge"
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.spurge &#60;user&#62; &#60;number&#62;</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">unlock</h4>
+                                        </div>
+                                        <div class="col" style="text-align:right">
+                                            <h4 class="smalltitle"><span class="badge badge-pill badge-secondary">Mod</span></h4>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    Unlocks a channel that was in lockdown
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.unlock</li>
+                                        <li class="text-muted">.unlock &#60;channel&#62;</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">warn</h4>
+                                        </div>
+                                        <div class="col" style="text-align:right">
+                                            <h4 class="smalltitle"><span class="badge badge-pill badge-secondary">Mod</span></h4>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    Adds a warn to a user and DMs them the warn
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.warn &#60;user&#62;</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">warnNote</h4>
+                                        </div>
+                                        <div class="col" style="text-align:right">
+                                            <h4 class="smalltitle"><span class="badge badge-pill badge-secondary">Mod</span></h4>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    Adds a warn to a user without sending the warn to them
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.warnNote &#60;user&#62;</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">warns</h4>
+                                        </div>
+                                        <div class="col" style="text-align:right">
+                                            <h4 class="smalltitle"><span class="badge badge-pill badge-secondary">Mod</span></h4>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    Shows all of the warnings made in the server or warnings for a specific users
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.warns</li>
+                                        <li class="text-muted">.warns &#60;user&#62;</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+                <div class="tab-pane fade" id="utility" role="tabpanel" aria-labelledby="utility-tab" style="width:100%;justify-content:space-around">
+                    <div class="row row-cols-1 row-cols-md-4">
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">addAccessRole</h4>
+                                        </div>
+                                        <div class="col" style="text-align:right">
+                                            <h4 class="smalltitle"><span class="badge badge-pill badge-secondary">Admin</span></h4>
+                                        </div>
+                                        
+                                    </div>
+                                    <hr>
+                                    Adds a role to the access role list. Access roles are roles that are used to get access to normal server channels.
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.addAccessRole &#60;role(s)&#62;</li>
+                                        <li class="text-muted">.addAccessRole clear</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">addOptInRole</h4>
+                                        </div>
+                                        <div class="col" style="text-align:right">
+                                            <h4 class="smalltitle"><span class="badge badge-pill badge-secondary">Admin</span></h4>
+                                        </div>
+                                        
+                                    </div>
+                                    <hr>
+                                    Adds a role to the opt-in role list. Opt-in roles are roles that are used to get access to specific server channels.
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.addOptInRoles &#60;role(s)&#62;</li>
+                                        <li class="text-muted">.addOptInRoles clear</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">letmein</h4>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    Returns all roles taken away from a lockout command
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.letmein</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">lockout</h4>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    Removes all roles from a user to later be returned by letmein
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.lockout</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">prefix</h4>
+                                        </div>
+                                        <div class="col" style="text-align:right">
+                                            <h4 class="smalltitle"><span class="badge badge-pill badge-secondary">Admin</span></h4>
+                                        </div>
+                                        
+                                    </div>
+                                    <hr>
+                                    Sets the prefix for the bot
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.prefix &#60;newPrefix&#62;</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">removeAccessRole</h4>
+                                        </div>
+                                        <div class="col" style="text-align:right">
+                                            <h4 class="smalltitle"><span class="badge badge-pill badge-secondary">Admin</span></h4>
+                                        </div>
+                                        
+                                    </div>
+                                    <hr>
+                                    Removes an access role for the server. Access roles are roles that are used to get access to normal server channels.
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.removeAccessRole &#60;roles&#62;</li>
+                                        <li class="text-muted">.removeAccessRole clear</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">removeOptInRole</h4>
+                                        </div>
+                                        <div class="col" style="text-align:right">
+                                            <h4 class="smalltitle"><span class="badge badge-pill badge-secondary">Admin</span></h4>
+                                        </div>
+                                        
+                                    </div>
+                                    <hr>
+                                    Removes an opt-in role for the server. Opt-in roles are roles that are used to get access to specific server channels.
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.removeOptInRole &#60;roles&#62;</li>
+                                        <li class="text-muted">.removeOptInRole clear</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">rradd</h4>
+                                        </div>
+                                        <div class="col" style="text-align:right">
+                                            <h4 class="smalltitle"><span class="badge badge-pill badge-secondary">Mod</span></h4>
+                                        </div>
+                                        
+                                    </div>
+                                    <hr>
+                                    Adds a reaction role to a message.
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.rradd &#60;messageLink&#62; &#60;role&#62; &#60;emoji&#62;</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">rremove</h4>
+                                        </div>
+                                        <div class="col" style="text-align:right">
+                                            <h4 class="smalltitle"><span class="badge badge-pill badge-secondary">Mod</span></h4>
+                                        </div>
+                                        
+                                    </div>
+                                    <hr>
+                                    Removes a reaction role from a message.
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.rremove &#60;messageLink&#62; &#60;emoji&#62;</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">status</h4>
+                                        </div>
+                                        <div class="col" style="text-align:right">
+                                            <h4 class="smalltitle"><span class="badge badge-pill badge-secondary">Mod</span></h4>
+                                        </div>
+                                        
+                                    </div>
+                                    <hr>
+                                    Changes the bots status to "Playing &#60;status&#62;"
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.status &#60;status&#62;</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="logging" role="tabpanel" aria-labelledby="logging-tab" style="width:100%;justify-content:space-around">
+                    <div class="row row-cols-1 row-cols-md-4">
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">logging</h4>
+                                        </div>
+                                        <div class="col" style="text-align:right">
+                                            <h4 class="smalltitle"><span class="badge badge-pill badge-secondary">Admin</span></h4>
+                                        </div>
+                                        
+                                    </div>
+                                    <hr>
+                                    Sets the logging channel for the server
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.logging &#60;channel&#62;</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="games" role="tabpanel" aria-labelledby="games-tab" style="width:100%;justify-content:space-around">
+                    <div class="row row-cols-1 row-cols-md-4">
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">hangman</h4>
+                                        </div>             
+                                    </div>
+                                    <hr>
+                                    Creates a reaction hangman game
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.hangman</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">minesweeper</h4>
+                                        </div>   
+                                    </div>
+                                    <hr>
+                                    Creates a minesweeper game
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.minesweeper</li>
+                                        <li class="text-muted">.minesweeper &#60;x&#62; &#60;y&#62;</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="movievoting" role="tabpanel" aria-labelledby="movievoting-tab" style="width:100%;justify-content:space-around">
+                    <div class="row row-cols-1 row-cols-md-4">
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">addMovie</h4>
+                                        </div>             
+                                    </div>
+                                    <hr>
+                                    Adds a movie to the movie vote
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.addMovie &#60;movieName&#62;</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">listMovies</h4>
+                                        </div>   
+                                    </div>
+                                    <hr>
+                                    Sends the current movie voting leaderboard
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.listMovies</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">movieInfo</h4>
+                                        </div>   
+                                    </div>
+                                    <hr>
+                                    Displays IMDB info for the movie
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.movieInfo &#60;movieName&#62;</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">removeMovie</h4>
+                                        </div>   
+                                        <div class="col" style="text-align:right">
+                                            <h4 class="smalltitle"><span class="badge badge-pill badge-secondary">Admin</span></h4>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    Removes a movie from the vote
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.removeMovie &#60;movieName&#62;</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">removeVote</h4>
+                                        </div>   
+                                    </div>
+                                    <hr>
+                                    Removes you vote made for a movie
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.removeVote &#60;movieName&#62;</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col mb-4">
+                            <div class="card text-white bg-dark" style="width:100%">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col">
+                                            <h4 class="smalltitle">resetMovies</h4>
+                                        </div>
+                                        <div class="col" style="text-align:right">
+                                            <h4 class="smalltitle"><span class="badge badge-pill badge-secondary">Admin</span></h4>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    Resets the movie vote
+                                    <hr>
+                                    <ul class="list-unstyled">
+                                        <li class="text-muted">.resetMovies</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-	<table class="table_commands" id="commandTable">
-  		<thead>
-    		<tr class="tableHeader">
-      			<th>Command</th>
-      			<th>Description</th>
-      			<th>Permissions Required</th>
-    			</tr>
-  			</thead>
-  		<tbody>
-			<tr class="dataRow">
-				<td>addMovie MOVIE_NAME</td>
-				<td>Adds the movie of certain name to the poll</td>
-				<td>None</td>
-    		</tr>
-  		</tbody>
-		<tbody>
-			<tr class="dataRow">
-				<td>movieInfo MOVIE_NAME</td>
-				<td>Sends the info for a movie</td>
-				<td>None</td>
-    		</tr>
-  		</tbody>
-		<tbody>
-			<tr class="dataRow">
-				<td>vote MOVIE_NAME</td>
-				<td>Vote for a movie</td>
-				<td>None</td>
-    		</tr>
-  		</tbody>
-		<tbody>
-			<tr class="dataRow">
-				<td>removeVote MOVIE_NAME</td>
-				<td>Remove your vote for a movie</td>
-				<td>None</td>
-    		</tr>
-  		</tbody>
-		<tbody>
-			<tr class="dataRow">
-				<td>listMovies</td>
-				<td>Lists the current movies in the poll</td>
-				<td>None</td>
-    		</tr>
-  		</tbody>
-		<tbody>
-			<tr class="dataRow">
-				<td>removeMovie MOVIE_NAME</td>
-				<td>Removes a movie from the poll</td>
-				<td>Administrator</td>
-    		</tr>
-  		</tbody>
-	</table>
+            </div>
+            </div>
+        </div>
 
-	<h4 class="subTitle">Minigame Commands</h4>
-
-	<table class="table_commands" id="commandTable">
-  		<thead>
-    		<tr class="tableHeader">
-      			<th>Command</th>
-      			<th>Description</th>
-      			<th>Permissions Required</th>
-    			</tr>
-  			</thead>
-  		<tbody>
-			<tr class="dataRow">
-				<td>hangman</td>
-				<td>Starts a hangman game</td>
-				<td>None</td>
-    		</tr>
-  		</tbody>
-		<tbody>
-			<tr class="dataRow">
-				<td>minesweeper</td>
-				<td>creates a minesweeper board</td>
-				<td>None</td>
-    		</tr>
-  		</tbody>
-	</table>
-
-	<h4 class="subTitle">Moderation Commands</h4>
-
-	<table class="table_commands" id="commandTable">
-  		<thead>
-    		<tr class="tableHeader">
-      			<th>Command</th>
-      			<th>Description</th>
-      			<th>Permissions Required</th>
-    			</tr>
-  			</thead>
-  		<tbody>
-			<tr class="dataRow">
-				<td>mute USER MINUTES REASON</td>
-				<td>Mutes user for specified time and DMs reason</td>
-				<td>Administrator/Moderator</td>
-    		</tr>
-  		</tbody>
-		<tbody>
-			<tr class="dataRow">
-				<td>purge NUMBER</td>
-				<td>Purges a number of messages from the channel used in</td>
-				<td>Administrator/Moderator</td>
-    		</tr>
-  		</tbody>
-		<tbody>
-			<tr class="dataRow">
-				<td>spurge USER NUMBER</td>
-				<td>Purges a number of messages from user in the channel used in</td>
-				<td>Administrator/Moderator</td>
-    		</tr>
-  		</tbody>
-	</table>
-
-  </section>
-</div>
-</body>
+        <!--Bootstrap-->
+        <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.min.js" integrity="sha384-w1Q4orYjBQndcko6MimVbzY0tgp4pWB4lZ7lr30WKz0vr/aWKhXdBNmNb5D92v7s" crossorigin="anonymous"></script>
+    </body>
 </html>
