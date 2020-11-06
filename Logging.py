@@ -104,7 +104,9 @@ class Logging(commands.Cog):
                 logging_channel = message.guild.get_channel(int(self.logs[str(message.guild.id)]["channel"]))
                 channel = message.channel
 
-                self.embed = discord.Embed()
+                previous_message = await message.channel.history(limit=1, before=message.created_at).flatten()
+
+                self.embed = discord.Embed(url=previous_message[0].jump_url)
                 self.embed.colour = discord.Colour(0xbe4041)
                 self.embed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
                 entries = await message.guild.audit_logs(limit=1).flatten()
