@@ -9,6 +9,7 @@ from discord.ext import commands
 from datetime import datetime
 from Hangman import Hangman
 from Logging import Logging
+from Voting import Voting
 
 import discord
 import random
@@ -40,15 +41,16 @@ print("Loading cogs...")
 gompei.add_cog(Leaderboards(gompei))
 gompei.add_cog(Administration(gompei))
 
-if len(sys.argv) > 2:
-    gompei.add_cog(MovieVoting(gompei, sys.argv[2]))
-else:
-    print("No OMDb token passed! Not loading MovieVoting")
+# if len(sys.argv) > 2:
+#     gompei.add_cog(MovieVoting(gompei, sys.argv[2]))
+# else:
+#     print("No OMDb token passed! Not loading MovieVoting")
 
 gompei.add_cog(Hangman(gompei))
 gompei.add_cog(Minesweeper(gompei))
 gompei.add_cog(Logging(gompei))
 gompei.add_cog(ReactionRoles(gompei))
+gompei.add_cog(Voting(gompei))
 print("Cogs loaded")
 
 # Overwrite help command
@@ -94,6 +96,9 @@ async def on_message(message):
     """
     if not message.author.bot:
         await gompei.process_commands(message)
+
+        if message.author.id == 87585011070414848 and "beep beep" in message.content.lower():
+            await message.channel.send("https://i.pinimg.com/originals/84/ee/27/84ee27382f9f9819097b29fe78be814d.png")
 
         if isinstance(message.channel, discord.channel.DMChannel) and settings["dm_channel_id"] is not None:
             message_embed = discord.Embed(description=message.content, timestamp=datetime.utcnow())
