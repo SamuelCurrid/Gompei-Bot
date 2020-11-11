@@ -19,7 +19,7 @@ import sys
 
 settings = {}
 
-greetings = ["hello", "hi", "greetings", "howdy", "salutations", "hey", "oi", "dear", "yo ", "morning", "afternoon", "evening", "sup", "G'day", "good day"]
+greetings = ["hello", "hi", "greetings", "howdy", "salutations", "hey", "oi", "dear", "yo ", "morning", "afternoon", "evening", "sup", "G'day", "good day", "bonjour"]
 gompei_references = ["gompei", "672453835863883787", "goat"]
 love_references = ["gompeiHug", "love", "ily", "<3", "❤"]
 hate_references = ["fuck you", "sucks", "fucker", "idiot", "shithead", "eat shit", "hate"]
@@ -588,7 +588,10 @@ async def roll(ctx, number):
     if "d" in number:
         sides = 0
         try:
-            dice = int(number[:number.find("d")])
+            if number[:number.find("d")] != "":
+                dice = int(number[:number.find("d")])
+            else:
+                dice = 1
             sides = int(number[number.find("d") + 1:])
         except ValueError:
             await ctx.send("Could not parse this roll")
@@ -609,6 +612,9 @@ async def roll(ctx, number):
             response += " + "
 
         response += " = " + str(total) + ")"
+
+        if dice == 1:
+            response = ""
 
         if ctx.author.nick is not None:
             response = ctx.author.nick.replace("@", "") + " rolled a " + str(total) + "!" + response
