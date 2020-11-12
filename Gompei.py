@@ -7,9 +7,11 @@ from MovieVoting import MovieVoting
 from Minesweeper import Minesweeper
 from discord.ext import commands
 from datetime import datetime
+from Automod import Automod
 from Hangman import Hangman
 from Logging import Logging
 from Voting import Voting
+
 
 import discord
 import random
