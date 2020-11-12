@@ -347,7 +347,10 @@ async def let_me_in(ctx):
         else:
             role_list = []
             for role_id in lockout_info[str(member.id)]:
-                role_list.append(guild.get_role(role_id))
+
+                # Check if the role exists
+                if guild.get_role(role_id) is not None:
+                    role_list.append(guild.get_role(role_id))
 
             await member.edit(roles=role_list)
 
