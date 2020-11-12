@@ -3,9 +3,11 @@ from Permissions import moderator_perms, administrator_perms
 from discord.ext import commands
 from datetime import timedelta
 from datetime import datetime
-from pytimeparse import parse
 
+import pytimeparse
+import dateparser
 import asyncio
+import pytz
 import os
 
 
@@ -254,9 +256,64 @@ class Administration(commands.Cog):
         else:
             print(error)
 
+    @commands.command(pass_context=True, name="tpurge")
+    @commands.check(moderator_perms)
     @commands.guild_only()
+    async def time_purge(self, ctx, channel, time1, time2=None):
+        channel = ctx.guild.get_channel(parse_id(channel))
+
+        # If channel does not exist
+        if channel is None:
+            await ctx.send("Not a valid channel")
+            return
+
+        after_date = dateparser.parse(time1)
+
+        if after_date is None:
+            await ctx.send("Not a valid after time/date")
+            return
+
+        if time2 is None:
+            offset = datetime.utcnow() - datetime.now()
+            messages = await channel.history(limit=None, after=after_date + offset).flatten()
+        else:
+            before_date = dateparser.parse(time2)
+
+            if before_date is None:
+                await ctx.send("Not a valid before time/date")
+                return
+
+            offset = datetime.utcnow() - datetime.now()
+            messages = await channel.history(limit=None, after=after_date + offset, before=before_date + offset).flatten()
+
+        if len(messages) == 0:
+            await ctx.send("There are no messages to purge in this time frame")
+            return
+
+        response = "You are about to purge " + str(len(messages)) + " message(s) from " + channel.name
+        if time2 is None:
+            response += " after " + str(after_date) + ".\n"
+        else:
+            response += " between " + str(after_date) + " and " + str(before_date) + ".\n"
+
+        response += "The purge will start at <" + messages[0].jump_url + "> and end at <" + messages[-1].jump_url + ">.\n\nAre you sure you want to proceed? (Y/N)"
+
+        def check_author(message):
+            return message.author.id == ctx.author.id
+
+        await ctx.send(response)
+
+        response = await self.bot.wait_for('message', check=check_author)
+        if response.content.lower() == "y" or response.content.lower() == "yes":
+            await channel.delete_messages(messages)
+            await ctx.send("Successfully purged messages")
+        else:
+            await ctx.send("Cancelled purging messages")
+
+
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
+    @commands.guild_only()
     async def mute(self, ctx, arg1, arg2):
         member = ctx.guild.get_member(parse_id(arg1))
         muted_role = ctx.guild.get_role(615956736616038432)
@@ -273,7 +330,7 @@ class Administration(commands.Cog):
 
         username = member.name + "#" + str(member.discriminator)
 
-        seconds = parse(arg2)
+        seconds = pytimeparse.parse(arg2)
         if seconds is None:
             await ctx.send("Not a valid time, try again")
 
@@ -463,7 +520,7 @@ class Administration(commands.Cog):
         if channel is None:
             await ctx.send("Not a valid channel")
         else:
-            seconds = parse(time)
+            seconds = pytimeparse.parse(time)
             if seconds is None:
                 await ctx.send("Not a valid time format, try again")
             elif seconds > 21600:
