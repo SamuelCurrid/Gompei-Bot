@@ -53,6 +53,7 @@ gompei.add_cog(Minesweeper(gompei))
 gompei.add_cog(Logging(gompei))
 gompei.add_cog(ReactionRoles(gompei))
 gompei.add_cog(Voting(gompei))
+gompei.add_cog(Automod(gompei))
 print("Cogs loaded")
 
 # Overwrite help command
