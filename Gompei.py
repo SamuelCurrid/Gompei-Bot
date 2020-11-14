@@ -268,19 +268,31 @@ async def on_command_error(ctx, error):
 # Commands
 @gompei.command(pass_context=True)
 @commands.check(dm_commands)
-async def help(ctx):
+async def help(ctx, command_name=None):
     """
     Sends help information
-    Usage: .help
+    Usage: .help (command)
 
     :param ctx: context object
+    :param command_name: command in question
     """
-    help_embed = discord.Embed(title="Gompei Bot", colour=discord.Colour.blue())
-    help_embed.add_field(name="Documentation", value="https://samuelcurrid.github.io/Gompei-Bot/documentation.html")
-    help_embed.set_thumbnail(url="https://raw.githubusercontent.com/SamuelCurrid/Gompei-Bot/master/assets/gompei.png")
-    help_embed.set_footer(text="Source: https://github.com/SamuelCurrid/Gompei-Bot/")
-
-    await ctx.message.channel.send(embed=help_embed)
+    if command_name is None:
+        help_embed = discord.Embed(title="Gompei Bot", colour=discord.Colour.blue())
+        help_embed.add_field(name="Documentation", value="https://samuelcurrid.github.io/Gompei-Bot/documentation.html")
+        help_embed.set_thumbnail(url="https://raw.githubusercontent.com/SamuelCurrid/Gompei-Bot/master/assets/gompei.png")
+        help_embed.set_footer(text="Source: https://github.com/SamuelCurrid/Gompei-Bot/")
+        await ctx.send(embed=help_embed)
+    else:
+        command = gompei.get_command(command_name)
+        if command is None:
+            await ctx.send("Could not find the command " + command_name)
+        else:
+            description = command.help[:command.help.find("Usage:") - 1]
+            usage = command.help[command.help.find("Usage:") + 7:command.help.find("\n\n")]
+            embed = discord.Embed(title=command.name, colour=discord.Colour.blue())
+            embed.description = description + "\n\n**Usage:** `" + usage + "`\n\n**Aliases:** " + ", ".join(command.aliases)
+            embed.set_footer(text="<> = required, () = optional")
+            await ctx.send(embed=embed)
 
 
 @gompei.command(pass_context=True, name="prefix")
