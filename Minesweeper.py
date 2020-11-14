@@ -27,7 +27,16 @@ class Minesweeper(commands.Cog):
 
     @commands.command(pass_context=True, name="minesweeper")
     @commands.check(command_channels)
+    @commands.guild_only()
     async def new_minesweeper(self, ctx, x_str="8", y_str="8"):
+        """
+        Creates a new spoiler minesweeper game
+        Usage: .minesweeper (x) (y)
+
+        :param ctx: context object
+        :param x_str: (optional) x dimension
+        :param y_str: (optional) y dimension
+        """
         if not (x_str.isdecimal() and y_str.isdecimal()):
             await ctx.send(f"Either {x_str} or {y_str} is not a valid dimension for a minesweeper board. Please use the format `minesweeper x y`.")
             return

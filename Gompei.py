@@ -252,12 +252,28 @@ async def on_member_update(before, after):
         await after.edit(roles=role_list)
 
 
+@gompei.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.BadArgument):
+        argument = list(ctx.command.clean_params)[len(ctx.args[2:] if ctx.command.cog else ctx.args[1:])]
+        await ctx.send("Could not find the " + argument)
+    elif isinstance(error, commands.CheckFailure):
+        print("!ERROR! " + str(ctx.author.id) + " did not have permissions for " + ctx.command.name + " command")
+    elif isinstance(error, commands.MissingRequiredArgument):
+        await ctx.send("Command is missing arguments")
+    else:
+        print(error)
+
+
 # Commands
 @gompei.command(pass_context=True)
 @commands.check(dm_commands)
 async def help(ctx):
     """
     Sends help information
+    Usage: .help
+
+    :param ctx: context object
     """
     help_embed = discord.Embed(title="Gompei Bot", colour=discord.Colour.blue())
     help_embed.add_field(name="Documentation", value="https://samuelcurrid.github.io/Gompei-Bot/documentation.html")
@@ -270,6 +286,13 @@ async def help(ctx):
 @gompei.command(pass_context=True, name="prefix")
 @commands.check(administrator_perms)
 async def change_prefix(ctx, prefix):
+    """
+    Changes the bots prefix
+    Usage: .prefix <prefix>
+
+    :param ctx: context object
+    :param prefix: prefix to change to
+    """
     if " " in prefix:
         await ctx.send("Not a valid prefix")
     else:
@@ -284,6 +307,9 @@ async def change_prefix(ctx, prefix):
 async def ping(ctx):
     """
     Sends bot latency
+    Usage: .ping
+
+    :param ctx: context object
     """
     await ctx.send(f'Pong! `{int(gompei.latency * 1000)}ms`')
 
@@ -292,8 +318,10 @@ async def ping(ctx):
 @commands.check(dm_commands)
 async def lockout(ctx):
     """
-    Removes user roles and stores them to be returned alter
-    :param ctx: Context object
+    Removes user roles and stores them to be returned after
+    Usage: .lockout
+
+    :param ctx: context object
     """
     guild = gompei.get_guild(settings["guild_id"])
     member = await guild.fetch_member(ctx.message.author.id)
@@ -329,7 +357,9 @@ async def lockout(ctx):
 async def let_me_in(ctx):
     """
     Returns user roles from a lockout command
-    :param ctx: Context object
+    Usage: .letMeIn
+
+    :param ctx: context object
     """
     guild = gompei.get_guild(settings["guild_id"])
     member = await guild.fetch_member(ctx.message.author.id)
@@ -369,8 +399,10 @@ async def let_me_in(ctx):
 async def set_dm_channel(ctx, channel):
     """
     Sets the channel for DM events to be forwarded to
-    :param ctx: Context object
-    :param channel: Channel ID / mention
+    Usage: .dmChannel <channel>
+
+    :param ctx: context object
+    :param channel: channel to set to
     """
     if ctx.guild.id != settings["guild_id"]:
         await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up here: <INSERT LINK>")
@@ -398,7 +430,9 @@ async def set_dm_channel(ctx, channel):
 async def add_access_role(ctx, *roles):
     """
     Adds roles to the list that give read access to the server
-    :param ctx: Context object
+    Usage: .addAccessRole <role(s)>
+
+    :param ctx: context object
     :param roles: role(s) to add
     """
     if ctx.guild.id != settings["guild_id"]:
@@ -443,8 +477,10 @@ async def add_access_role(ctx, *roles):
 async def remove_access_role(ctx, *roles):
     """
     Removes roles from the access list
-    :param ctx: Context object
-    :param roles: Role(s) to remove
+    Usage: .removeAccessRoles <role(s)>
+
+    :param ctx: context object
+    :param roles: role(s) to remove
     """
     if ctx.guild.id != settings["guild_id"]:
         await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up here: <INSERT LINK>")
@@ -484,8 +520,9 @@ async def remove_access_role(ctx, *roles):
 async def add_opt_in_role(ctx, *roles):
     """
     Adds roles to the opt in list that will be removed if a user loses an access role
-    :param ctx: Context object
-    :param roles: Role(s) to add
+
+    :param ctx: context object
+    :param roles: role(s) to add
     """
     if ctx.guild.id != settings["guild_id"]:
         await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up here: <INSERT LINK>")
@@ -529,8 +566,10 @@ async def add_opt_in_role(ctx, *roles):
 async def remove_opt_in_role(ctx, *roles):
     """
     Removes roles from the opt in list
-    :param ctx: Context object
-    :param roles: Role(s) to remove
+    Usage: .removeOptInRole <role(s)>
+
+    :param ctx: context object
+    :param roles: role(s) to remove
     """
     if ctx.guild.id != settings["guild_id"]:
         await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up here: <INSERT LINK>")
@@ -567,17 +606,18 @@ async def remove_opt_in_role(ctx, *roles):
 @gompei.command(pass_context=True, aliases=["status"])
 @commands.check(administrator_perms)
 @commands.guild_only()
-async def set_status(ctx):
+async def set_status(ctx, *, status):
     """
     Set the bots status ("Now playing <insert>")
-    :param ctx: Context object
-    """
-    message = ctx.message.content[ctx.message.content.find(" "):]
+    Usage: .status <status>
 
-    if len(message) > 128:
+    :param ctx: context object
+    :param status: status
+    """
+    if len(status) > 128:
         await ctx.send("This status is too long! (128 character limit)")
     else:
-        settings["status"] = message
+        settings["status"] = status
         await gompei.change_presence(activity=discord.Game(name=settings["status"], start=datetime.utcnow()))
         save_json(os.path.join("config", "settings.json"), settings)
 
@@ -589,10 +629,11 @@ async def set_status(ctx):
 async def roll(ctx, number):
     """
     Rolls a die for the number
+    Usage: .roll <number>
+
     :param ctx: context object
     :param number: number of sides on the die
     """
-
     if "d" in number:
         sides = 0
         try:

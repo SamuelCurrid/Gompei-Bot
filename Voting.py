@@ -1,11 +1,10 @@
-import asyncio
-
-from Permissions import dm_commands, command_channels, moderator_perms
+from Permissions import dm_commands, moderator_perms
 from GompeiFunctions import load_json, save_json, parse_id
 from dateutil.parser import parse
 from discord.ext import commands
 from datetime import datetime
 
+import asyncio
 import discord
 import os
 
@@ -74,6 +73,12 @@ class Voting(commands.Cog):
     @commands.command(pass_context=True, aliases=["closePoll"])
     @commands.check(moderator_perms)
     async def close_poll(self, ctx):
+        """
+        Closes the poll
+        Usage: .closePoll
+
+        :param ctx: context object
+        """
         lastVotes = 0
         lastCount = 1
         count = 1
@@ -109,39 +114,49 @@ class Voting(commands.Cog):
     @commands.command(pass_context=True, aliases=['createOpenVote'])
     @commands.check(moderator_perms)
     @commands.guild_only()
-    async def create_open_vote(self, ctx, channel, title, close_timestamp):
+    async def create_open_vote(self, ctx, channel: discord.TextChannel, title, close_timestamp, *, message):
+        """
+        Creates an open poll
+        Usage: .createOpenVote <channel> <title> <closeTime> <message>
+
+        :param ctx: context object
+        :param channel: channel for the poll
+        :param title: embed title for the poll
+        :param close_timestamp: closing time for the poll
+        :param message: message to accompany the poll
+        """
         if str(ctx.guild.id) in self.votes:
             await ctx.send("A vote is already running for this server")
         else:
-            channel_object = ctx.guild.get_channel(parse_id(channel))
-            if channel_object is None:
-                await ctx.send("Not a valid channel to send the poll to")
+            closes = parse(close_timestamp)
+
+            if closes is None:
+                await ctx.send("Not a valid close time")
+            elif (closes - datetime.now()).total_seconds() < 0:
+                await ctx.send("Close time cannot be before current time")
             else:
-                closes = parse(close_timestamp)
+                modifier = 4
+                for char in ctx.message.content[:ctx.message.content.find(close_timestamp)]:
+                    if char == "\"":
+                        modifier += 1
 
-                if closes is None:
-                    await ctx.send("Not a valid close time")
-                elif (closes - datetime.now()).total_seconds() < 0:
-                    await ctx.send("Close time cannot be before current time")
-                else:
-                    modifier = 4
-                    for char in ctx.message.content[:ctx.message.content.find(close_timestamp)]:
-                        if char == "\"":
-                            modifier += 1
+                embed = discord.Embed(title=title, color=0x43b581)
 
-                    message = ctx.message.content[ctx.message.content.find(" ") + len(channel) + len(close_timestamp) + len(title) + modifier:]
+                self.poll_message = await channel.send(message + "```.addOption <option> - Create an option to vote for and cast your vote for it\n.vote <option> - Cast a vote for an option in the poll\n.removeVote <option> - Removes a vote you casted for an option\n.sendPoll - sends the poll embed (does not update live)```", embed=embed)
 
-                    embed = discord.Embed(title=title, color=0x43b581)
-
-                    self.poll_message = await channel_object.send(message + "```.addOption <option> - Create an option to vote for and cast your vote for it\n.vote <option> - Cast a vote for an option in the poll\n.removeVote <option> - Removes a vote you casted for an option\n.sendPoll - sends the poll embed (does not update live)```", embed=embed)
-
-                    self.votes = {"close": close_timestamp, "title": title, "channel_id": channel_object.id, "message_id": self.poll_message.id, "votes": []}
-                    save_json(os.path.join("config", "votes.json"), self.votes)
-                    await self.poll_timer(closes)
+                self.votes = {"close": close_timestamp, "title": title, "channel_id": channel.id, "message_id": self.poll_message.id, "votes": []}
+                save_json(os.path.join("config", "votes.json"), self.votes)
+                await self.poll_timer(closes)
 
     @commands.command(pass_context=True, aliases=["addOption"])
     @commands.check(dm_commands)
     async def add_option(self, ctx):
+        """
+        Adds an option to the poll
+        Usage: .addOption <option>
+
+        :param ctx: context object
+        """
         if not self.vote_open:
             await ctx.send("There is no poll currently open")
             return
@@ -183,6 +198,12 @@ class Voting(commands.Cog):
     @commands.command(pass_context=True)
     @commands.check(dm_commands)
     async def vote(self, ctx):
+        """
+        Votes for an option in the poll
+        Usage: .vote <option>
+
+        :param ctx: context object
+        """
         if not self.vote_open:
             await ctx.send("There is no poll currently open")
             return
@@ -206,6 +227,12 @@ class Voting(commands.Cog):
     @commands.command(pass_context=True, aliases=["removeVote"])
     @commands.check(dm_commands)
     async def remove_vote(self, ctx):
+        """
+        Removes your vote for an option in the poll
+        Usage: .removeVote <option>
+
+        :param ctx: context object
+        """
         if not self.vote_open:
             await ctx.send("There is no poll currently open")
             return
@@ -232,6 +259,12 @@ class Voting(commands.Cog):
     @commands.command(pass_context=True, aliases=["removeOption"])
     @commands.check(moderator_perms)
     async def remove_option(self, ctx):
+        """
+        Removes an option from the poll entirely
+        Usage: .removeOption <option>
+
+        :param ctx: context object
+        """
         user_option = ctx.message.content[ctx.message.content.find(" ") + 1:]
         count = 0
 
@@ -247,6 +280,12 @@ class Voting(commands.Cog):
     @commands.command(pass_context=True, aliases=["sendPoll"])
     @commands.check(dm_commands)
     async def send_poll(self, ctx):
+        """
+        Sends the poll
+        Usage: .sendPoll
+
+        :param ctx: context object
+        """
         lastVotes = 0
         lastCount = 1
         count = 1

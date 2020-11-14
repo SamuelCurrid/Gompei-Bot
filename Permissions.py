@@ -1,6 +1,5 @@
 import discord
 
-# Mod role ID
 moderator_id = 742118136458772551
 
 # Command channels

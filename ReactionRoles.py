@@ -12,75 +12,73 @@ class ReactionRoles(commands.Cog):
         self.reaction_messages = {}
         self.load_reaction_message = load_json(os.path.join("config", "reaction_messages.json"))
 
+    @commands.command(pass_context=True, aliases=["addReactionRole", "rradd"])
     @commands.check(moderator_perms)
-    @commands.command(pass_context=True, aliases=['rradd'])
-    async def add_reaction_role(self, ctx, message_link, role_id, emoji):
-        message_id = int(message_link[message_link.rfind("/") + 1:])
-        short_link = message_link[:message_link.rfind("/")]
-        channel_id = int(short_link[short_link.rfind("/") + 1:])
+    @commands.guild_only()
+    async def add_reaction_role(self, ctx, message: discord.Message, role: discord.Role, emoji: discord.Emoji):
+        """
+        Adds a reaction role to a message with the given emoji
+        Usage: .addReactionRole <message> <role> <emote>
 
-        channel = ctx.guild.get_channel(channel_id)
-        if channel is None:
-            await ctx.send("Not a valid link to message")
+        :param ctx: context object
+        :param message: message to add the reaction role to
+        :param role: role tied to the reaction
+        :param emoji: emoji to react with
+        """
+        if ctx.message.author.top_role.position < role.position:
+            await ctx.send("You do not have permission to make a reaction role for this role")
         else:
-            message = await channel.fetch_message(message_id)
-            if message is None:
-                await ctx.send("Not a valid link to message")
-            else:
-                role = ctx.guild.get_role(int(role_id))
+            await message.add_reaction(emoji)
 
-                if role is None:
-                    await ctx.send("Not a valid role ID")
+            # Get a list of pre-existing reactions
+            reactions = [self.bot.user.id]
+            for reaction in message.reactions:
+                if type(reaction.emoji) is discord.Emoji:
+                    emoji_name = "<:" + reaction.emoji.name + ":" + str(reaction.emoji.id) + ">"
                 else:
-                    if ctx.message.author.top_role.position < role.position:
-                        await ctx.send("You do not have permission to make a reaction role for this role")
-                    else:
-                        await message.add_reaction(emoji)
+                    emoji_name = reaction.emoji
 
-                        # Get a list of pre-existing reactions
-                        reactions = [self.bot.user.id]
-                        for reaction in message.reactions:
-                            if type(reaction.emoji) is discord.Emoji:
-                                emoji_name = "<:" + reaction.emoji.name + ":" + str(reaction.emoji.id) + ">"
-                            else:
-                                emoji_name = reaction.emoji
+                print(emoji_name + " vs. " + emoji)
+                if emoji_name == emoji:
+                    print("got here")
 
-                            print(emoji_name + " vs. " + emoji)
-                            if emoji_name == emoji:
-                                print("got here")
+                    async for user in reaction.users():
+                        reactions.append(user.id)
+                    break
 
-                                async for user in reaction.users():
-                                    reactions.append(user.id)
-                                break
+            combined_id = str(message.channel.id) + str(message.id)
 
-                        combined_id = str(channel_id) + str(message_id)
+            if combined_id in self.reaction_messages:
+                self.reaction_messages[combined_id][str(emoji)] = {"id": role.id, "users": reactions}
+            else:
+                self.reaction_messages[combined_id] = {str(emoji): {"id": role.id, "users": reactions}}
 
-                        if combined_id in self.reaction_messages:
-                            self.reaction_messages[combined_id][emoji] = {"id": role_id, "users": reactions}
-                        else:
-                            self.reaction_messages[combined_id] = {emoji: {"id": role_id, "users": reactions}}
+            save_json(os.path.join("config", "reaction_messages.json"), self.reaction_messages)
+            await ctx.send("Created reaction role")
 
-                        save_json(os.path.join("config", "reaction_messages.json"), self.reaction_messages)
-                        await ctx.send("Created reaction role")
-
+    @commands.command(pass_context=True, aliases=["removeReactionRole", "rrdelete", "rremove"])
     @commands.check(moderator_perms)
-    @commands.command(pass_context=True, aliases=['rrdelete', 'rremove'])
-    async def remove_reaction_role(self, ctx, message_link, emoji):
-        message_id = int(message_link[message_link.rfind("/") + 1:])
-        short_link = message_link[:message_link.rfind("/")]
-        channel_id = int(short_link[short_link.rfind("/") + 1:])
+    @commands.guild_only()
+    async def remove_reaction_role(self, ctx, message: discord.Message, emoji: discord.Emoji):
+        """
+        Removes a reaction role from a message
+        Usage: .removeReactionRole <message> <emoji>
 
-        key = str(channel_id) + str(message_id)
+        :param ctx: context object
+        :param message: message to remove from
+        :param emoji: emoji to remove
+        """
+        key = str(message.channel.id) + str(message.id)
         if key not in self.reaction_messages:
             await ctx.send("There are no reaction roles on this message")
         else:
             if emoji not in self.reaction_messages[key]:
                 await ctx.send("This emoji is not used on this reaction role")
             else:
-                del self.reaction_messages[key][emoji]
+                del self.reaction_messages[key][str(emoji)]
                 save_json(os.path.join("config", "reaction_messages.json"), self.reaction_messages)
-                channel = ctx.guild.get_channel(channel_id)
-                message = await channel.fetch_message(message_id)
+                channel = ctx.guild.get_channel(message.channel.id)
+                message = await channel.fetch_message(message.id)
 
                 await message.remove_reaction(emoji, self.bot.user)
                 await ctx.send("Removed reaction role")

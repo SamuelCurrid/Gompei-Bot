@@ -1,25 +1,10 @@
-from GompeiFunctions import make_ordinal, time_delta_string, load_json, save_json
+from GompeiFunctions import make_ordinal, time_delta_string, load_json, save_json, parse_id
 from Permissions import administrator_perms
 from discord.ext import commands
 from datetime import datetime
 
 import discord
 import os
-
-
-def parse_id(arg):
-    """
-    Parses an ID from a discord mention
-    :param arg: mention or ID passed
-    :return: ID
-    """
-    if "<" in arg:
-        for i, c in enumerate(arg):
-            if c.isdigit():
-                return int(arg[i:-1])
-    # Using ID
-    else:
-        return int(arg)
 
 
 class Logging(commands.Cog):
@@ -82,15 +67,6 @@ class Logging(commands.Cog):
 
             save_json(os.path.join("config", "logging.json"), self.logs)
             await ctx.send("Successfully updated logging channel to <#" + str(channel.id) + ">")
-
-    @change_logging.error
-    async def change_logging_error(self, ctx, error):
-        if isinstance(error, commands.CheckFailure):
-            print("!ERROR! " + str(ctx.author.id) + " did not have permissions for change logging command")
-        elif isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("Command is missing arguments")
-        else:
-            print(error)
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
@@ -562,7 +538,6 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the property of the user updated before and after
         """
-
         if self.logs[str(self.settings["guild_id"])]["channel"] is not None:
             logging_channel = self.bot.get_guild(self.settings["guild_id"]).get_channel(int(self.logs[str(self.settings["guild_id"])]["channel"]))
 

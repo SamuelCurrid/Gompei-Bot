@@ -4,10 +4,11 @@ from discord.ext import commands
 from datetime import timedelta
 from datetime import datetime
 
+import discord
 import pytimeparse
 import dateparser
 import asyncio
-import discord
+import typing
 import os
 
 
@@ -20,223 +21,187 @@ class Administration(commands.Cog):
         self.warns = load_json(os.path.join("config", "warns.json"))
         self.bot = bot
 
-    @commands.guild_only()
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
-    async def echo(self, ctx, channel):
+    @commands.guild_only()
+    async def echo(self, ctx, channel: discord.TextChannel, *, msg):
         """
         Forwards message / attachments appended to the command to the given channel
+        Usage: .echo <channel> <message>
+
         :param ctx: context object
         :param channel: channel to send the message to
+        :param msg: message to send
         """
-        # Check if the channel exists
-        echo_channel = ctx.guild.get_channel(int(channel[2:-1]))
-        if echo_channel is not None:
+        # Check for attachments to forward
+        attachments = []
+        if len(ctx.message.attachments) > 0:
+            for i in ctx.message.attachments:
+                attachments.append(await i.to_file())
 
-            # Check for attachments to forward
-            attachments = []
-            if len(ctx.message.attachments) > 0:
-                for i in ctx.message.attachments:
-                    attachments.append(await i.to_file())
-
-            # Get message content and check length
-            message = ctx.message.content[7 + len(channel):]
-            if len(message) > 0:
-                message = await echo_channel.send(message, files=attachments)
-                await ctx.send("Message sent (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(message.channel.id) + "/" + str(message.id) + ">)")
-            elif len(attachments) > 0:
-                message = await echo_channel.send(files=attachments)
-                await ctx.send("Message sent (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(message.channel.id) + "/" + str(message.id) + ">)")
-            else:
-                await ctx.send("No content to send.")
+        if len(msg) > 0:
+            message = await channel.send(msg, files=attachments)
+            await ctx.send("Message sent (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(message.channel.id) + "/" + str(message.id) + ">)")
+        elif len(attachments) > 0:
+            message = await channel.send(files=attachments)
+            await ctx.send("Message sent (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(message.channel.id) + "/" + str(message.id) + ">)")
         else:
-            await ctx.send("Not a valid channel")
+            await ctx.send("No content to send.")
 
-    @echo.error
-    async def echo_error(self, ctx, error):
-        if isinstance(error, commands.CheckFailure):
-            print("!ERROR! " + str(ctx.author.id) + " did not have permissions for echo command")
-        elif isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("Command is missing arguments")
-        else:
-            print(error)
-
-    @commands.guild_only()
-    @commands.command(pass_context=True, aliases=["echoEdit"])
+    @commands.command(pass_context=True, aliases=["echoEdit", "editEcho"])
     @commands.check(moderator_perms)
-    async def echo_edit(self, ctx, message_link):
-        # Get message and channel ID from the message_link
-        message_id = int(message_link[message_link.rfind("/") + 1:])
-        shortLink = message_link[:message_link.rfind("/")]
-        channel_id = int(shortLink[shortLink.rfind("/") + 1:])
-
-        # Check if the channel exists
-        channel = ctx.guild.get_channel(channel_id)
-        if channel is None:
-            await ctx.send("Not a valid link to message")
-        else:
-            # Check if the message exists
-            message = await channel.fetch_message(message_id)
-            if message is None:
-                await ctx.send("Not a valid link to message")
-            else:
-                # Check if Gompei is author of the message
-                if message.author.id != self.bot.user.id:
-                    await ctx.send("Cannot edit a message that is not my own")
-                else:
-                    # Read new message content and edit message
-                    newMessage = ctx.message.content[10 + len(message_link):]
-
-                    await message.edit(content=newMessage)
-                    await ctx.send("Message edited (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(channel_id) + "/" + str(message_id) + ">)")
-
     @commands.guild_only()
-    @commands.command(pass_context=True, aliases=["pmEcho", "echoPM"])
+    async def echo_edit(self, ctx, bot_msg: discord.Message, *, msg):
+        """
+        Edits a message sent by the bot with the message given
+        Usage: .echoEdit <messageLink> <message>
+
+        :param ctx: context object
+        :param bot_msg: link or id of the message to edit
+        :param msg: message to edit to
+        """
+        # Check if Gompei is author of the message
+        if bot_msg.author.id != self.bot.user.id:
+            await ctx.send("Cannot edit a message that is not my own")
+        else:
+            await bot_msg.edit(content=msg)
+            await ctx.send("Message edited (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(bot_msg.channel.id) + "/" + str(bot_msg.id) + ">)")
+
+    @commands.command(pass_context=True, aliases=["echoPM", "pmEcho"])
     @commands.check(moderator_perms)
-    async def echo_pm(self, ctx, user):
+    @commands.guild_only()
+    async def echo_pm(self, ctx, user: typing.Union[discord.User, discord.Member], *, msg):
         """
         Forwards given message / attachments to give user
+        Usage: .echoPM <user> <message>
+
+        :param ctx: context object
+        :param user: user to send message to
+        :param msg: message to send
         """
-        # Get member
-        member = ctx.guild.get_member(parse_id(user))
-
-        if member is None:
-            await ctx.send("Not a valid member")
-            return
-
         # Read attachments and message
         attachments = []
         if len(ctx.message.attachments) > 0:
             for i in ctx.message.attachments:
                 attachments.append(await i.to_file())
 
-        message = ctx.message.content[9 + len(user):]
-
         # Send message to user via DM
-        if len(message) > 0:
-            message = await member.send(message, files=attachments)
+        if len(msg) > 0:
+            message = await user.send(msg, files=attachments)
             await ctx.send("Message sent (<https://discordapp.com/channels/@me/" + str(message.channel.id) + "/" + str(message.id) + ">)")
         elif len(attachments) > 0:
-            message = await member.send(files=attachments)
+            message = await user.send(files=attachments)
             await ctx.send("Message sent (<https://discordapp.com/channels/@me/" + str(message.channel.id) + "/" + str(message.id) + ">)")
         else:
             await ctx.send("No content to send")
 
         await ctx.message.add_reaction("👍")
 
-    @echo_pm.error
-    async def echo_pm_error(self, ctx, error):
-        if isinstance(error, commands.CheckFailure):
-            print("!ERROR! " + str(ctx.author.id) + " did not have permissions for echo command")
-        elif isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("Command is missing arguments")
-        else:
-            print(error)
-
     @commands.guild_only()
-    @commands.command(pass_context=True, aliases=["pmEdit"])
+    @commands.command(pass_context=True, aliases=["pmEdit", "editPM"])
     @commands.check(moderator_perms)
-    async def pm_edit(self, ctx, user, message_link):
+    async def pm_edit(self, ctx, user: typing.Union[discord.Member, discord.User], message_link, *, msg):
+        """
+        Edits a PM message sent to a user
+        Usage: .pmEdit <user> <messageLink>
+
+        :param ctx: context object
+        :param user: user that the message was sent to
+        :param message_link: link to the message
+        :param msg: message to edit to
+        """
         # Get message ID from message_link
         message_id = int(message_link[message_link.rfind("/") + 1:])
 
-        member = ctx.guild.get_member(parse_id(user))
-        if member is None:
-            await ctx.send("Not a valid user")
-        else:
-            channel = member.dm_channel
-            if channel is None:
-                channel = await member.create_dm()
-
-            message = await channel.fetch_message(message_id)
-            if message is None:
-                await ctx.send("Not a valid link to message")
-            else:
-                if message.author.id != self.bot.user.id:
-                    await ctx.send("Cannot edit a message that is not my own")
-                else:
-                    new_message = ctx.message.content[10 + len(message_link) + len(user):]
-
-                    await message.edit(content=new_message)
-                    await ctx.send("Message edited (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(channel.id) + "/" + str(message_id) + ">)")
-
-    @commands.guild_only()
-    @commands.command(pass_context=True, aliases=["react", "echoReact"])
-    @commands.check(moderator_perms)
-    async def echo_react(self, ctx, message_link, emote):
-        message_id = int(message_link[message_link.rfind("/") + 1:])
-        short_link = message_link[:message_link.rfind("/")]
-        channel_id = int(short_link[short_link.rfind("/") + 1:])
-
-        channel = ctx.guild.get_channel(channel_id)
+        channel = user.dm_channel
         if channel is None:
+            channel = await user.create_dm()
+
+        message = await channel.fetch_message(message_id)
+        if message is None:
             await ctx.send("Not a valid link to message")
         else:
-            message = await channel.fetch_message(message_id)
-            if message is None:
-                await ctx.send("Not a valid link to message")
+            if message.author.id != self.bot.user.id:
+                await ctx.send("Cannot edit a message that is not my own")
             else:
-                await message.add_reaction(emote)
-                await ctx.message.add_reaction("👍")
+                await message.edit(content=msg)
+                await ctx.send("Message edited (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(channel.id) + "/" + str(message_id) + ">)")
 
-    @commands.guild_only()
-    @commands.command(pass_context=True, aliases=["reactRemove", "echoRemoveReact"])
+    @commands.command(pass_context=True, aliases=["echoReact", "react"])
     @commands.check(moderator_perms)
-    async def echo_remove_react(self, ctx, message_link, emote):
-        message_id = int(message_link[message_link.rfind("/") + 1:])
-        short_link = message_link[:message_link.rfind("/")]
-        channel_id = int(short_link[short_link.rfind("/") + 1:])
-
-        channel = ctx.guild.get_channel(channel_id)
-        if channel is None:
-            await ctx.send("Not a valid link to message")
-        else:
-            message = await channel.fetch_message(message_id)
-            if message is None:
-                await ctx.send("Not a valid link to message")
-            else:
-                await message.remove_reaction(emote)
-                await ctx.message.add_reaction("👍")
-
     @commands.guild_only()
+    async def echo_react(self, ctx, message: discord.Message, emote: discord.Emoji):
+        """
+        Adds a reaction to a message
+        Usage: .echoReact <message> <emote>
+
+        :param ctx: context object
+        :param message: message link or ID
+        :param emote: emote to react with
+        """
+        await message.add_reaction(emote)
+        await ctx.message.add_reaction("👍")
+
+    @commands.command(pass_context=True, aliases=["echoRemoveReact", "reactRemove"])
+    @commands.check(moderator_perms)
+    @commands.guild_only()
+    async def echo_remove_react(self, ctx, message: discord.Message, emote: discord.Emoji):
+        """
+        Removes the bots reaction from a message
+        Usage: .echoRemoveReact <message> <emote>
+
+        :param ctx: context object
+        :param message: message link or ID
+        :param emote: emote to un-react with
+        """
+        await message.remove_reaction(emote)
+        await ctx.message.add_reaction("👍")
+
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
-    async def purge(self, ctx, number):
-        """
-        Purges a number of messages in channel used
-        :param ctx: context object
-        :param number: number of messages to purge
-        """
-        await ctx.channel.purge(limit=int(number) + 1)
-
-    @purge.error
-    async def purge_error(self, ctx, error):
-        if isinstance(error, commands.CheckFailure):
-            print("!ERROR! " + str(ctx.author.id) + " did not have permissions for purge command")
-        elif isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("Command is missing arguments")
-        else:
-            print(error)
-
     @commands.guild_only()
-    @commands.command(pass_context=True, name="spurge")
-    @commands.check(moderator_perms)
-    async def selective_purge(self, ctx, user, number):
+    async def purge(self, ctx, channel: typing.Optional[discord.TextChannel], *, number: int = 0):
         """
-        Purges messages from a specific user in the channel
+        Deletes given number of messages in a channel
+        Usage: .purge (channel) <number>
+
         :param ctx: context object
-        :param user: user to purge
+        :param channel: (optional) channel to purge from
         :param number: number of messages to purge
         """
-        member = ctx.guild.get_member(parse_id(user))
+        if channel is None:
+            await ctx.channel.purge(limit=int(number) + 1)
+        else:
+            await channel.purge(limit=int(number))
 
-        messages = [ctx.message]
-        old_message = ctx.message
+    @commands.command(pass_context=True, aliases=["selectivePurge", "spurge"])
+    @commands.check(moderator_perms)
+    @commands.guild_only()
+    async def selective_purge(self, ctx, target: typing.Union[discord.User, discord.TextChannel], user: typing.Optional[discord.User], *, number: int = 0):
+        """
+        Purges messages from a specific user in a channel
+        Usage: .spurge (channel) <user> <number>
+
+        :param ctx: context object
+        :param target: member or channel to purge from
+        :param user: user to purge if a channel is given
+        :param number: number of messages to purge
+        """
+        messages = []
         count = 0
 
+        if isinstance(target, discord.User):
+            channel = ctx.message.channel
+            messages.append(ctx.message)
+            user = target
+        else:
+            channel = target
+
+        old_message = (await channel.history(limit=1).flatten())[0].created_at
+
         while count < int(number):
-            async for message in ctx.message.channel.history(limit=int(number), before=old_message, oldest_first=False):
-                if message.author == member:
+            async for message in channel.history(limit=int(number), before=old_message, oldest_first=False):
+                if message.author.id == user.id:
                     count += 1
                     messages.append(message)
 
@@ -245,27 +210,23 @@ class Administration(commands.Cog):
 
                 old_message = message.created_at
 
-        await ctx.channel.delete_messages(messages)
-
-    @selective_purge.error
-    async def selective_purge_error(self, ctx, error):
-        if isinstance(error, commands.CheckFailure):
-            print("!ERROR! " + str(ctx.author.id) + " did not have permissions for selective purge command")
-        elif isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("Command is missing arguments")
-        else:
-            print(error)
+        await channel.delete_messages(messages)
 
     @commands.command(pass_context=True, aliases=["tPurge", "timePurge"])
     @commands.check(moderator_perms)
     @commands.guild_only()
-    async def time_purge(self, ctx, channel, time1, time2=None):
-        channel = ctx.guild.get_channel(parse_id(channel))
+    async def time_purge(self, ctx, channel: typing.Optional[discord.TextChannel], *, time1, time2=None):
+        """
+        Purges messages from a time range in a channel
+        Usage: .timePurge (channel) <startTime> (endTime)
 
-        # If channel does not exist
+        :param ctx: context object
+        :param channel: (optional) channel to purge from
+        :param time1: time to start purge at
+        :param time2: (optional) time to end purge at
+        """
         if channel is None:
-            await ctx.send("Not a valid channel")
-            return
+            channel = ctx.message.channel
 
         after_date = dateparser.parse(time1)
 
@@ -301,79 +262,83 @@ class Administration(commands.Cog):
         def check_author(message):
             return message.author.id == ctx.author.id
 
-        await ctx.send(response)
+        query = await ctx.send(response)
 
         response = await self.bot.wait_for('message', check=check_author)
         if response.content.lower() == "y" or response.content.lower() == "yes":
-            await channel.delete_messages(messages)
-            await ctx.send("Successfully purged messages")
+            if channel.id == ctx.channel.id:
+                messages.append(response)
+                messages.append(query)
+                await channel.delete_messages(messages)
+            else:
+                await channel.delete_messages(messages)
+                await ctx.send("Successfully purged messages")
         else:
             await ctx.send("Cancelled purging messages")
 
     @commands.command(pass_context=True, aliases=["mPurge", "messagePurge"])
     @commands.check(moderator_perms)
     @commands.guild_only()
-    async def message_purge(self, ctx, channel, start_message, end_message=None):
-        # Get channel
-        channel = ctx.guild.get_channel(parse_id(channel))
+    async def message_purge(self, ctx, start_message: discord.TextChannel, end_message: discord.TextChannel = None):
+        """
+        Purges messages from an inclusive range of messages
+        Usage: .messagePurge <startMessage> (endMessage)
 
-        # If channel does not exist
-        if channel is None:
-            await ctx.send("Not a valid channel")
-            return
-
-        try:
-            s_message = await channel.fetch_message(int(start_message[-18:]))
-        except ValueError:
-            await ctx.send("Not a valid message ID (start message)")
-            return
-        except discord.NotFound:
-            await ctx.send("Could not find message in given channel")
-            return
-
+        :param ctx: context object
+        :param start_message: first message to purge
+        :param end_message: (optional) last message to purge
+        """
         if end_message is None:
-            messages = await channel.history(limit=None, after=s_message.created_at).flatten()
-            messages.insert(0, s_message)
+            messages = await start_message.channel.history(limit=None, after=start_message.created_at).flatten()
         else:
-            try:
-                e_message = await channel.fetch_message(int(end_message[-18:]))
-            except ValueError:
-                await ctx.send("Not a valid message ID (start message)")
-                return
-            except discord.NotFound:
-                await ctx.send("Could not find message in given channel")
+            if start_message.channel.id != end_message.channel.id:
+                await ctx.send("End message is not in the same channel as the start message")
                 return
 
-            messages = await channel.history(limit=None, after=s_message.created_at, before=e_message.created_at).flatten()
-            messages.append(e_message)
+            messages = await start_message.channel.history(limit=None, after=start_message.created_at, before=end_message.created_at).flatten()
+            messages.append(end_message)
 
-        messages.insert(0, s_message)
+        messages.insert(0, start_message)
 
         if len(messages) == 0:
             await ctx.send("You've selected no messages to purge")
             return
 
-        response = "You are about to purge " + str(len(messages)) + " message(s) from " + channel.name
+        response = "You are about to purge " + str(len(messages)) + " message(s) from " + start_message.channel.name
 
         response += "\nThe purge will start at <" + messages[0].jump_url + "> and end at <" + messages[-1].jump_url + ">.\n\nAre you sure you want to proceed? (Y/N)"
 
         def check_author(message):
             return message.author.id == ctx.author.id
 
-        await ctx.send(response)
+        query = await ctx.send(response)
 
         response = await self.bot.wait_for('message', check=check_author)
+
         if response.content.lower() == "y" or response.content.lower() == "yes":
-            await channel.delete_messages(messages)
-            await ctx.send("Successfully purged messages")
+            if start_message.channel.id == ctx.channel.id:
+                messages.append(response)
+                messages.append(query)
+                await start_message.channel.delete_messages(messages)
+            else:
+                await start_message.channel.delete_messages(messages)
+                await ctx.send("Successfully purged messages")
         else:
             await ctx.send("Cancelled purging messages")
 
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
     @commands.guild_only()
-    async def mute(self, ctx, arg1, arg2):
-        member = ctx.guild.get_member(parse_id(arg1))
+    async def mute(self, ctx, member: discord.Member, time, *, reason):
+        """
+        Mutes a member for the given time and reason
+        Usage: .mute <member> <time> <reason>
+
+        :param ctx: context object
+        :param member: member to mute
+        :param time: time to mute for
+        :param reason: reason for the mute (dm'ed to the user)
+        """
         muted_role = ctx.guild.get_role(615956736616038432)
 
         # Is user already muted
@@ -388,12 +353,11 @@ class Administration(commands.Cog):
 
         username = member.name + "#" + str(member.discriminator)
 
-        seconds = pytimeparse.parse(arg2)
+        seconds = pytimeparse.parse(time)
         if seconds is None:
             await ctx.send("Not a valid time, try again")
 
         delta = timedelta(seconds=seconds)
-        reason = ctx.message.content[8 + len(arg1 + arg2):]
         if len(reason) < 1:
             await ctx.send("You must include a reason for the mute")
             return
@@ -409,78 +373,65 @@ class Administration(commands.Cog):
         await member.remove_roles(muted_role)
         await ctx.send("**Unmuted** user **" + username + "**")
 
-    @mute.error
-    async def mute_error(self, ctx, error):
-        if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("Command is missing arguments: .mute <user> <minutes> <reason>")
-        if isinstance(error, commands.CommandInvokeError):
-            await ctx.send("Invalid mute time")
-
-    @commands.guild_only()
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
-    async def warn(self, ctx, user):
+    @commands.guild_only()
+    async def warn(self, ctx, member: discord.Member, *, reason):
         """
         Warns a specific user for given reason
+        Usage: .warn <member> <reason>
+
+        :param ctx: context object
+        :param member: member of the server to warn
+        :param reason: reason to log and DM
         """
-        member_id = parse_id(user)
-        member = ctx.guild.get_member(member_id)
-
-        if member is None:
-            await ctx.send("Not a valid member")
-            return
-
         attachments = []
         if len(ctx.message.attachments) > 0:
             for i in ctx.message.attachments:
                 attachments.append(await i.to_file())
 
-        message = ctx.message.content[7 + len(user):]
-        if len(message) > 0:
-            await member.send("You were warned in the WPI Discord Server. Reason:\n> " + message, files=attachments)
+        if len(reason) > 0:
+            await member.send("You were warned in the WPI Discord Server. Reason:\n> " + reason, files=attachments)
         else:
             await ctx.send("No warning to send")
             return
 
-        if str(member_id) in self.warns:
-            self.warns[str(member_id)].append(message)
+        if str(member.id) in self.warns:
+            self.warns[str(member.id)].append(reason)
         else:
-            self.warns[str(member_id)] = [message]
+            self.warns[str(member.id)] = [reason]
 
         save_json(os.path.join("config", "warns.json"), self.warns)
 
-        await ctx.send("Warning sent to " + member.display_name + " (" + str(member_id) + "), this is their " + make_ordinal(len(self.warns[str(member_id)])) + " warning")
+        await ctx.send("Warning sent to " + member.display_name + " (" + str(member.id) + "), this is their " + make_ordinal(len(self.warns[str(member.id)])) + " warning")
 
-    @warn.error
-    async def warn_error(self, ctx, error):
-        if isinstance(error, commands.CheckFailure):
-            print("!ERROR! " + str(ctx.author.id) + " did not have permissions for warn command")
-        elif isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send("Command is missing arguments\n> warn [user/user_ID] [reason]")
-        else:
-            print(error)
-
-    @commands.guild_only()
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
-    async def warns(self, ctx, user=None):
+    @commands.guild_only()
+    async def warns(self, ctx, user: typing.Union[discord.Member, discord.User] = None):
+        """
+        List the warns for the server or a user
+        Usage: .warns (user)
+
+        :param ctx: context object
+        :param user: (optional) user in the server
+        """
         message = ""
         if user is None:
             if len(self.warns) == 0:
                 message = "There are no warnings on this server"
-            for member in self.warns:
-                message += "Warnings for <@" + member + ">\n"
+            for user in self.warns:
+                message += "Warnings for <@" + user + ">\n"
                 count = 1
-                for warn in self.warns[member]:
+                for warn in self.warns[user]:
                     message += "__**" + str(count) + ".**__\n" + warn + "\n\n"
                     count += 1
 
                 message += "\n\n"
         else:
-            member_id = parse_id(user)
-            if str(member_id) in self.warns:
-                message = "Warnings for <@" + str(member_id) + ">\n"
-                for warn in self.warns[str(member_id)]:
+            if str(user.id) in self.warns:
+                message = "Warnings for <@" + str(user.id) + ">\n"
+                for warn in self.warns[str(user.id)]:
                     message += "> " + warn + "\n"
             else:
                 message = "This user does not exist or has no warnings"
@@ -492,141 +443,159 @@ class Administration(commands.Cog):
         else:
             await ctx.send(message)
 
-    @commands.guild_only()
     @commands.command(pass_context=True, aliases=["warnNote"])
     @commands.check(moderator_perms)
-    async def warn_note(self, ctx, user):
-        member_id = parse_id(user)
-        member = ctx.guild.get_member(member_id)
+    @commands.guild_only()
+    async def warn_note(self, ctx, user: typing.Union[discord.Member, discord.User], *, reason):
+        """
+        Adds a warning to a user without DM'ing them
+        Usage: .warnNote <user> <reason>
 
-        if member is None:
-            await ctx.send("Not a valid member")
-            return
-
+        :param ctx: context object
+        :param user: user to add a note for
+        :param reason: reason for the note
+        """
         attachments = []
         if len(ctx.message.attachments) > 0:
             for i in ctx.message.attachments:
                 attachments.append(await i.to_file())
 
-        message = ctx.message.content[11 + len(user):]
-
-        if str(member_id) in self.warns:
-            self.warns[str(member_id)].append(message)
+        if str(user.id) in self.warns:
+            self.warns[str(user.id)].append(reason)
         else:
-            self.warns[str(member_id)] = [message]
+            self.warns[str(user.id)] = [reason]
 
         save_json(os.path.join("config", "warns.json"), self.warns)
 
-        await ctx.send("Warning added for " + member.display_name + " (" + str(member_id) + "), this is their " + make_ordinal(len(self.warns[str(member_id)])) + " warning")
+        if isinstance(user, discord.Member):
+            await ctx.send("Warning added for " + user.display_name + " (" + str(user.id) + "), this is their " + make_ordinal(len(self.warns[str(user.id)])) + " warning")
+        else:
+            await ctx.send("Warning added for " + user.name + " (" + str(user.id) + "), this is their " + make_ordinal(len(self.warns[str(user.id)])) + " warning")
 
     @commands.command(pass_context=True, aliases=["clearWarn"])
     @commands.check(moderator_perms)
-    async def clear_warn(self, ctx, user):
-        member_id = parse_id(user)
-        if str(member_id) in self.warns:
-            del self.warns[str(member_id)]
-            await ctx.send("Cleared warnings for <@" + str(member_id) + ">")
+    @commands.guild_only()
+    async def clear_warn(self, ctx, user: typing.Union[discord.Member, discord.User]):
+        """
+        Clears the warnings for a user
+        Usage: .clearWarn <user>
+
+        :param ctx: context object
+        :param user: user to clear warns for
+        """
+        if str(user.id) in self.warns:
+            del self.warns[str(user.id)]
+            await ctx.send("Cleared warnings for <@" + str(user.id) + ">")
             save_json(os.path.join("config", "warns.json"), self.warns)
         else:
             await ctx.send("This user does not exist or has no warnings")
 
-    @commands.guild_only()
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
-    async def lockdown(self, ctx):
-        if len(ctx.message.content) > 10:
-            lock_channel = ctx.guild.get_channel(parse_id(ctx.message.content[10:]))
-            if lock_channel is None:
-                await ctx.send("Not a valid channel to lockdown")
-                return
-        else:
+    @commands.guild_only()
+    async def lockdown(self, ctx, channel: discord.TextChannel = None):
+        """
+        Locks down a channel so users cannot send messages in it
+        Usage: .lockdown (channel)
+
+        :param ctx: context object
+        :param channel: (optional) channel to lockdown
+        """
+        if channel is None:
             lock_channel = ctx.channel
+        else:
+            lock_channel = channel
 
         overwrite = lock_channel.overwrites_for(ctx.guild.default_role)
         if overwrite.send_messages is False:
             await ctx.send("Channel is already locked down!")
         else:
             overwrite.update(send_messages=False)
-            await lock_channel.send(":white_check_mark: **Locked down " + lock_channel.name + "**")
+            await lock_channel.send(":lock: **This channel is now locked**")
             await lock_channel.set_permissions(ctx.guild.default_role, overwrite=overwrite)
 
-    @commands.guild_only()
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
-    async def unlock(self, ctx):
-        if len(ctx.message.content) > 8:
-            lock_channel = ctx.guild.get_channel(parse_id(ctx.message.content[8:]))
-            if lock_channel is None:
-                await ctx.send("Not a valid channel to unlock")
-                return
-        else:
+    @commands.guild_only()
+    async def unlock(self, ctx, channel: discord.TextChannel = None):
+        """
+        Unlocks a channel that is locked
+        Usage: .unlock (channel)
+
+        :param ctx: context object
+        :param channel: (optional) channel to unlock
+        """
+        if channel is None:
             lock_channel = ctx.channel
+        else:
+            lock_channel = channel
 
         overwrite = lock_channel.overwrites_for(ctx.guild.default_role)
         if overwrite.send_messages is False:
             overwrite.update(send_messages=None)
             await lock_channel.set_permissions(ctx.guild.default_role, overwrite=overwrite)
-            await lock_channel.send(":white_check_mark: **Unlocked " + lock_channel.name + "**")
+            await lock_channel.send(":unlock: **Unlocked the channel**")
         else:
             await ctx.send("Channel is not locked")
 
-    @commands.guild_only()
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
-    async def slowmode(self, ctx, channel, time):
-        channel = ctx.guild.get_channel(parse_id(channel))
+    @commands.guild_only()
+    async def slowmode(self, ctx, channel: typing.Optional[discord.TextChannel], *, time):
+        """
+        Sets the slowmode in a channel
+        Usage: .slowmode (channel) <time>
+
+        :param ctx: context object
+        :param channel: (optional) channel to set slowmode on
+        :param time: time for the slowmode
+        """
         if channel is None:
-            await ctx.send("Not a valid channel")
-        else:
-            seconds = pytimeparse.parse(time)
-            if seconds is None:
-                await ctx.send("Not a valid time format, try again")
-            elif seconds > 21600:
-                await ctx.send("Slowmode delay is too long")
-            else:
-                await channel.edit(slowmode_delay=seconds)
-                await ctx.send("Successfully set slowmode delay to " + str(seconds) + " seconds in #" + channel.name)
+            channel = ctx.message.channel
 
-    @commands.guild_only()
+        seconds = pytimeparse.parse(time)
+        if seconds is None:
+            await ctx.send("Not a valid time format, try again")
+        elif seconds > 21600:
+            await ctx.send("Slowmode delay is too long")
+        else:
+            await channel.edit(slowmode_delay=seconds)
+            await ctx.send("Successfully set slowmode delay to " + str(seconds) + " seconds in #" + channel.name)
+
     @commands.command(pass_context=True)
     @commands.check(administrator_perms)
-    async def kick(self, ctx, user):
-        """
-        Kicks a user from the server, requires a reason as well
-        :param ctx: Context object
-        :param user: User to kick
-        """
-        member = ctx.guild.get_member(parse_id(user))
-
-        if member is None:
-            await ctx.send("Could not find the member to kick")
-        else:
-            reason = ctx.message.content[ctx.message.content.find(" ") + len(user) + 2:]
-            if len(reason) < 1:
-                await ctx.send("Must include a reason with the kick")
-            else:
-                await member.send(member.guild.name + " kicked you for reason:\n> " + reason)
-                await member.kick(reason=reason)
-                await ctx.send("Successfully kicked user " + member.name + member.discriminator)
-
     @commands.guild_only()
+    async def kick(self, ctx, member: discord.Member, *, reason):
+        """
+        Kicks a user from the server with a DM'ed reason
+        Usage: .kick <member> <reason>
+
+        :param ctx: context object
+        :param member: member to kick
+        :param reason: reason to kick, DM'ed to user
+        """
+        if len(reason) < 1:
+            await ctx.send("Must include a reason with the kick")
+        else:
+            await member.send(member.guild.name + " kicked you for reason:\n> " + reason)
+            await member.kick(reason=reason)
+            await ctx.send("Successfully kicked user " + member.name + member.discriminator)
+
     @commands.command(pass_context=True)
     @commands.check(administrator_perms)
-    async def ban(self, ctx, user):
+    @commands.guild_only()
+    async def ban(self, ctx, member: discord.Member, *, reason):
         """
         Bans a user from the server, requires a reason as well
-        :param ctx: Context object
-        :param user: User to ban
-        """
-        member = ctx.guild.get_member(parse_id(user))
+        Usage: .ban <member> <reason>
 
-        if member is None:
-            await ctx.send("Could not find the member to kick")
+        :param ctx: context object
+        :param member: member to ban
+        :param reason: reason for the ban, DM'ed to user
+        """
+        if len(reason) < 1:
+            await ctx.send("Must include a reason with the ban")
         else:
-            reason = ctx.message.content[ctx.message.content.find(" ") + len(user) + 2:]
-            if len(reason) < 1:
-                await ctx.send("Must include a reason with the ban")
-            else:
-                await member.send(member.guild.name + " banned you for reason:\n> " + reason)
-                await member.kick(reason=reason)
-                await ctx.send("Successfully banned user " + member.name + member.discriminator)
+            await member.send(member.guild.name + " banned you for reason:\n> " + reason)
+            await member.kick(reason=reason)
+            await ctx.send("Successfully banned user " + member.name + member.discriminator)
