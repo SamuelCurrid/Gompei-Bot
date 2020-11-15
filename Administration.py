@@ -130,7 +130,7 @@ class Administration(commands.Cog):
     @commands.command(pass_context=True, aliases=["echoReact", "react"])
     @commands.check(moderator_perms)
     @commands.guild_only()
-    async def echo_react(self, ctx, message: discord.Message, emote: discord.Emoji):
+    async def echo_react(self, ctx, message: discord.Message, emote: typing.Union[discord.Emoji, str]):
         """
         Adds a reaction to a message
         Usage: .echoReact <message> <emote>
@@ -145,7 +145,7 @@ class Administration(commands.Cog):
     @commands.command(pass_context=True, aliases=["echoRemoveReact", "reactRemove"])
     @commands.check(moderator_perms)
     @commands.guild_only()
-    async def echo_remove_react(self, ctx, message: discord.Message, emote: discord.Emoji):
+    async def echo_remove_react(self, ctx, message: discord.Message, emote: typing.Union[discord.Emoji, str]):
         """
         Removes the bots reaction from a message
         Usage: .echoRemoveReact <message> <emote>
