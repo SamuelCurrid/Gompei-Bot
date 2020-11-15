@@ -92,7 +92,9 @@ async def on_ready():
 @gompei.event
 async def on_message(message):
     """
-    Forwards DMs to a channel
+    Forwards DM messages to the DM channel
+
+    :param message: message
     """
     if not message.author.bot:
         await gompei.process_commands(message)
@@ -140,10 +142,10 @@ async def on_message(message):
 @gompei.event
 async def on_message_edit(before, after):
     """
-    Forwards messages edited in DMs to a channel
-    :param before:
-    :param after:
-    :return:
+    Forwards DM messages edited in DMs to a channel
+
+    :param before: message before edit
+    :param after: message after edit
     """
     if isinstance(before.channel, discord.channel.DMChannel) and not before.author.bot and settings["dm_channel_id"] is not None:
         if before.content is after.content:
@@ -165,6 +167,11 @@ async def on_message_edit(before, after):
 
 @gompei.event
 async def on_raw_message_edit(payload):
+    """
+    Forwards DM uncached message edits to the DM channel
+
+    :param payload: uncached message edit payload
+    """
     # If the message is not cached
     if payload.cached_message is None:
         guild = gompei.get_guild(settings["guild_id"])
@@ -184,6 +191,11 @@ async def on_raw_message_edit(payload):
 
 @gompei.event
 async def on_message_delete(message):
+    """
+    Forwards DM message delete events to the DM channel
+
+    :param message: Message that was deleted
+    """
     # If a DM message
     if isinstance(message.channel, discord.channel.DMChannel) and not message.author.bot and settings["dm_channel_id"] is not None:
         message_embed = discord.Embed()
@@ -207,6 +219,11 @@ async def on_message_delete(message):
 
 @gompei.event
 async def on_raw_message_delete(payload):
+    """
+    Forwards DM uncached message delete events to the DM channel
+
+    :param payload: Uncached deleted message payload
+    """
     # If a DM message
     if not hasattr(payload, "guild_id") and settings["dm_channel_id"] is not None:
         # If the message is not cached
@@ -225,6 +242,13 @@ async def on_raw_message_delete(payload):
 
 @gompei.event
 async def on_typing(channel, user, when):
+    """
+    Sends an on typing event to DM channel if someone is typing in the bots DMs
+
+    :param channel: channel that the user is typing in
+    :param user: user that is typing
+    :param when: when the user was typing
+    """
     if isinstance(channel, discord.channel.DMChannel) and not user.bot and settings["dm_channel_id"] is not None:
         guild = gompei.get_guild(settings["guild_id"])
         dm_channel = guild.get_channel(settings["dm_channel_id"])
@@ -235,6 +259,9 @@ async def on_typing(channel, user, when):
 async def on_member_update(before, after):
     """
     Removes opt in channel roles if losing access role
+
+    :param before: member roles before
+    :param after: member roles after
     """
     # Role checks
     added_roles = [x for x in after.roles if x not in before.roles]
@@ -254,6 +281,12 @@ async def on_member_update(before, after):
 
 @gompei.event
 async def on_command_error(ctx, error):
+    """
+    Default error handling for the bot
+
+    :param ctx: context object
+    :param error: error
+    """
     if isinstance(error, commands.CheckFailure):
         print("!ERROR! " + str(ctx.author.id) + " did not have permissions for " + ctx.command.name + " command")
     elif isinstance(error, commands.BadArgument):
