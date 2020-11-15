@@ -254,11 +254,11 @@ async def on_member_update(before, after):
 
 @gompei.event
 async def on_command_error(ctx, error):
-    if isinstance(error, commands.BadArgument):
+    if isinstance(error, commands.CheckFailure):
+        print("!ERROR! " + str(ctx.author.id) + " did not have permissions for " + ctx.command.name + " command")
+    elif isinstance(error, commands.BadArgument):
         argument = list(ctx.command.clean_params)[len(ctx.args[2:] if ctx.command.cog else ctx.args[1:])]
         await ctx.send("Could not find the " + argument)
-    elif isinstance(error, commands.CheckFailure):
-        print("!ERROR! " + str(ctx.author.id) + " did not have permissions for " + ctx.command.name + " command")
     elif isinstance(error, commands.MissingRequiredArgument):
         await ctx.send("Command is missing arguments")
     else:
