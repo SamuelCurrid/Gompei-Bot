@@ -536,88 +536,84 @@ class Logging(commands.Cog):
 
                 await logging_channel.send(embed=self.embed)
 
+            statusBefore = ""
+            statusAfter = ""
             # If user is coming online
             if before.raw_status == "offline":
                 self.embed = discord.Embed()
 
                 if str(after.id) in self.statuses:
-                    send = False
 
                     # Custom status was removed
                     if not isinstance(after.activity, discord.CustomActivity):
                         self.embed.colour = discord.Colour(0xbe4041)
                         self.embed.title = "Custom status removed"
+                        if self.statuses[str(after.id)]["emoji"] is not None:
+                            statusBefore += self.statuses[str(after.id)]["emoji"] + " "
+                        if self.statuses[str(after.id)]["name"] is not None:
+                            statusBefore += self.statuses[str(after.id)]["name"]
+
                     # Custom status was edited
                     else:
+
                         self.embed.colour = discord.Colour(0x8899d4)
                         self.embed.title = "Custom status edited"
 
-                    if after.activity.name != self.statuses[str(after.id)]["name"]:
-                        self.embed.add_field(name="Name", value=after.activity.name)
-                        send = True
-                    if after.activity.emoji != self.statuses[str(after.id)]["emoji"]:
-                        self.embed.add_field(name="Emoji", value=after.activity.emoji)
-                        send = True
+                        if after.activity.emoji != self.statuses[str(after.id)]["emoji"]:
+                            statusBefore += self.statuses[str(after.id)]["emoji"] + " "
+                            if after.activity.emoji is not None:
+                                statusAfter += str(after.activity.emoji) + " "
+                        if after.activity.name != self.statuses[str(after.id)]["name"]:
+                            statusBefore += self.statuses[str(after.id)]["name"]
+                            if after.activity.name is not None:
+                                statusAfter += after.activity.name
 
                     del self.statuses[str(after.id)]
 
-                    if send:
-                        self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
-                        self.embed.set_footer(text="ID: " + str(after.id))
-                        self.embed.timestamp = datetime.utcnow()
-
-                        await logging_channel.send(embed=self.embed)
-
                 # Custom status was added
-                else:
+                elif isinstance(after.activity, discord.CustomActivity):
                     self.embed.colour = discord.Colour(0x43b581)
                     self.embed.title = "Custom status added"
 
-                    if after.activity.name is not None:
-                        self.embed.add_field(name="Name", value=after.activity.name)
-                        send = True
                     if after.activity.emoji is not None:
-                        self.embed.add_field(name="Emoji", value=after.activity.emoji)
-                        send = True
-
-                    if send:
-                        self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
-                        self.embed.set_footer(text="ID: " + str(after.id))
-                        self.embed.timestamp = datetime.utcnow()
-
-                        await logging_channel.send(embed=self.embed)
+                        statusAfter += str(after.activity.emoji) + " "
+                    if after.activity.name is not None:
+                        statusAfter += after.activity.name
 
             # Log custom statuses of those going offline
             elif after.raw_status == "offline":
                 if isinstance(before.activity, discord.CustomActivity):
-                    self.statuses[str(after.id)] = {"name": before.activity.name,
-                                                    "emoji": before.activity.emoji}
-            elif isinstance(after.activity, discord.CustomActivity) or isinstance(before.activity, discord.CustomActivity):
-                send = False
 
+                    self.statuses[str(after.id)] = {"name": None, "emoji": None}
+
+                    if before.activity.emoji is not None:
+                        self.statuses[str(after.id)]["name"] = str(before.activity.emoji)
+                    if before.activity.name is not None:
+                        self.statuses[str(after.id)]["name"] = before.activity.name
+
+            # Log custom status changes of those staying online
+            elif isinstance(after.activity, discord.CustomActivity) or isinstance(before.activity, discord.CustomActivity):
                 # Custom status was added
                 if not isinstance(before.activity, discord.CustomActivity):
                     self.embed = discord.Embed()
                     self.embed.colour = discord.Colour(0x43b581)
                     self.embed.title = "Custom status added"
-                    if after.activity.name is not None:
-                        self.embed.add_field(name="Name", value=after.activity.name)
-                        send = True
+
                     if after.activity.emoji is not None:
-                        self.embed.add_field(name="Emoji", value=after.activity.emoji)
-                        send = True
+                        statusAfter += str(after.activity.emoji) + " "
+                    if after.activity.name is not None:
+                        statusAfter += after.activity.name
 
                 # Custom status was removed
                 elif not isinstance(after.activity, discord.CustomActivity):
                     self.embed = discord.Embed()
                     self.embed.colour = discord.Colour(0xbe4041)
                     self.embed.title = "Custom status removed"
-                    send = True
 
-                    if before.activity.name is not None:
-                        self.embed.add_field(name="Name", value=before.activity.name)
                     if before.activity.emoji is not None:
-                        self.embed.add_field(name="Emoji", value=before.activity.emoji)
+                        statusBefore += str(before.activity.emoji) + " "
+                    if before.activity.name is not None:
+                        statusBefore += before.activity.name
 
                 # Custom status was edited
                 else:
@@ -625,18 +621,21 @@ class Logging(commands.Cog):
                     self.embed.colour = discord.Colour(0x8899d4)
                     self.embed.title = "Custom status edited"
 
-                    if before.activity.name != after.activity.name:
-                        self.embed.add_field(name="Name", value=after.activity.name)
-                        send = True
-                    if before.activity.emoji != after.activity.emoji:
-                        self.embed.add_field(name="Emoji", value=after.activity.emoji)
-                        send = True
+                    if before.activity.emoji is not None:
+                        statusBefore += str(before.activity.emoji) + " "
+                    if after.activity.emoji is not None:
+                        statusAfter += str(after.activity.emoji) + " "
+                    if before.activity.name is not None:
+                        statusBefore += before.activity.name
+                    if after.activity.name is not None:
+                        statusAfter += after.activity.name
 
-                if send:
-                    self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
-                    self.embed.set_footer(text="ID: " + str(after.id))
-                    self.embed.timestamp = datetime.utcnow()
-                    await logging_channel.send(embed=self.embed)
+            if (statusBefore != "" or statusAfter != "") and statusBefore != statusAfter:
+                self.embed.description = "**Before:** " + statusBefore + "\n**+After:** " + statusAfter
+                self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+                self.embed.set_footer(text="ID: " + str(after.id))
+                self.embed.timestamp = datetime.utcnow()
+                await logging_channel.send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_user_update(self, before, after):
