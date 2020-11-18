@@ -13,6 +13,7 @@ class Logging(commands.Cog):
         self.settings = load_json(os.path.join("config", "settings.json"))
         self.embed = discord.Embed()
         self.logs = None
+        self.statuses = None
 
     async def update_guilds(self):
         saved_guilds = []
@@ -50,6 +51,7 @@ class Logging(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         self.logs = load_json(os.path.join("config", "logging.json"))
+        self.statuses = {}
         await self.update_guilds()
 
     @commands.command(pass_context=True, name="logging")
@@ -432,32 +434,75 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the property of the member updated before and after
         """
-        logging_channel = before.guild.get_channel(int(self.logs[str(before.guild.id)]["channel"]))
 
-        # Role checks
-        added_roles = [x for x in after.roles if x not in before.roles]
-        removed_roles = [x for x in before.roles if x not in after.roles]
+        if self.logs[str(after.guild.id)]["channel"] is not None:
+            logging_channel = before.guild.get_channel(int(self.logs[str(after.guild.id)]["channel"]))
 
-        # If roles edited
-        if len(added_roles) + len(removed_roles) > 0:
-            # Log who the editor is
-            entries = await before.guild.audit_logs(limit=1).flatten()
-            editor = ""
-            if entries[0].action == discord.AuditLogAction.member_role_update:
-                editor += "\n\nEdited by <@" + str(entries[0].user.id) + ">"
+            # Role checks
+            added_roles = [x for x in after.roles if x not in before.roles]
+            removed_roles = [x for x in before.roles if x not in after.roles]
 
-            if len(added_roles) > 0:
-                # Roles have been added and removed
-                if len(removed_roles) > 0:
+            # If roles edited
+            if len(added_roles) + len(removed_roles) > 0:
+                # Log who the editor is
+                entries = await before.guild.audit_logs(limit=1).flatten()
+                editor = ""
+                if entries[0].action == discord.AuditLogAction.member_role_update:
+                    editor += "\n\nEdited by <@" + str(entries[0].user.id) + ">"
+
+                if len(added_roles) > 0:
+                    # Roles have been added and removed
+                    if len(removed_roles) > 0:
+                        self.embed = discord.Embed()
+                        self.embed.colour = discord.Colour(0x8899d4)
+                        self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+                        self.embed.title = "Roles updated"
+
+                        self.embed.description = "**Added:** "
+                        for role in added_roles:
+                            self.embed.description += "<@&" + str(role.id) + "> "
+                        self.embed.description += "\n**Removed:** "
+                        for role in removed_roles:
+                            self.embed.description += "<@&" + str(role.id) + "> "
+
+                        self.embed.description += editor
+
+                        self.embed.set_footer(text="ID: " + str(after.id))
+                        self.embed.timestamp = datetime.utcnow()
+
+                        await logging_channel.send(embed=self.embed)
+                        return
+                    else:
+                        # Roles have only been added
+                        self.embed = discord.Embed()
+                        self.embed.colour = discord.Colour(0x43b581)
+                        self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+                        if len(added_roles) > 1:
+                            self.embed.title = "Roles added"
+                        else:
+                            self.embed.title = "Role added"
+                        self.embed.description = ""
+                        for role in added_roles:
+                            self.embed.description += "<@&" + str(role.id) + "> "
+
+                        self.embed.description += editor
+
+                        self.embed.set_footer(text="ID: " + str(after.id))
+                        self.embed.timestamp = datetime.utcnow()
+
+                        await logging_channel.send(embed=self.embed)
+                        return
+
+                else:
+                    # Roles have only been removed
                     self.embed = discord.Embed()
-                    self.embed.colour = discord.Colour(0x8899d4)
+                    self.embed.colour = discord.Colour(0xbe4041)
                     self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
-                    self.embed.title = "Roles updated"
-
-                    self.embed.description = "**Added:** "
-                    for role in added_roles:
-                        self.embed.description += "<@&" + str(role.id) + "> "
-                    self.embed.description += "\n**Removed:** "
+                    if len(removed_roles) > 1:
+                        self.embed.title = "Roles removed"
+                    else:
+                        self.embed.title = "Role removed"
+                    self.embed.description = ""
                     for role in removed_roles:
                         self.embed.description += "<@&" + str(role.id) + "> "
 
@@ -468,69 +513,130 @@ class Logging(commands.Cog):
 
                     await logging_channel.send(embed=self.embed)
                     return
-                else:
-                    # Roles have only been added
-                    self.embed = discord.Embed()
-                    self.embed.colour = discord.Colour(0x43b581)
-                    self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
-                    if len(added_roles) > 1:
-                        self.embed.title = "Roles added"
-                    else:
-                        self.embed.title = "Role added"
-                    self.embed.description = ""
-                    for role in added_roles:
-                        self.embed.description += "<@&" + str(role.id) + "> "
 
-                    self.embed.description += editor
-
-                    self.embed.set_footer(text="ID: " + str(after.id))
-                    self.embed.timestamp = datetime.utcnow()
-
-                    await logging_channel.send(embed=self.embed)
-                    return
-
-            else:
-                # Roles have only been removed
+            # Nickname check
+            if before.nick != after.nick:
                 self.embed = discord.Embed()
-                self.embed.colour = discord.Colour(0xbe4041)
-                self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
-                if len(removed_roles) > 1:
-                    self.embed.title = "Roles removed"
+                if before.nick is None:
+                    self.embed.title = "Nickname added"
+                    self.embed.description = "**Before: **\n**+After: **" + after.nick
+                    self.embed.colour = discord.Colour(0x43b581)
+                elif after.nick is None:
+                    self.embed.title = "Nickname removed"
+                    self.embed.description = "**Before: **" + before.nick + "\n**+After: **"
+                    self.embed.colour = discord.Colour(0xbe4041)
                 else:
-                    self.embed.title = "Role removed"
-                self.embed.description = ""
-                for role in removed_roles:
-                    self.embed.description += "<@&" + str(role.id) + "> "
+                    self.embed.title = "Nickname changed"
+                    self.embed.description = "**Before: **" + before.nick + "\n**+After: **" + after.nick
+                    self.embed.colour = discord.Colour(0x8899d4)
 
-                self.embed.description += editor
-
+                self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
                 self.embed.set_footer(text="ID: " + str(after.id))
                 self.embed.timestamp = datetime.utcnow()
 
                 await logging_channel.send(embed=self.embed)
-                return
 
-        # Nickname check
-        elif before.nick != after.nick:
-            self.embed = discord.Embed()
-            if before.nick is None:
-                self.embed.title = "Nickname added"
-                self.embed.description = "**Before: **\n**+After: **" + after.nick
-                self.embed.colour = discord.Colour(0x43b581)
-            elif after.nick is None:
-                self.embed.title = "Nickname removed"
-                self.embed.description = "**Before: **" + before.nick + "\n**+After: **"
-                self.embed.colour = discord.Colour(0xbe4041)
-            else:
-                self.embed.title = "Nickname changed"
-                self.embed.description = "**Before: **" + before.nick + "\n**+After: **" + after.nick
-                self.embed.colour = discord.Colour(0x8899d4)
+            # If user is coming online
+            if before.raw_status == "offline":
+                self.embed = discord.Embed()
 
-            self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
-            self.embed.set_footer(text="ID: " + str(after.id))
-            self.embed.timestamp = datetime.utcnow()
+                if str(after.id) in self.statuses:
+                    send = False
 
-            await logging_channel.send(embed=self.embed)
+                    # Custom status was removed
+                    if not isinstance(after.activity, discord.CustomActivity):
+                        self.embed.colour = discord.Colour(0xbe4041)
+                        self.embed.title = "Custom status removed"
+                    # Custom status was edited
+                    else:
+                        self.embed.colour = discord.Colour(0x8899d4)
+                        self.embed.title = "Custom status edited"
+
+                    if after.activity.name != self.statuses[str(after.id)]["name"]:
+                        self.embed.add_field(name="Name", value=after.activity.name)
+                        send = True
+                    if after.activity.emoji != self.statuses[str(after.id)]["emoji"]:
+                        self.embed.add_field(name="Emoji", value=after.activity.emoji)
+                        send = True
+
+                    del self.statuses[str(after.id)]
+
+                    if send:
+                        self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+                        self.embed.set_footer(text="ID: " + str(after.id))
+                        self.embed.timestamp = datetime.utcnow()
+
+                        await logging_channel.send(embed=self.embed)
+
+                # Custom status was added
+                else:
+                    self.embed.colour = discord.Colour(0x43b581)
+                    self.embed.title = "Custom status added"
+
+                    if after.activity.name is not None:
+                        self.embed.add_field(name="Name", value=after.activity.name)
+                        send = True
+                    if after.activity.emoji is not None:
+                        self.embed.add_field(name="Emoji", value=after.activity.emoji)
+                        send = True
+
+                    if send:
+                        self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+                        self.embed.set_footer(text="ID: " + str(after.id))
+                        self.embed.timestamp = datetime.utcnow()
+
+                        await logging_channel.send(embed=self.embed)
+
+            # Log custom statuses of those going offline
+            elif after.raw_status == "offline":
+                if isinstance(before.activity, discord.CustomActivity):
+                    self.statuses[str(after.id)] = {"name": before.activity.name,
+                                                    "emoji": before.activity.emoji}
+            elif isinstance(after.activity, discord.CustomActivity) or isinstance(before.activity, discord.CustomActivity):
+                send = False
+
+                # Custom status was added
+                if not isinstance(before.activity, discord.CustomActivity):
+                    self.embed = discord.Embed()
+                    self.embed.colour = discord.Colour(0x43b581)
+                    self.embed.title = "Custom status added"
+                    if after.activity.name is not None:
+                        self.embed.add_field(name="Name", value=after.activity.name)
+                        send = True
+                    if after.activity.emoji is not None:
+                        self.embed.add_field(name="Emoji", value=after.activity.emoji)
+                        send = True
+
+                # Custom status was removed
+                elif not isinstance(after.activity, discord.CustomActivity):
+                    self.embed = discord.Embed()
+                    self.embed.colour = discord.Colour(0xbe4041)
+                    self.embed.title = "Custom status removed"
+                    send = True
+
+                    if before.activity.name is not None:
+                        self.embed.add_field(name="Name", value=before.activity.name)
+                    if before.activity.emoji is not None:
+                        self.embed.add_field(name="Emoji", value=before.activity.emoji)
+
+                # Custom status was edited
+                else:
+                    self.embed = discord.Embed()
+                    self.embed.colour = discord.Colour(0x8899d4)
+                    self.embed.title = "Custom status edited"
+
+                    if before.activity.name != after.activity.name:
+                        self.embed.add_field(name="Name", value=after.activity.name)
+                        send = True
+                    if before.activity.emoji != after.activity.emoji:
+                        self.embed.add_field(name="Emoji", value=after.activity.emoji)
+                        send = True
+
+                if send:
+                    self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+                    self.embed.set_footer(text="ID: " + str(after.id))
+                    self.embed.timestamp = datetime.utcnow()
+                    await logging_channel.send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_user_update(self, before, after):
