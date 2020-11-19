@@ -84,12 +84,10 @@ async def on_message(message):
         if message.author.id == 87585011070414848 and "beep beep" in message.content.lower():
             await message.channel.send("https://i.pinimg.com/originals/84/ee/27/84ee27382f9f9819097b29fe78be814d.png")
 
-        if isinstance(message.channel, discord.channel.DMChannel) and Config.settings["dm_channel_id"] is not None:
+        if isinstance(message.channel, discord.channel.DMChannel) and Config.dm_channel is not None:
             message_embed = discord.Embed(description=message.content, timestamp=datetime.utcnow())
             message_embed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
             message_embed.set_footer(text=message.author.id)
-            guild = gompei.get_guild(Config.settings["guild_id"])
-            dm_channel = guild.get_channel(Config.settings["dm_channel_id"])
 
             attachments = []
             if len(message.attachments) > 0:
@@ -103,10 +101,10 @@ async def on_message(message):
                     message_embed.description = message.content + "**<File(s) Attached>**"
 
                 message_embed.timestamp = datetime.utcnow()
-                await dm_channel.send(embed=message_embed)
-                await dm_channel.send(files=attachments)
+                await Config.dm_channel.send(embed=message_embed)
+                await Config.dm_channel.send(files=attachments)
             else:
-                await dm_channel.send(embed=message_embed)
+                await Config.dm_channel.send(embed=message_embed)
         else:
             if not message.author.bot:
 
@@ -129,7 +127,7 @@ async def on_message_edit(before, after):
     :param before: message before edit
     :param after: message after edit
     """
-    if isinstance(before.channel, discord.channel.DMChannel) and not before.author.bot and Config.settings["dm_channel_id"] is not None:
+    if isinstance(before.channel, discord.channel.DMChannel) and not before.author.bot and Config.dm_channel is not None:
         if before.content is after.content:
             return
 
@@ -141,10 +139,7 @@ async def on_message_edit(before, after):
         message_embed.set_footer(text="ID: " + str(before.author.id))
         message_embed.timestamp = datetime.utcnow()
 
-        guild = gompei.get_guild(Config.settings["guild_id"])
-        dm_channel = guild.get_channel(Config.settings["dm_channel_id"])
-
-        await dm_channel.send(embed=message_embed)
+        await Config.dm_channel.send(embed=message_embed)
 
 
 @gompei.event
@@ -156,8 +151,8 @@ async def on_raw_message_edit(payload):
     """
     # If the message is not cached
     if payload.cached_message is None:
-        guild = gompei.get_guild(Config.settings["guild_id"])
-        dm_channel = guild.get_channel(Config.settings["dm_channel_id"])
+        guild = Config.guild
+        dm_channel = Config.dm_channel
         channel = guild.get_channel(payload.channel_id)
 
         # If not in the guild
@@ -179,7 +174,7 @@ async def on_message_delete(message):
     :param message: Message that was deleted
     """
     # If a DM message
-    if isinstance(message.channel, discord.channel.DMChannel) and not message.author.bot and Config.settings["dm_channel_id"] is not None:
+    if isinstance(message.channel, discord.channel.DMChannel) and not message.author.bot and Config.dm_channel is not None:
         message_embed = discord.Embed()
         message_embed.colour = discord.Colour(0xbe4041)
         message_embed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
@@ -193,10 +188,7 @@ async def on_message_delete(message):
         message_embed.set_footer(text="ID: " + str(message.author.id))
         message_embed.timestamp = datetime.utcnow()
 
-        guild = gompei.get_guild(Config.settings["guild_id"])
-        dm_channel = guild.get_channel(Config.settings["dm_channel_id"])
-
-        await dm_channel.send(embed=message_embed)
+        await Config.dm_channel.send(embed=message_embed)
 
 
 @gompei.event
@@ -207,19 +199,16 @@ async def on_raw_message_delete(payload):
     :param payload: Uncached deleted message payload
     """
     # If a DM message
-    if not hasattr(payload, "guild_id") and Config.settings["dm_channel_id"] is not None:
+    if not hasattr(payload, "guild_id") and Config.dm_channel is not None:
         # If the message is not cached
         if payload.cached_message is None:
-            guild = gompei.get_guild(Config.settings["guild_id"])
-            dm_channel = guild.get_channel(Config.settings["dm_channel_id"])
-
             message_embed = discord.Embed()
             message_embed.colour = discord.Colour(0xbe4041)
             message_embed.title = "Message deleted by ???"
             message_embed.set_footer(text="Uncached message: " + str(payload.message_id))
             message_embed.timestamp = datetime.utcnow()
 
-            await dm_channel.send(embed=message_embed)
+            await Config.dm_channel.send(embed=message_embed)
 
 
 @gompei.event
@@ -231,10 +220,8 @@ async def on_typing(channel, user, when):
     :param user: user that is typing
     :param when: when the user was typing
     """
-    if isinstance(channel, discord.channel.DMChannel) and not user.bot and Config.settings["dm_channel_id"] is not None:
-        guild = gompei.get_guild(Config.settings["guild_id"])
-        dm_channel = guild.get_channel(Config.settings["dm_channel_id"])
-        await dm_channel.trigger_typing()
+    if isinstance(channel, discord.channel.DMChannel) and not user.bot and Config.dm_channel is not None:
+        await Config.dm_channel.trigger_typing()
 
 
 @gompei.event
@@ -253,9 +240,9 @@ async def on_member_update(before, after):
     if len(added_roles) + len(removed_roles) > 0:
         role_list = []
         for role in after.roles:
-            if role.id in Config.settings["access_roles"]:
+            if role in Config.access_roles:
                 return
-            if role.id not in Config.settings["opt_in_roles"]:
+            if role not in Config.access_roles:
                 role_list.append(role)
 
         await after.edit(roles=role_list)
@@ -323,9 +310,7 @@ async def change_prefix(ctx, prefix):
     if " " in prefix:
         await ctx.send("Not a valid prefix")
     else:
-        Config.settings["prefix"] = str(prefix)
-        save_json(os.path.join("config", "settings.json"), Config.settings)
-
+        Config.set_prefix(prefix)
         await ctx.send("Update prefix to `" + str(prefix) + "`")
 
 
@@ -350,8 +335,7 @@ async def lockout(ctx):
 
     :param ctx: context object
     """
-    guild = gompei.get_guild(Config.settings["guild_id"])
-    member = await guild.fetch_member(ctx.message.author.id)
+    member = await Config.guild.fetch_member(ctx.message.author.id)
 
     # Get lockout info
     with open(os.path.join("config", "lockout.json"), "r+") as lockout_file:
@@ -369,7 +353,7 @@ async def lockout(ctx):
         if member.premium_since is None:
             await member.edit(roles=[])
         else:
-            await member.edit(roles=[guild.get_role(Config.settings["nitro_booster_id"])])
+            await member.edit(roles=[Config.nitro_role])
 
         # Store roles
         lockout_info[str(member.id)] = role_ids
@@ -388,7 +372,7 @@ async def let_me_in(ctx):
 
     :param ctx: context object
     """
-    guild = gompei.get_guild(Config.settings["guild_id"])
+    guild = Config.guild
     member = await guild.fetch_member(ctx.message.author.id)
 
     # Get lockout info
@@ -431,7 +415,7 @@ async def set_dm_channel(ctx, channel):
     :param ctx: context object
     :param channel: channel to set to
     """
-    if ctx.guild.id != Config.settings["guild_id"]:
+    if ctx.guild != Config.guild:
         await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up here: <INSERT LINK>")
     else:
         if channel.lower() == "clear":
@@ -442,7 +426,7 @@ async def set_dm_channel(ctx, channel):
 
             if channel_object is None:
                 await ctx.send("Not a valid channel")
-            elif channel_object.id == Config.settings["dm_channel"]:
+            elif channel_object == Config.dm_channel:
                 await ctx.send("This is already the DM channel")
             else:
                 Config.set_dm_channel(channel_object)
@@ -460,7 +444,7 @@ async def add_access_role(ctx, *roles: discord.Role):
     :param ctx: context object
     :param roles: role(s) to add
     """
-    if ctx.guild.id != Config.settings["guild_id"]:
+    if ctx.guild != Config.guild:
         await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up here: <INSERT LINK>")
     elif len(roles) == 0:
         await ctx.send("You must include a role to add")
@@ -480,7 +464,7 @@ async def remove_access_role(ctx, *roles: discord.Role):
     :param ctx: context object
     :param roles: role(s) to remove
     """
-    if ctx.guild.id != Config.settings["guild_id"]:
+    if ctx.guild != Config.guild:
         await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up here: <INSERT LINK>")
     elif len(roles) == 0:
         await ctx.send("You must include a role to remove")
@@ -499,7 +483,7 @@ async def add_opt_in_role(ctx, *roles: discord.Role):
     :param ctx: context object
     :param roles: role(s) to add
     """
-    if ctx.guild.id != Config.settings["guild_id"]:
+    if ctx.guild != Config.guild:
         await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up here: <INSERT LINK>")
     elif len(roles) == 0:
         await ctx.send("You must include a role to add")
@@ -519,7 +503,7 @@ async def remove_opt_in_role(ctx, *roles: discord.Role):
     :param ctx: context object
     :param roles: role(s) to remove
     """
-    if ctx.guild.id != Config.settings["guild_id"]:
+    if ctx.guild != Config.guild:
         await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up here: <INSERT LINK>")
     elif len(roles) == 0:
         await ctx.send("You must include a role to remove")
@@ -543,7 +527,6 @@ async def set_status(ctx, *, status: str):
         await ctx.send("This status is too long! (128 character limit)")
     else:
         Config.set_status(status)
-        await gompei.change_presence(activity=discord.Game(name=Config.settings["status"], start=datetime.utcnow()))
         await ctx.send("Successfully updated status")
 
 
