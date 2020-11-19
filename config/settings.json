@@ -5,5 +5,19 @@
     "dm_channel_id": null,
     "prefix": ".",
     "access_roles": [],
-    "opt_in_roles": []
+    "opt_in_roles": [],
+    "logging": {
+        "channel": null,
+        "overwrite_channels": {
+            "member": null,
+            "message": null,
+            "member_tracking": null,
+            "mod": null,
+            "server": null,
+            "status": null,
+            "voice": null
+        },
+        "last_audit": null,
+        "invites": {}
+    }
 }
