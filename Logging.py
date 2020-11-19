@@ -1,11 +1,10 @@
-from GompeiFunctions import make_ordinal, time_delta_string, load_json, save_json, parse_id
+from GompeiFunctions import make_ordinal, time_delta_string
 from Permissions import administrator_perms
 from discord.ext import commands
 from datetime import datetime
 
 import discord
 import Config
-import os
 
 
 class Logging(commands.Cog):
