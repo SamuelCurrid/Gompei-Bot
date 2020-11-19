@@ -493,6 +493,98 @@ class Logging(commands.Cog):
         # Check for role updates
         await self.role_update_checks(before, after)
 
+        # Check for nickname updates
+        await self.nickname_update_checks(before, after)
+
+        # Check for status updates
+        await self.status_update_checks(before, after)
+
+    async def role_update_checks(self, before, after):
+        """
+        Checks for role updates and sends a member logging message if there are any
+
+        :param before: Member object before
+        :param after: Member object after
+        """
+        # Role checks
+        added_roles = [x for x in after.roles if x not in before.roles]
+        removed_roles = [x for x in before.roles if x not in after.roles]
+
+        # If roles edited and logging channel exists
+        if len(added_roles) + len(removed_roles) > 0 and (Config.logging["channel"] is not None or Config.logging["overwrite_channels"]["mod"] is not None):
+
+            # Reset embed
+            self.embed = discord.Embed()
+            self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+
+            # Log who the editor is
+            entries = await before.guild.audit_logs(limit=1).flatten()
+            if entries[0].action == discord.AuditLogAction.member_role_update:
+                editor = "\n\nEdited by <@" + str(entries[0].user.id) + ">"
+
+            if len(added_roles) > 0:
+
+                # Roles have been added and removed
+                if len(removed_roles) > 0:
+                    self.embed.colour = discord.Colour(0x8899d4)
+                    self.embed.title = "Roles updated"
+
+                    self.embed.description = "**Added:** "
+                    for role in added_roles:
+                        self.embed.description += "<@&" + str(role.id) + "> "
+                    self.embed.description += "\n**Removed:** "
+                    for role in removed_roles:
+                        self.embed.description += "<@&" + str(role.id) + "> "
+
+                    self.embed.description += editor
+
+                    self.embed.set_footer(text="ID: " + str(after.id))
+                    self.embed.timestamp = datetime.utcnow()
+
+                # Roles have only been added
+                else:
+                    self.embed.colour = discord.Colour(0x43b581)
+                    if len(added_roles) > 1:
+                        self.embed.title = "Roles added"
+                    else:
+                        self.embed.title = "Role added"
+                    self.embed.description = ""
+                    for role in added_roles:
+                        self.embed.description += "<@&" + str(role.id) + "> "
+
+                    self.embed.description += editor
+
+                    self.embed.set_footer(text="ID: " + str(after.id))
+                    self.embed.timestamp = datetime.utcnow()
+
+            # Roles have only been removed
+            else:
+                self.embed.colour = discord.Colour(0xbe4041)
+                if len(removed_roles) > 1:
+                    self.embed.title = "Roles removed"
+                else:
+                    self.embed.title = "Role removed"
+                self.embed.description = ""
+                for role in removed_roles:
+                    self.embed.description += "<@&" + str(role.id) + "> "
+
+                self.embed.description += editor
+
+                self.embed.set_footer(text="ID: " + str(after.id))
+                self.embed.timestamp = datetime.utcnow()
+
+            await Config.logging["overwrite_channels"]["member"].send(embed=self.embed)
+
+            if not entries[0].user.bot:
+                await Config.logging["overwrite_channels"]["mod"].send(embed=self.embed)
+
+    async def nickname_update_checks(self, before, after):
+        """
+        Checks for nickname updates and sends a member logging message if there are any
+
+        :param before: Member object before
+        :param after: Member object after
+        """
         # Nickname check
         if before.nick != after.nick:
             self.embed = discord.Embed()
@@ -515,6 +607,13 @@ class Logging(commands.Cog):
 
             await Config.logging["overwrite_channels"]["member"].send(embed=self.embed)
 
+    async def status_update_checks(self, before, after):
+        """
+        Checks for status updates and sends a status logging message if there are any
+
+        :param before: Member object before
+        :param after: Member object after
+        """
         if Config.logging["overwrite_channels"]["status"] is not None:
             logging_channel = Config.logging["overwrite_channels"]["status"]
 
@@ -542,7 +641,7 @@ class Logging(commands.Cog):
                         self.embed.title = "Custom status edited"
 
                         if after.activity.emoji != self.statuses[str(after.id)]["emoji"]:
-                            if before.activity.emoji is not None:
+                            if self.statuses[str(after.id)]["emoji"] is not None:
                                 statusBefore += self.statuses[str(after.id)]["emoji"] + " "
                             if after.activity.emoji is not None:
                                 statusAfter += str(after.activity.emoji) + " "
@@ -619,87 +718,6 @@ class Logging(commands.Cog):
                 self.embed.set_footer(text="ID: " + str(after.id))
                 self.embed.timestamp = datetime.utcnow()
                 await logging_channel.send(embed=self.embed)
-
-    async def role_update_checks(self, before, after):
-        """
-        Checks for role updates and sends a logging message if there are any
-
-        :param before: Member object before
-        :param after: Member object after
-        :param logging_channel: Channel for logging
-        :param mod_log: Channel for mod logging
-        """
-        # Role checks
-        added_roles = [x for x in after.roles if x not in before.roles]
-        removed_roles = [x for x in before.roles if x not in after.roles]
-
-        # If roles edited and logging channel exists
-        if len(added_roles) + len(removed_roles) > 0 and (Config.logging["channel"] is not None or Config.logging["overwrite_channels"]["mod"] is not None):
-
-            # Reset embed
-            self.embed = discord.Embed()
-            self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
-
-            # Log who the editor is
-            entries = await before.guild.audit_logs(limit=1).flatten()
-            if entries[0].action == discord.AuditLogAction.member_role_update:
-                editor = "\n\nEdited by <@" + str(entries[0].user.id) + ">"
-
-            if len(added_roles) > 0:
-
-                # Roles have been added and removed
-                if len(removed_roles) > 0:
-                    self.embed.colour = discord.Colour(0x8899d4)
-                    self.embed.title = "Roles updated"
-
-                    self.embed.description = "**Added:** "
-                    for role in added_roles:
-                        self.embed.description += "<@&" + str(role.id) + "> "
-                    self.embed.description += "\n**Removed:** "
-                    for role in removed_roles:
-                        self.embed.description += "<@&" + str(role.id) + "> "
-
-                    self.embed.description += editor
-
-                    self.embed.set_footer(text="ID: " + str(after.id))
-                    self.embed.timestamp = datetime.utcnow()
-
-                # Roles have only been added
-                else:
-                    self.embed.colour = discord.Colour(0x43b581)
-                    if len(added_roles) > 1:
-                        self.embed.title = "Roles added"
-                    else:
-                        self.embed.title = "Role added"
-                    self.embed.description = ""
-                    for role in added_roles:
-                        self.embed.description += "<@&" + str(role.id) + "> "
-
-                    self.embed.description += editor
-
-                    self.embed.set_footer(text="ID: " + str(after.id))
-                    self.embed.timestamp = datetime.utcnow()
-
-            # Roles have only been removed
-            else:
-                self.embed.colour = discord.Colour(0xbe4041)
-                if len(removed_roles) > 1:
-                    self.embed.title = "Roles removed"
-                else:
-                    self.embed.title = "Role removed"
-                self.embed.description = ""
-                for role in removed_roles:
-                    self.embed.description += "<@&" + str(role.id) + "> "
-
-                self.embed.description += editor
-
-                self.embed.set_footer(text="ID: " + str(after.id))
-                self.embed.timestamp = datetime.utcnow()
-
-            await Config.logging["overwrite_channels"]["member"].send(embed=self.embed)
-
-            if not entries[0].user.bot:
-                await Config.logging["overwrite_channels"]["mod"].send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_user_update(self, before, after):
