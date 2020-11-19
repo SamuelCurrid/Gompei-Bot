@@ -26,7 +26,7 @@ violent_references = ["kill", "murder", "attack", "skin", "ambush", "stab"]
 
 
 def get_prefix(client, message):
-    return Config.settings["prefix"]
+    return Config.prefix
 
 
 # Initialize Bot
@@ -62,24 +62,11 @@ async def on_ready():
     """
     Load state and update information since last run
     """
-    if Config.settings["status"] is not None:
-        await gompei.change_presence(activity=discord.Game(name=Config.settings["status"], start=datetime.utcnow()))
+    if Config.status is not None:
+        await gompei.change_presence(activity=discord.Game(name=Config.status, start=datetime.utcnow()))
 
-    # Update the nitro booster role id for the guild; check if access / opt-in roles still exist
-    if Config.settings["guild_id"] is not None:
-        guild = gompei.get_guild(Config.settings["guild_id"])
-        for role in guild.roles:
-            if role.name == "Nitro Booster":
-                if Config.settings["nitro_booster_id"] != role.id:
-                    Config.settings["nitro_booster_id"] = role.id
-
-        for role_id in Config.settings["opt_in_roles"]:
-            if guild.get_role(role_id) is None:
-                del role_id
-
-        for role_id in Config.settings["access_roles"]:
-            if guild.get_role(role_id) is None:
-                del role_id
+    await Config.set_client(gompei)
+    await Config.load_settings()
 
     print("Logged on as {0}".format(gompei.user))
 
