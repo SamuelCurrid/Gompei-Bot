@@ -4,10 +4,12 @@ from discord.ext import commands
 from datetime import timedelta
 from datetime import datetime
 
-import discord
+
 import pytimeparse
 import dateparser
 import asyncio
+import discord
+import Config
 import typing
 import os
 
@@ -340,6 +342,7 @@ class Administration(commands.Cog):
         :param reason: reason for the mute (dm'ed to the user)
         """
         muted_role = ctx.guild.get_role(615956736616038432)
+        mod_log = ctx.guild.get_channel(Config.settings["mod_log"])
 
         # Is user already muted
         if muted_role in member.roles:
@@ -364,9 +367,15 @@ class Administration(commands.Cog):
 
         mute_time = time_delta_string(datetime.utcnow(), datetime.utcnow() + delta)
 
+        mute_embed = discord.Embed(title="Member muted", color=0xbe4041)
+        mute_embed.description = "**Muted:** <@" + str(member.id) + ">\n**Time:** " + mute_time + "\n**__Reason__**\n> " + reason + "\n\n**Muter:** <@" + str(ctx.author.id) + ">"
+        mute_embed.set_footer(text="ID: " + str(member.id))
+        mute_embed.timestamp = datetime.utcnow()
+
         await member.add_roles(muted_role)
         await ctx.send("**Muted** user **" + username + "** for **" + mute_time + "** for: **" + reason + "**")
-        await member.send("**You were muted in the WPI Discord Server for " + mute_time + ". Reason:**\n> " + reason + "\n\nYou can repond here to contact WPI Discord staff.")
+        await mod_log.send(embed=mute_embed)
+        await member.send("**You were muted in the WPI Discord Server for " + mute_time + ". Reason:**\n> " + reason + "\n\nYou can respond here to contact WPI Discord staff.")
 
         await asyncio.sleep(seconds)
 
@@ -599,3 +608,20 @@ class Administration(commands.Cog):
             await member.send(member.guild.name + " banned you for reason:\n> " + reason)
             await member.kick(reason=reason)
             await ctx.send("Successfully banned user " + member.name + member.discriminator)
+
+    @commands.command(pass_context=True, name="modLog")
+    @commands.check(administrator_perms)
+    @commands.guild_only()
+    async def change_mod_log(self, ctx, channel: discord.TextChannel):
+        """
+        Changes the channel in which to log mod actions into
+        Usage: .modLog <channel>
+
+        :param ctx: context object
+        :param channel: channel
+        """
+        if Config.settings["mod_log"] != channel.id:
+            Config.set_mod_log(channel)
+            await ctx.send("Successfully updated mod log channel")
+        else:
+            await ctx.send("This is already the mod log channel")

@@ -4,13 +4,13 @@ from discord.ext import commands
 from datetime import datetime
 
 import discord
+import Config
 import os
 
 
 class Logging(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.settings = load_json(os.path.join("config", "settings.json"))
         self.embed = discord.Embed()
         self.logs = None
         self.statuses = None
@@ -29,7 +29,7 @@ class Logging(commands.Cog):
 
         # Add new guilds
         for guild_id in add_guilds:
-            self.logs[str(guild_id)] = {"channel": None, "last_audit": None, "invites": None}
+            self.logs[str(guild_id)] = {"channel": None, "overwrite_channels": {"member": None,  "message": None, "member_tracking": None, "server": None, "status": None, "voice": None}, "last_audit": None, "invites": None}
 
         # Remove disconnected guilds
         for guild_id in remove_guilds:
@@ -56,19 +56,132 @@ class Logging(commands.Cog):
 
     @commands.command(pass_context=True, name="logging")
     @commands.check(administrator_perms)
-    async def change_logging(self, ctx, arg1):
+    async def change_logging(self, ctx, channel: discord.TextChannel):
         """
         Changes the channel that the bot sends logging messages in
-        :param ctx: context object
-        :param arg1: channel ID or mention
-        """
-        channel = ctx.guild.get_channel(parse_id(arg1))
+        Usage: .logging <channel>
 
+        :param ctx: context object
+        :param channel: channel ID or mention
+        """
         if self.logs[str(ctx.message.guild.id)]["channel"] != channel.id:
             self.logs[str(ctx.message.guild.id)]["channel"] = channel.id
+            for overwrite in self.logs[str(ctx.message.guild.id)]["overwrite_channels"]:
+                if self.logs[str(ctx.message.guild.id)]["overwrite_channels"][overwrite] is None:
+                    self.logs[str(ctx.message.guild.id)]["overwrite_channels"][overwrite] = channel.id
 
             save_json(os.path.join("config", "logging.json"), self.logs)
             await ctx.send("Successfully updated logging channel to <#" + str(channel.id) + ">")
+        else:
+            await ctx.send("This channel is already being used for logging")
+
+    @commands.command(pass_context=True, name="memberLogging")
+    @commands.check(administrator_perms)
+    async def change_member_logging(self, ctx, channel: discord.TextChannel):
+        """
+        Changes the channel that the bot sends member logging messages in
+        Usage: .memberLogging <channel>
+
+        :param ctx: context object
+        :param channel: channel ID or mention
+        """
+        if self.logs[str(ctx.message.guild.id)]["overwrite_channels"]["member"] != channel.id:
+            self.logs[str(ctx.message.guild.id)]["overwrite_channels"]["member"] = channel.id
+
+            save_json(os.path.join("config", "logging.json"), self.logs)
+            await ctx.send("Successfully updated member logging channel to <#" + str(channel.id) + ">")
+        else:
+            await ctx.send("This channel is already being used for member logging")
+
+    @commands.command(pass_context=True, name="messageLogging")
+    @commands.check(administrator_perms)
+    async def change_message_logging(self, ctx, channel: discord.TextChannel):
+        """
+        Changes the channel that the bot sends message logging messages in
+        Usage: .messageLogging <channel>
+
+        :param ctx: context object
+        :param channel: channel ID or mention
+        """
+        if self.logs[str(ctx.message.guild.id)]["overwrite_channels"]["message"] != channel.id:
+            self.logs[str(ctx.message.guild.id)]["overwrite_channels"]["message"] = channel.id
+
+            save_json(os.path.join("config", "logging.json"), self.logs)
+            await ctx.send("Successfully updated message logging channel to <#" + str(channel.id) + ">")
+        else:
+            await ctx.send("This channel is already being used for message logging")
+
+    @commands.command(pass_context=True, name="memberTracking")
+    @commands.check(administrator_perms)
+    async def change_member_tracking(self, ctx, channel: discord.TextChannel):
+        """
+        Changes the channel that the bot sends member tracking messages in
+        Usage: .messageLogging <channel>
+
+        :param ctx: context object
+        :param channel: channel ID or mention
+        """
+        if self.logs[str(ctx.message.guild.id)]["overwrite_channels"]["member_tracking"] != channel.id:
+            self.logs[str(ctx.message.guild.id)]["overwrite_channels"]["member_tracking"] = channel.id
+
+            save_json(os.path.join("config", "logging.json"), self.logs)
+            await ctx.send("Successfully updated member tracking channel to <#" + str(channel.id) + ">")
+        else:
+            await ctx.send("This channel is already being used for member tracking")
+
+    @commands.command(pass_context=True, name="serverLogging")
+    @commands.check(administrator_perms)
+    async def change_server_logging(self, ctx, channel: discord.TextChannel):
+        """
+        Changes the channel that the bot sends voice logging messages in
+        Usage: .serverLogging <channel>
+
+        :param ctx: context object
+        :param channel: channel ID or mention
+        """
+        if self.logs[str(ctx.message.guild.id)]["overwrite_channels"]["server"] != channel.id:
+            self.logs[str(ctx.message.guild.id)]["overwrite_channels"]["server"] = channel.id
+
+            save_json(os.path.join("config", "logging.json"), self.logs)
+            await ctx.send("Successfully updated server logging channel to <#" + str(channel.id) + ">")
+        else:
+            await ctx.send("This channel is already being used for server logging")
+
+    @commands.command(pass_context=True, name="statusLogging")
+    @commands.check(administrator_perms)
+    async def change_server_logging(self, ctx, channel: discord.TextChannel):
+        """
+        Changes the channel that the bot sends status logging messages in
+        Usage: .serverLogging <channel>
+
+        :param ctx: context object
+        :param channel: channel ID or mention
+        """
+        if self.logs[str(ctx.message.guild.id)]["overwrite_channels"]["status"] != channel.id:
+            self.logs[str(ctx.message.guild.id)]["overwrite_channels"]["status"] = channel.id
+
+            save_json(os.path.join("config", "logging.json"), self.logs)
+            await ctx.send("Successfully updated status logging channel to <#" + str(channel.id) + ">")
+        else:
+            await ctx.send("This channel is already being used for status logging")
+
+    @commands.command(pass_context=True, name="voiceLogging")
+    @commands.check(administrator_perms)
+    async def change_voice_logging(self, ctx, channel: discord.TextChannel):
+        """
+        Changes the channel that the bot sends voice logging messages in
+        Usage: .voiceLogging <channel>
+
+        :param ctx: context object
+        :param channel: channel ID or mention
+        """
+        if self.logs[str(ctx.message.guild.id)]["overwrite_channels"]["voice"] != channel.id:
+            self.logs[str(ctx.message.guild.id)]["overwrite_channels"]["voice"] = channel.id
+
+            save_json(os.path.join("config", "logging.json"), self.logs)
+            await ctx.send("Successfully updated voice logging channel to <#" + str(channel.id) + ">")
+        else:
+            await ctx.send("This channel is already being used for voice logging")
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
@@ -78,8 +191,8 @@ class Logging(commands.Cog):
         :param message: message object deleted
         """
         if not message.author.bot:
-            if self.logs[str(message.guild.id)]["channel"] is not None:
-                logging_channel = message.guild.get_channel(int(self.logs[str(message.guild.id)]["channel"]))
+            if self.logs[str(message.guild.id)]["overwrite_channels"]["message"] is not None:
+                logging_channel = message.guild.get_channel(int(self.logs[str(message.guild.id)]["overwrite_channels"]["message"]))
                 channel = message.channel
 
                 previous_message = await message.channel.history(limit=1, before=message.created_at).flatten()
@@ -107,6 +220,9 @@ class Logging(commands.Cog):
 
                 await logging_channel.send(embed=self.embed)
 
+                if not entries[0].user.bot:
+                    await message.guild.get_channel(int(Config.settings["mod_log"])).send(embed=self.embed)
+
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload):
         """
@@ -119,9 +235,9 @@ class Logging(commands.Cog):
         if hasattr(payload, "guild_id"):
             guild = self.bot.get_guild(payload.guild_id)
 
-            if self.logs[str(guild.id)]["channel"] is not None and payload.cached_message is None:
+            if self.logs[str(guild.id)]["overwrite_channels"]["message"] is not None and payload.cached_message is None:
                 entries = await guild.audit_logs(limit=1).flatten()
-                logging_channel = guild.get_channel(int(self.logs[str(guild.id)]["channel"]))
+                logging_channel = guild.get_channel(int(self.logs[str(guild.id)]["overwrite_channels"]["message"]))
                 channel = guild.get_channel(payload.channel_id)
 
                 self.embed = discord.Embed()
@@ -138,6 +254,9 @@ class Logging(commands.Cog):
 
                 await logging_channel.send(embed=self.embed)
 
+                if not entries[0].user.bot:
+                    await guild.get_channel(int(Config.settings["mod_log"])).send(embed=self.embed)
+
     @commands.Cog.listener()
     async def on_raw_bulk_message_delete(self, payload):
         """
@@ -150,9 +269,9 @@ class Logging(commands.Cog):
         if hasattr(payload, "guild_id"):
             guild = self.bot.get_guild(payload.guild_id)
 
-            if self.logs[str(guild.id)]["channel"] is not None:
+            if self.logs[str(guild.id)]["overwrite_channels"]["message"] is not None:
 
-                logging_channel = guild.get_channel(int(self.logs[str(guild.id)]["channel"]))
+                logging_channel = guild.get_channel(int(self.logs[str(guild.id)]["overwrite_channels"]["message"]))
                 channel = guild.get_channel(payload.channel_id)
                 content = ""
                 count = 0
@@ -168,6 +287,7 @@ class Logging(commands.Cog):
                 self.embed.timestamp = datetime.utcnow()
 
                 await logging_channel.send(embed=self.embed)
+                await guild.get_channel(int(Config.settings["mod_log"])).send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
@@ -178,12 +298,12 @@ class Logging(commands.Cog):
         :param after: message object after
         """
         if not before.author.bot:
-            if self.logs[str(before.guild.id)]["channel"] is not None:
+            if self.logs[str(after.guild.id)]["overwrite_channels"]["message"] is not None:
 
                 if before.content is after.content:
                     return
 
-                logging_channel = before.guild.get_channel(int(self.logs[str(before.guild.id)]["channel"]))
+                logging_channel = before.guild.get_channel(int(self.logs[str(after.guild.id)]["overwrite_channels"]["message"]))
                 channel = before.channel
 
                 self.embed = discord.Embed(url=before.jump_url)
@@ -201,31 +321,34 @@ class Logging(commands.Cog):
         """
         Sends a logging message containing
         the content of the message after the edit
+
         :param payload:
         :return:
         """
-        # If not a DM message
-        guild = self.bot.get_guild(self.settings["guild_id"])
+        # If a guild has been set
+        if Config.settings["guild_id"] is not None:
+            # If not a DM message
+            guild = self.bot.get_guild(Config.settings["guild_id"])
 
-        if self.logs[str(guild.id)]["channel"] is not None and payload.cached_message is None:
-            channel = guild.get_channel(payload.channel_id)
-            # If a dm message
-            if channel is None:
-                return
-            message = await channel.fetch_message(payload.message_id)
+            if self.logs[str(guild.id)]["overwrite_channels"]["message"] is not None and payload.cached_message is None:
+                channel = guild.get_channel(payload.channel_id)
+                # If a dm message
+                if channel is None:
+                    return
+                message = await channel.fetch_message(payload.message_id)
 
-            if not message.author.bot:
-                logging_channel = guild.get_channel(int(self.logs[str(guild.id)]["channel"]))
+                if not message.author.bot:
+                    logging_channel = guild.get_channel(int(self.logs[str(guild.id)]["overwrite_channels"]["message"]))
 
-                self.embed = discord.Embed(url=message.jump_url)
-                self.embed.colour = discord.Colour(0x8899d4)
-                self.embed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
-                self.embed.title = "Message edited in #" + channel.name
-                self.embed.description = "**Uncached Message**\n**+After:** " + message.content
-                self.embed.set_footer(text="ID: " + str(message.author.id))
-                self.embed.timestamp = datetime.utcnow()
+                    self.embed = discord.Embed(url=message.jump_url)
+                    self.embed.colour = discord.Colour(0x8899d4)
+                    self.embed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
+                    self.embed.title = "Message edited in #" + channel.name
+                    self.embed.description = "**Uncached Message**\n**+After:** " + message.content
+                    self.embed.set_footer(text="ID: " + str(message.author.id))
+                    self.embed.timestamp = datetime.utcnow()
 
-                await logging_channel.send(embed=self.embed)
+                    await logging_channel.send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_guild_channel_create(self, channel):
@@ -234,8 +357,8 @@ class Logging(commands.Cog):
         the name, category, and permissions of the channel
         :param channel:
         """
-        if self.logs[str(channel.guild.id)]["channel"] is not None:
-            logging_channel = channel.guild.get_channel(int(self.logs[str(channel.guild.id)]["channel"]))
+        if self.logs[str(channel.guild.id)]["overwrite_channels"]["server"] is not None:
+            logging_channel = channel.guild.get_channel(int(self.logs[str(channel.guild.id)]["overwrite_channels"]["server"]))
             self.embed = discord.Embed()
             self.embed.colour = discord.Colour(0x43b581)
             permissions = ""
@@ -299,8 +422,8 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the name, category, and permissions of the channel
         """
-        if self.logs[str(channel.guild.id)]["channel"] is not None:
-            logging_channel = channel.guild.get_channel(int(self.logs[str(channel.guild.id)]["channel"]))
+        if self.logs[str(channel.guild.id)]["overwrite_channels"]["server"] is not None:
+            logging_channel = channel.guild.get_channel(int(self.logs[str(channel.guild.id)]["overwrite_channels"]["server"]))
             self.embed = discord.Embed()
             self.embed.colour = discord.Colour(0xbe4041)
 
@@ -369,8 +492,8 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the name, avatar, id, join position, account age
         """
-        if self.logs[str(member.guild.id)]["channel"] is not None:
-            logging_channel = member.guild.get_channel(int(self.logs[str(member.guild.id)]["channel"]))
+        if self.logs[str(member.guild.id)]["overwrite_channels"]["member_tracking"] is not None:
+            logging_channel = member.guild.get_channel(int(self.logs[str(member.guild.id)]["overwrite_channels"]["member_tracking"]))
             invites = await member.guild.invites()
 
             for invite in invites:
@@ -398,8 +521,8 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the name, avatar, id, time spent on the server
         """
-        if self.logs[str(member.guild.id)]["channel"] is not None:
-            logging_channel = member.guild.get_channel(int(self.logs[str(member.guild.id)]["channel"]))
+        if self.logs[str(member.guild.id)]["overwrite_channels"]["member_tracking"] is not None:
+            logging_channel = member.guild.get_channel(int(self.logs[str(member.guild.id)]["overwrite_channels"]["member_tracking"]))
 
             self.embed = discord.Embed()
             self.embed.colour = discord.Colour(0xbe4041)
@@ -428,6 +551,9 @@ class Logging(commands.Cog):
 
             await logging_channel.send(embed=self.embed)
 
+            if not entries[0].user.bot:
+                await member.guild.get_channel(int(Config.settings["mod_log"])).send(embed=self.embed)
+
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
         """
@@ -435,8 +561,8 @@ class Logging(commands.Cog):
         the property of the member updated before and after
         """
 
-        if self.logs[str(after.guild.id)]["channel"] is not None:
-            logging_channel = before.guild.get_channel(int(self.logs[str(after.guild.id)]["channel"]))
+        if self.logs[str(before.guild.id)]["overwrite_channels"]["member"] is not None:
+            logging_channel = before.guild.get_channel(int(self.logs[str(before.guild.id)]["overwrite_channels"]["member"]))
 
             # Role checks
             added_roles = [x for x in after.roles if x not in before.roles]
@@ -471,6 +597,10 @@ class Logging(commands.Cog):
                         self.embed.timestamp = datetime.utcnow()
 
                         await logging_channel.send(embed=self.embed)
+
+                        if not entries[0].user.bot:
+                            await before.guild.get_channel(int(Config.settings["mod_log"])).send(embed=self.embed)
+
                         return
                     else:
                         # Roles have only been added
@@ -491,6 +621,10 @@ class Logging(commands.Cog):
                         self.embed.timestamp = datetime.utcnow()
 
                         await logging_channel.send(embed=self.embed)
+
+                        if not entries[0].user.bot:
+                            await before.guild.get_channel(int(Config.settings["mod_log"])).send(embed=self.embed)
+
                         return
 
                 else:
@@ -512,6 +646,10 @@ class Logging(commands.Cog):
                     self.embed.timestamp = datetime.utcnow()
 
                     await logging_channel.send(embed=self.embed)
+
+                    if not entries[0].user.bot:
+                        await before.guild.get_channel(int(Config.settings["mod_log"])).send(embed=self.embed)
+
                     return
 
             # Nickname check
@@ -536,106 +674,110 @@ class Logging(commands.Cog):
 
                 await logging_channel.send(embed=self.embed)
 
-            statusBefore = ""
-            statusAfter = ""
-            # If user is coming online
-            if before.raw_status == "offline":
-                self.embed = discord.Embed()
+            if self.logs[str(before.guild.id)]["overwrite_channels"]["status"] is not None:
+                logging_channel = before.guild.get_channel(int(self.logs[str(before.guild.id)]["overwrite_channels"]["status"]))
 
-                if str(after.id) in self.statuses:
+                statusBefore = ""
+                statusAfter = ""
+                # If user is coming online
+                if before.raw_status == "offline":
+                    self.embed = discord.Embed()
+
+                    if str(after.id) in self.statuses:
+
+                        # Custom status was removed
+                        if not isinstance(after.activity, discord.CustomActivity):
+                            self.embed.colour = discord.Colour(0xbe4041)
+                            self.embed.title = "Custom status removed"
+                            if self.statuses[str(after.id)]["emoji"] is not None:
+                                statusBefore += self.statuses[str(after.id)]["emoji"] + " "
+                            if self.statuses[str(after.id)]["name"] is not None:
+                                statusBefore += self.statuses[str(after.id)]["name"]
+
+                        # Custom status was edited
+                        else:
+
+                            self.embed.colour = discord.Colour(0x8899d4)
+                            self.embed.title = "Custom status edited"
+
+                            if after.activity.emoji != self.statuses[str(after.id)]["emoji"]:
+                                if before.activity.emoji is not None:
+                                    statusBefore += self.statuses[str(after.id)]["emoji"] + " "
+                                if after.activity.emoji is not None:
+                                    statusAfter += str(after.activity.emoji) + " "
+                            if after.activity.name != self.statuses[str(after.id)]["name"]:
+                                statusBefore += self.statuses[str(after.id)]["name"]
+                                if after.activity.name is not None:
+                                    statusAfter += after.activity.name
+
+                        del self.statuses[str(after.id)]
+
+                    # Custom status was added
+                    elif isinstance(after.activity, discord.CustomActivity):
+                        self.embed.colour = discord.Colour(0x43b581)
+                        self.embed.title = "Custom status added"
+
+                        if after.activity.emoji is not None:
+                            statusAfter += str(after.activity.emoji) + " "
+                        if after.activity.name is not None:
+                            statusAfter += after.activity.name
+
+                # Log custom statuses of those going offline
+                elif after.raw_status == "offline":
+                    if isinstance(before.activity, discord.CustomActivity):
+
+                        self.statuses[str(after.id)] = {"name": None, "emoji": None}
+
+                        if before.activity.emoji is not None:
+                            self.statuses[str(after.id)]["name"] = str(before.activity.emoji)
+                        if before.activity.name is not None:
+                            self.statuses[str(after.id)]["name"] = before.activity.name
+
+                # Log custom status changes of those staying online
+                elif isinstance(after.activity, discord.CustomActivity) or isinstance(before.activity, discord.CustomActivity):
+                    # Custom status was added
+                    if not isinstance(before.activity, discord.CustomActivity):
+                        self.embed = discord.Embed()
+                        self.embed.colour = discord.Colour(0x43b581)
+                        self.embed.title = "Custom status added"
+
+                        if after.activity.emoji is not None:
+                            statusAfter += str(after.activity.emoji) + " "
+                        if after.activity.name is not None:
+                            statusAfter += after.activity.name
 
                     # Custom status was removed
-                    if not isinstance(after.activity, discord.CustomActivity):
+                    elif not isinstance(after.activity, discord.CustomActivity):
+                        self.embed = discord.Embed()
                         self.embed.colour = discord.Colour(0xbe4041)
                         self.embed.title = "Custom status removed"
-                        if self.statuses[str(after.id)]["emoji"] is not None:
-                            statusBefore += self.statuses[str(after.id)]["emoji"] + " "
-                        if self.statuses[str(after.id)]["name"] is not None:
-                            statusBefore += self.statuses[str(after.id)]["name"]
+
+                        if before.activity.emoji is not None:
+                            statusBefore += str(before.activity.emoji) + " "
+                        if before.activity.name is not None:
+                            statusBefore += before.activity.name
 
                     # Custom status was edited
                     else:
-
+                        self.embed = discord.Embed()
                         self.embed.colour = discord.Colour(0x8899d4)
                         self.embed.title = "Custom status edited"
 
-                        if after.activity.emoji != self.statuses[str(after.id)]["emoji"]:
-                            statusBefore += self.statuses[str(after.id)]["emoji"] + " "
-                            if after.activity.emoji is not None:
-                                statusAfter += str(after.activity.emoji) + " "
-                        if after.activity.name != self.statuses[str(after.id)]["name"]:
-                            statusBefore += self.statuses[str(after.id)]["name"]
-                            if after.activity.name is not None:
-                                statusAfter += after.activity.name
+                        if before.activity.emoji is not None:
+                            statusBefore += str(before.activity.emoji) + " "
+                        if after.activity.emoji is not None:
+                            statusAfter += str(after.activity.emoji) + " "
+                        if before.activity.name is not None:
+                            statusBefore += before.activity.name
+                        if after.activity.name is not None:
+                            statusAfter += after.activity.name
 
-                    del self.statuses[str(after.id)]
-
-                # Custom status was added
-                elif isinstance(after.activity, discord.CustomActivity):
-                    self.embed.colour = discord.Colour(0x43b581)
-                    self.embed.title = "Custom status added"
-
-                    if after.activity.emoji is not None:
-                        statusAfter += str(after.activity.emoji) + " "
-                    if after.activity.name is not None:
-                        statusAfter += after.activity.name
-
-            # Log custom statuses of those going offline
-            elif after.raw_status == "offline":
-                if isinstance(before.activity, discord.CustomActivity):
-
-                    self.statuses[str(after.id)] = {"name": None, "emoji": None}
-
-                    if before.activity.emoji is not None:
-                        self.statuses[str(after.id)]["name"] = str(before.activity.emoji)
-                    if before.activity.name is not None:
-                        self.statuses[str(after.id)]["name"] = before.activity.name
-
-            # Log custom status changes of those staying online
-            elif isinstance(after.activity, discord.CustomActivity) or isinstance(before.activity, discord.CustomActivity):
-                # Custom status was added
-                if not isinstance(before.activity, discord.CustomActivity):
-                    self.embed = discord.Embed()
-                    self.embed.colour = discord.Colour(0x43b581)
-                    self.embed.title = "Custom status added"
-
-                    if after.activity.emoji is not None:
-                        statusAfter += str(after.activity.emoji) + " "
-                    if after.activity.name is not None:
-                        statusAfter += after.activity.name
-
-                # Custom status was removed
-                elif not isinstance(after.activity, discord.CustomActivity):
-                    self.embed = discord.Embed()
-                    self.embed.colour = discord.Colour(0xbe4041)
-                    self.embed.title = "Custom status removed"
-
-                    if before.activity.emoji is not None:
-                        statusBefore += str(before.activity.emoji) + " "
-                    if before.activity.name is not None:
-                        statusBefore += before.activity.name
-
-                # Custom status was edited
-                else:
-                    self.embed = discord.Embed()
-                    self.embed.colour = discord.Colour(0x8899d4)
-                    self.embed.title = "Custom status edited"
-
-                    if before.activity.emoji is not None:
-                        statusBefore += str(before.activity.emoji) + " "
-                    if after.activity.emoji is not None:
-                        statusAfter += str(after.activity.emoji) + " "
-                    if before.activity.name is not None:
-                        statusBefore += before.activity.name
-                    if after.activity.name is not None:
-                        statusAfter += after.activity.name
-
-            if (statusBefore != "" or statusAfter != "") and statusBefore != statusAfter:
-                self.embed.description = "**Before:** " + statusBefore + "\n**+After:** " + statusAfter
-                self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
-                self.embed.set_footer(text="ID: " + str(after.id))
-                self.embed.timestamp = datetime.utcnow()
-                await logging_channel.send(embed=self.embed)
+                if (statusBefore != "" or statusAfter != "") and statusBefore != statusAfter:
+                    self.embed.description = "**Before:** " + statusBefore + "\n**+After:** " + statusAfter
+                    self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+                    self.embed.set_footer(text="ID: " + str(after.id))
+                    self.embed.timestamp = datetime.utcnow()
+                    await logging_channel.send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_user_update(self, before, after):
@@ -643,8 +785,8 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the property of the user updated before and after
         """
-        if self.logs[str(self.settings["guild_id"])]["channel"] is not None:
-            logging_channel = self.bot.get_guild(self.settings["guild_id"]).get_channel(int(self.logs[str(self.settings["guild_id"])]["channel"]))
+        if self.logs[str(before.guild.id)]["overwrite_channels"]["member"] is not None:
+            logging_channel = self.bot.get_guild(Config.settings["guild_id"]).get_channel(int(self.logs[str(before.guild.id)]["overwrite_channels"]["member"]))
 
             # Check for avatar update
             if before.avatar != after.avatar:
@@ -658,7 +800,7 @@ class Logging(commands.Cog):
                 self.embed.set_footer(text="ID: " + str(after.id))
                 self.embed.timestamp = datetime.utcnow()
 
-                avatar_channel = self.bot.get_guild(self.settings["guild_id"]).get_channel(738536336016801793)
+                avatar_channel = self.bot.get_guild(Config.settings["guild_id"]).get_channel(738536336016801793)
                 await avatar_channel.send(embed=self.embed)
                 return
 
@@ -730,8 +872,8 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the id, name, and updated voice properties of the member
         """
-        if self.logs[str(member.guild.id)]["channel"] is not None:
-            logging_channel = member.guild.get_channel(int(self.logs[str(member.guild.id)]["channel"]))
+        if self.logs[str(member.guild.id)]["overwrite_channels"]["voice"] is not None:
+            logging_channel = member.guild.get_channel(int(self.logs[str(member.guild.id)]["overwrite_channels"]["voice"]))
 
             if before.channel is None:
                 self.embed = discord.Embed()
@@ -769,8 +911,8 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the id, name, and join date of the member
         """
-        if self.logs[str(guild.id)]["channel"] is not None:
-            logging_channel = guild.get_channel(int(self.logs[str(guild.id)]["channel"]))
+        if Config.settings["mod_log"] is not None:
+            logging_channel = guild.get_channel(int(Config.settings["mod_log"]))
             entries = await guild.audit_logs(limit=1).flatten()
             self.logs[str(guild.id)]["last_audit"] = entries[0].id
 
@@ -794,8 +936,8 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the id and name of the member
         """
-        if self.logs[str(guild.id)]["channel"] is not None:
-            logging_channel = guild.get_channel(int(self.logs[str(guild.id)]["channel"]))
+        if Config.settings["mod_log"] is not None:
+            logging_channel = guild.get_channel(int(Config.settings["mod_log"]))
 
             self.embed = discord.Embed()
             self.embed.title = "Member unbanned"
@@ -813,8 +955,8 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the invite code, inviter name, inviter id, expiration time, invite max uses
         """
-        if self.logs[str(invite.guild.id)]["channel"] is not None:
-            logging_channel = invite.guild.get_channel(int(self.logs[str(invite.guild.id)]["channel"]))
+        if self.logs[str(invite.guild.id)]["overwrite_channels"]["member_tracking"] is not None:
+            logging_channel = invite.guild.get_channel(int(self.logs[str(invite.guild.id)]["overwrite_channels"]["member_tracking"]))
             if invite.max_age == 0:
                 expires = "Never"
             elif invite.max_age == 1800:
@@ -843,8 +985,10 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the invite code and moderator responsible for deleting it
         """
-        if self.logs[str(invite.guild.id)]["channel"] is not None:
-            logging_channel = invite.guild.get_channel(int(self.logs[str(invite.guild.id)]["channel"]))
+        if self.logs[str(invite.guild.id)]["overwrite_channels"]["member_tracking"] is not None:
+            logging_channel = invite.guild.get_channel(int(self.logs[str(invite.guild.id)]["overwrite_channels"]["member_tracking"]))
+            mod_log = invite.guild.get_channel(int(Config.settings["mod_log"]))
+
             entries = await invite.guild.audit_logs(limit=1).flatten()
             self.logs[str(invite.guild.id)]["last_audit"] = entries[0].id
             deleter = entries[0].user.id
@@ -856,3 +1000,4 @@ class Logging(commands.Cog):
             self.embed.colour = discord.Colour(0xbe4041)
 
             await logging_channel.send(embed=self.embed)
+            await mod_log.send(embed=self.embed)
