@@ -1,4 +1,4 @@
-from GompeiFunctions import load_json, save_json, parse_id
+from GompeiFunctions import load_json, save_json, parse_id, time_delta_string
 from Administration import Administration
 from Permissions import dm_commands, administrator_perms
 from ReactionRoles import ReactionRoles
@@ -69,7 +69,20 @@ async def on_ready():
     await Config.load_settings()
 
     print("Logged on as {0}".format(gompei.user))
+    if Config.dm_channel is not None:
+        start_embed = discord.Embed(title="Bot started", color=0x43b581)
+        start_embed.set_author(name=gompei.user.name + "#" + gompei.user.discriminator, icon_url=gompei.user.avatar_url)
+        if Config.close_time is None:
+            start_embed.description = "**Downtime:** NaN"
+        else:
+            start_embed.description = "**Downtime:** " + time_delta_string(Config.close_time, datetime.now())
 
+        start_embed.set_footer(text="ID: " + str(gompei.user.id))
+        start_embed.timestamp = datetime.utcnow()
+
+        await Config.dm_channel.send(embed=start_embed)
+
+    Config.clear_close_time()
 
 @gompei.event
 async def on_message(message):
@@ -85,8 +98,9 @@ async def on_message(message):
             await message.channel.send("https://i.pinimg.com/originals/84/ee/27/84ee27382f9f9819097b29fe78be814d.png")
 
         if isinstance(message.channel, discord.channel.DMChannel) and Config.dm_channel is not None:
+
             message_embed = discord.Embed(description=message.content, timestamp=datetime.utcnow())
-            message_embed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
+            message_embed.set_author(name="DM from " + message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
             message_embed.set_footer(text=message.author.id)
 
             attachments = []
@@ -268,6 +282,36 @@ async def on_command_error(ctx, error):
 
 
 # Commands
+@gompei.command(pass_context=True)
+@commands.check(administrator_perms)
+async def kill(ctx):
+    """
+    Clean shutdown for the bot
+
+    :param ctx: Context object
+    """
+
+    def check_author(message):
+        return message.author.id == ctx.author.id
+
+    query = await ctx.send("You are about to shut down the bot, are you sure you want to do this? (Y/N)")
+
+    response = await gompei.wait_for('message', check=check_author)
+
+    if response.content.lower() == "y" or response.content.lower() == "yes":
+        Config.set_close_time()
+        if Config.dm_channel is not None:
+            end_embed = discord.Embed(title="Bot shutting down", color=0xbe4041)
+            end_embed.set_author(name=gompei.user.name + "#" + gompei.user.discriminator, icon_url=gompei.user.avatar_url)
+            end_embed.set_footer(text="ID: " + str(gompei.user.id))
+            end_embed.timestamp = datetime.utcnow()
+
+            await Config.dm_channel.send(embed=end_embed)
+        await gompei.close()
+    else:
+        await ctx.send("Not shutting down the bot")
+
+
 @gompei.command(pass_context=True)
 @commands.check(dm_commands)
 async def help(ctx, command_name=None):
