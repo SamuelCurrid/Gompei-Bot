@@ -262,7 +262,7 @@ async def on_command_error(ctx, error):
         argument = list(ctx.command.clean_params)[len(ctx.args[2:] if ctx.command.cog else ctx.args[1:])]
         await ctx.send("Could not find the " + argument)
     elif isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send("Command is missing arguments")
+        await ctx.send(ctx.command.name + " is missing arguments")
     else:
         print(error)
 
@@ -361,7 +361,6 @@ async def lockout(ctx):
 
         # DM User
         await member.send("Locked you out of the server. To get access back just type \".letmein\" here")
-
 
 @gompei.command(pass_context=True, aliases=["letMeIn"])
 @commands.check(dm_commands)
