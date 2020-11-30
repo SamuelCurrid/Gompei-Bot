@@ -1,4 +1,5 @@
 from GompeiFunctions import load_json, save_json
+from datetime import datetime
 
 import discord
 import os
@@ -26,6 +27,10 @@ logging = {
     },
     "last_audit": None,
     "invites": {}
+}
+administration = {
+    "mutes": {},
+    "jails": {}
 }
 
 
@@ -71,7 +76,7 @@ async def set_guild(new_guild: discord.Guild):
 
 
 async def update_guild_settings():
-    global dm_channel, logging, access_roles, opt_in_roles
+    global dm_channel, logging, access_roles, opt_in_roles, administration
 
     update_nitro_role()
 
@@ -90,6 +95,34 @@ async def update_guild_settings():
 
     for role_id in raw_settings["opt_in_roles"]:
         opt_in_roles.append(guild.get_role(role_id))
+
+    for user_id in raw_settings["administration"]["mutes"]:
+        member = guild.get_member(user_id)
+
+        # If user has left the server since last run, remove their mute
+        if member is None:
+            del user_id
+            continue
+
+        administration["mutes"][member] = datetime.strptime(raw_settings["administration"]["mutes"][user_id]["date"], "%Y-%m-%d %H:%M:%S")
+
+    for user_id in raw_settings["administration"]["jails"]:
+        member = guild.get_member(user_id)
+
+        # If user has left the server since last run, remove their jail
+        if member is None:
+            del user_id
+            continue
+
+        roles = []
+        for role_id in raw_settings["administration"]["jails"][user_id]["roles"]:
+            # Check if the role exists
+            if guild.get_role(role_id) is not None:
+                roles.append(guild.get_role(role_id))
+
+        lift_date = datetime.strptime(raw_settings["administration"]["jails"][user_id]["date"], "%Y-%m-%d %H:%M:%S")
+
+        administration["jails"][member] = {"date": lift_date, "roles": roles}
 
     save_json(os.path.join("config", "settings.json"), raw_settings)
 
@@ -329,3 +362,64 @@ def update_invite_uses(invite: str, uses: int):
 
     logging["invites"][invite]["uses"] = raw_settings["logging"]["invites"][invite]["uses"] = uses
     save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def automod_setting_enable(automod_type: str):
+    """
+    Enables automod settings
+
+    :param automod_type: setting to enable
+    """
+    global automod, raw_settings
+
+    automod[automod_type]["enabled"] = raw_settings["automod"][automod_type]["enabled"] = True
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def automod_setting_disable(automod_type: str):
+    """
+    Disabled automod settings
+
+    :param automod_type: setting to disable
+    """
+    global automod, raw_settings
+
+    automod[automod_type]["enabled"] = raw_settings["automod"][automod_type]["enabled"] = False
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def automod_set_message_rate_limit(number: int, seconds: int):
+    global automod, raw_settings
+
+    automod["message_rate"]["number"] = raw_settings["automod"]["message_rate"]["number"] = number
+    automod["message_rate"]["seconds"] = raw_settings["automod"]["message_rate"]["seconds"] = seconds
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def add_mute(member: discord.Member, date: datetime):
+    administration["mutes"][member] = {"date": date}
+    raw_settings["administration"]["mutes"][member.id] = {"date": date.strftime("%Y-%m-%d %H:%M:%S")}
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def remove_mute(member: discord.Member):
+    del administration["mutes"][member]
+    del raw_settings["administration"]["mutes"][member.id]
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def add_jail(member: discord.Member, date: datetime, roles):
+    role_ids = []
+    for role in roles:
+        role_ids.append(role.id)
+
+    administration["jails"][member] = {"date": date, "roles": roles}
+    raw_settings["administration"]["jails"][member.id] = {"date": date.strftime("%Y-%m-%d %H:%M:%S"), "roles": role_ids}
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def remove_jail(member: discord.Member):
+    del administration["jails"][member]
+    del raw_settings["administration"]["jails"][member.id]
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+

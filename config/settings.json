@@ -19,5 +19,9 @@
         },
         "last_audit": null,
         "invites": {}
+    },
+    "administration": {
+        "mutes": {},
+        "jails": {}
     }
 }
