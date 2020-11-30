@@ -161,7 +161,7 @@ class Logging(commands.Cog):
 
                 await logging_channel.send(embed=self.embed)
 
-                if not entries[0].user.bot:
+                if not entries[0].user.bot and entries[0].id != Config.logging["last_audit"]:
                     await Config.logging["overwrite_channels"]["mod"].send(embed=self.embed)
 
     @commands.Cog.listener()
@@ -193,7 +193,7 @@ class Logging(commands.Cog):
 
                 await Config.logging["overwrite_channels"]["mod"].send(embed=self.embed)
 
-                if not entries[0].user.bot:
+                if not entries[0].user.bot and entries[0].id != Config.logging["last_audit"]:
                     await Config.logging["overwrite_channels"]["message"].send(embed=self.embed)
 
     @commands.Cog.listener()
@@ -479,7 +479,7 @@ class Logging(commands.Cog):
 
             await Config.logging["overwrite_channels"]["member_tracking"].send(embed=self.embed)
 
-            if not entries[0].user.bot:
+            if not entries[0].user.bot and entries[0].id != Config.logging["last_audit"]:
                 await Config.logging["overwrite_channels"]["mod"].send(embed=self.embed)
 
     @commands.Cog.listener()
@@ -574,7 +574,7 @@ class Logging(commands.Cog):
 
             await Config.logging["overwrite_channels"]["member"].send(embed=self.embed)
 
-            if not entries[0].user.bot:
+            if not entries[0].user.bot and entries[0].id != Config.logging["last_audit"]:
                 await Config.logging["overwrite_channels"]["mod"].send(embed=self.embed)
 
     async def nickname_update_checks(self, before, after):
