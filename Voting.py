@@ -212,7 +212,7 @@ class Voting(commands.Cog):
 
         for option in self.votes["votes"]:
             if user_option == option["name"]:
-                if ctx.author.id == option["creator"]:
+                if ctx.author.id == option["voters"]:
                     await ctx.send("You already voted for this option")
                     return
 
