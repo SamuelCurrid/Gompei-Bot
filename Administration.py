@@ -23,6 +23,53 @@ class Administration(commands.Cog):
         self.warns = load_json(os.path.join("config", "warns.json"))
         self.bot = bot
 
+    async def on_ready(self):
+        for member in Config.administration["jails"]:
+            seconds = (member["date"] - datetime.now()).total_seconds()
+
+            if seconds < 0:
+                seconds = 0
+
+            # Reset roles if some have been picked up since last run
+            if member.roles > 1 and seconds > 0:
+                if member.premium_since is None:
+                    await member.edit(roles=[])
+                else:
+                    await member.edit(roles=[Config.nitro_role])
+
+            await self.jail_helper(member, seconds, member["roles"])
+
+        muted_role = Config.guild.get_role(615956736616038432)
+        for member in Config.administration["mutes"]:
+            seconds = (member["date"] - datetime.now()).total_seconds()
+
+            if seconds < 0:
+                seconds = 0
+
+            await self.mute_helper(member, seconds, muted_role)
+
+    @commands.Cog.listener()
+    async def on_member_update(self, before, after):
+        # Prevent jailed users from picking up roles
+        if after in Config.administration["jails"]:
+            added_roles = [x for x in after.roles if x not in before.roles]
+            if len(added_roles) > 0:
+                jail_embed = discord.Embed(title="Member jailed", color=0xbe4041)
+                jail_embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+
+                jail_embed.description = "<@" + str(after.id) + "> attempted to pick up a role while jailed:\n"
+                for role in added_roles:
+                    jail_embed.description += "<@&" + str(role.id) + "> "
+
+                jail_embed.set_footer(text="ID: " + str(after.id))
+                jail_embed.timestamp = datetime.utcnow()
+
+                await Config.logging["overwrite_channels"]["mod"].send(embed=jail_embed)
+                if after.premium_since is None:
+                    await after.edit(roles=[])
+                else:
+                    await after.edit(roles=[Config.nitro_role])
+
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
     @commands.guild_only()
@@ -342,7 +389,6 @@ class Administration(commands.Cog):
         :param reason: reason for the mute (dm'ed to the user)
         """
         muted_role = ctx.guild.get_role(615956736616038432)
-        mod_log = ctx.guild.get_channel(Config.settings["mod_log"])
 
         # Is user already muted
         if muted_role in member.roles:
@@ -365,22 +411,42 @@ class Administration(commands.Cog):
             await ctx.send("You must include a reason for the mute")
             return
 
+        Config.add_mute(member, datetime.now() + timedelta(seconds=seconds))
+
         mute_time = time_delta_string(datetime.utcnow(), datetime.utcnow() + delta)
 
         mute_embed = discord.Embed(title="Member muted", color=0xbe4041)
+        mute_embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
         mute_embed.description = "**Muted:** <@" + str(member.id) + ">\n**Time:** " + mute_time + "\n**__Reason__**\n> " + reason + "\n\n**Muter:** <@" + str(ctx.author.id) + ">"
         mute_embed.set_footer(text="ID: " + str(member.id))
         mute_embed.timestamp = datetime.utcnow()
 
         await member.add_roles(muted_role)
         await ctx.send("**Muted** user **" + username + "** for **" + mute_time + "** for: **" + reason + "**")
-        await mod_log.send(embed=mute_embed)
+        await Config.logging["overwrite_channels"]["mod"].send(embed=mute_embed)
         await member.send("**You were muted in the WPI Discord Server for " + mute_time + ". Reason:**\n> " + reason + "\n\nYou can respond here to contact WPI Discord staff.")
 
-        await asyncio.sleep(seconds)
+        await self.mute_helper(member, seconds, muted_role)
 
+    async def mute_helper(self, member, seconds, muted_role):
+        """
+        Waits out the jail time before returning roles to a user
+
+        :param member: Member who is jailed
+        :param seconds: Seconds to wait
+        :param muted_role: Role to remove for unmute
+        """
+        await asyncio.sleep(seconds)
+        Config.remove_mute(member)
         await member.remove_roles(muted_role)
-        await ctx.send("**Unmuted** user **" + username + "**")
+
+        mute_embed = discord.Embed(title="Member unmuted", color=0x43b581)
+        mute_embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
+        mute_embed.description = "Unmuted <@" + str(member.id) + ">"
+        mute_embed.set_footer(text="ID: " + str(member.id))
+        mute_embed.timestamp = datetime.utcnow()
+
+        await Config.logging["overwrite_channels"]["mod"].send(embed=mute_embed)
 
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
@@ -550,6 +616,80 @@ class Administration(commands.Cog):
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
     @commands.guild_only()
+    async def jail(self, ctx, member: discord.Member, time: str, *, reason: str):
+        """
+        Jails a member from the server by removing all of their roles
+        Usage: .jail <member> <time> <reason>
+
+        :param ctx: Context object
+        :param member: Member to jail
+        :param time: Time to jail for
+        :param reason: Reason for the jail
+        """
+        # Is user already jailed
+        if member in Config.administration["jails"]:
+            await ctx.send("This member is already jailed")
+            return
+
+        # Check role hierarchy
+        if ctx.author.top_role.position <= member.top_role.position:
+            await ctx.send("You're not high enough in the role hierarchy to do that.")
+            return
+
+        roles = member.roles
+
+        seconds = pytimeparse.parse(time)
+        if seconds is None:
+            await ctx.send("Not a valid time, try again")
+
+        delta = timedelta(seconds=seconds)
+        jail_time = time_delta_string(datetime.utcnow(), datetime.utcnow() + delta)
+
+        if len(reason) < 1:
+            await ctx.send("You must include a reason for the jail")
+            return
+
+        Config.add_jail(member, datetime.now() + timedelta(seconds=seconds), roles)
+
+        jail_embed = discord.Embed(title="Member jailed", color=0xbe4041)
+        jail_embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
+        jail_embed.description = "**Muted:** <@" + str(member.id) + ">\n**Time:** " + jail_time + "\n**__Reason__**\n> " + reason + "\n\n**Muter:** <@" + str(ctx.author.id) + ">"
+        jail_embed.set_footer(text="ID: " + str(member.id))
+        jail_embed.timestamp = datetime.utcnow()
+
+        if member.premium_since is None:
+            await member.edit(roles=[])
+        else:
+            await member.edit(roles=[Config.nitro_role])
+
+        await member.send("You have been locked out of the server for " + jail_time + ". Reason:\n> " + reason + "\n\nYou can respond here to contact WPI Discord staff.")
+        await Config.logging["overwrite_channels"]["mod"].send(embed=jail_embed)
+        await ctx.send("**Jailed** user **" + member.display_name + "** for **" + jail_time + "** for: **" + reason + "**")
+        await self.jail_helper(member, seconds, roles)
+
+    async def jail_helper(self, member, seconds, roles):
+        """
+        Waits out the jail time before returning roles to a user
+
+        :param member: Member who is jailed
+        :param seconds: Seconds to wait
+        :param roles: Roles to return
+        """
+        await asyncio.sleep(seconds)
+        Config.remove_jail(member)
+        await member.edit(roles=roles)
+
+        jail_embed = discord.Embed(title="Member unjailed", color=0x43b581)
+        jail_embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
+        jail_embed.description = "Unjailed <@" + str(member.id) + ">"
+        jail_embed.set_footer(text="ID: " + str(member.id))
+        jail_embed.timestamp = datetime.utcnow()
+
+        await Config.logging["overwrite_channels"]["mod"].send(embed=jail_embed)
+
+    @commands.command(pass_context=True)
+    @commands.check(moderator_perms)
+    @commands.guild_only()
     async def slowmode(self, ctx, channel: typing.Optional[discord.TextChannel], *, time):
         """
         Sets the slowmode in a channel
@@ -620,7 +760,7 @@ class Administration(commands.Cog):
         :param ctx: context object
         :param channel: channel
         """
-        if Config.settings["mod_log"] != channel.id:
+        if Config.raw_settings["mod_log"] != channel.id:
             Config.set_mod_log(channel)
             await ctx.send("Successfully updated mod log channel")
         else:
