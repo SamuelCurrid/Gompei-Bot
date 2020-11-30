@@ -50,6 +50,12 @@ class Administration(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
+        """
+        Check role updates to prevent jailed users from accessing the server again
+
+        :param before: Member before
+        :param after: Member after
+        """
         # Prevent jailed users from picking up roles
         if after in Config.administration["jails"]:
             added_roles = [x for x in after.roles if x not in before.roles]
@@ -69,6 +75,25 @@ class Administration(commands.Cog):
                     await after.edit(roles=[])
                 else:
                     await after.edit(roles=[Config.nitro_role])
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        """
+        Checks for logging reactions to elevate to staff channel
+
+        :param payload:
+        """
+        # If a staff channel exists
+        if Config.logging["staff"] is not None:
+            if Config.guild.id == payload.guild_id:
+                channel = Config.guild.get_channel(payload.channel_id)
+
+                # If the channel is a logging channel
+                if channel == Config.logging["channel"] or channel == Config.dm_channel or channel in Config.logging["overwrite_channels"].values():
+                    if str(payload.emoji) in ["❗", "‼️", "⁉️", "❕"]:
+                        message = await channel.fetch_message(payload.message_id)
+                        if len(message.embeds) > 0:
+                            await Config.logging["staff"].send("Message forwarded by <@" + str(payload.user_id) + "> from <#" + str(channel.id) + ">", embed=message.embeds[0])
 
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
@@ -765,3 +790,13 @@ class Administration(commands.Cog):
             await ctx.send("Successfully updated mod log channel")
         else:
             await ctx.send("This is already the mod log channel")
+
+    @commands.command(pass_context=True, name="staffChannel")
+    @commands.check(administrator_perms)
+    @commands.guild_only()
+    async def change_staff_channel(self, ctx, channel: discord.TextChannel):
+        if Config.logging["staff"] != channel:
+            Config.set_staff_channel(channel)
+            await ctx.send("Successfully updated staff channel")
+        else:
+            await ctx.send("This is already the staff channel")
