@@ -25,6 +25,7 @@ logging = {
         "status": None,
         "voice": None
     },
+    "staff": None,
     "last_audit": None,
     "invites": {}
 }
@@ -32,6 +33,7 @@ administration = {
     "mutes": {},
     "jails": {}
 }
+close_time = None
 
 
 async def set_client(new_client: discord.Client):
@@ -44,12 +46,15 @@ async def load_settings():
     Loads the settings with the client
     :return:
     """
-    global raw_settings, client, guild, status, prefix, logging
+    global raw_settings, client, guild, status, prefix, logging, close_time
     raw_settings = load_json(os.path.join("config", "settings.json"))
 
     prefix = raw_settings["prefix"]
 
     guild = client.get_guild(raw_settings["guild_id"])
+
+    if raw_settings["close_time"] is not None:
+        close_time = datetime.strptime(raw_settings["close_time"], "%Y-%m-%d %H:%M:%S")
 
     if guild is not None:
         await update_guild_settings()
@@ -88,6 +93,7 @@ async def update_guild_settings():
         logging["overwrite_channels"][key] = guild.get_channel(raw_settings["logging"]["overwrite_channels"][key])
 
     logging["last_audit"] = raw_settings["logging"]["last_audit"]
+    logging["staff"] = guild.get_channel(raw_settings["logging"]["staff"])
     logging["invites"] = raw_settings["logging"]["invites"]
 
     for role_id in raw_settings["access_roles"]:
@@ -145,7 +151,7 @@ def set_mod_log(channel: discord.TextChannel):
     global logging, raw_settings
 
     logging["overwrite_channels"]["mod"] = channel
-    raw_settings["mod"] = channel.id
+    raw_settings["logging"]["overwrite_channels"]["mod"] = channel.id
     save_json(os.path.join("config", "settings.json"), raw_settings)
 
 
@@ -423,3 +429,32 @@ def remove_jail(member: discord.Member):
     del raw_settings["administration"]["jails"][member.id]
     save_json(os.path.join("config", "settings.json"), raw_settings)
 
+
+def set_staff_channel(channel: discord.TextChannel):
+    global logging, raw_settings
+
+    logging["staff"] = channel
+    raw_settings["logging"]["staff"] = channel.id
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def clear_staff_channel():
+    global logging, raw_settings
+
+    logging["staff"] = raw_settings["logging"]["staff"] = None
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def set_close_time():
+    global close_time, raw_settings
+
+    close_time = datetime.now()
+    raw_settings["close_time"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def clear_close_time():
+    global close_time, raw_settings
+
+    close_time = raw_settings["close_time"] = None
+    save_json(os.path.join("config", "settings.json"), raw_settings)

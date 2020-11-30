@@ -17,11 +17,13 @@
             "status": null,
             "voice": null
         },
+        "staff": null,
         "last_audit": null,
         "invites": {}
     },
     "administration": {
         "mutes": {},
         "jails": {}
-    }
+    },
+    "close_time": {}
 }
