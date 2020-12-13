@@ -145,10 +145,9 @@ class Logging(commands.Cog):
                 entries = await message.guild.audit_logs(limit=1).flatten()
 
                 self.embed.title = "Message deleted in " + "#" + channel.name
-                if entries[0].action == discord.AuditLogAction.message_delete and entries[0].id != Config.logging["last_audit"]["last_audit"]:
+                if entries[0].action == discord.AuditLogAction.message_delete and entries[0].id != Config.logging["last_audit"]:
                     user_id = entries[0].user.id
                     self.embed.description = message.content + "\n\n**Deleted by <@" + str(user_id) + ">**"
-                    Config.set_last_audit = entries[0].id
                 else:
                     self.embed.description = message.content
 
@@ -162,6 +161,7 @@ class Logging(commands.Cog):
                 await logging_channel.send(embed=self.embed)
 
                 if not entries[0].user.bot and entries[0].id != Config.logging["last_audit"]:
+                    Config.set_last_audit(entries[0].id)
                     await Config.logging["overwrite_channels"]["mod"].send(embed=self.embed)
 
     @commands.Cog.listener()
@@ -189,11 +189,11 @@ class Logging(commands.Cog):
                 if entries[0].action == discord.AuditLogAction.message_delete and entries[0].id != Config.logging["last_audit"]:
                     user_id = entries[0].user.id
                     self.embed.description = "**Deleted by <@" + str(user_id) + ">**"
-                    Config.set_last_audit = entries[0].id
 
                 await Config.logging["overwrite_channels"]["mod"].send(embed=self.embed)
 
                 if not entries[0].user.bot and entries[0].id != Config.logging["last_audit"]:
+                    Config.set_last_audit(entries[0].id)
                     await Config.logging["overwrite_channels"]["message"].send(embed=self.embed)
 
     @commands.Cog.listener()
@@ -430,7 +430,7 @@ class Logging(commands.Cog):
                 if Config.logging["invites"][invite.code]["uses"] != invite.uses:
                     inviter_id = Config.logging["invites"][invite.code]["inviter_id"]
                     invite_code = invite.code
-                    Config.update_invite(invite)
+                    Config.update_invite_uses(invite.code, invite.uses)
 
             self.embed = discord.Embed()
             self.embed.colour = discord.Colour(0x43b581)
@@ -464,11 +464,13 @@ class Logging(commands.Cog):
 
             entries = await member.guild.audit_logs(limit=1).flatten()
             if entries[0].action == discord.AuditLogAction.kick and entries[0].id != Config.logging["last_audit"]:
-                Config.set_last_audit = entries[0].id
+                Config.set_last_audit(entries[0].id)
                 self.embed.title = "Member kicked"
                 self.embed.description = "<@" + str(member.id) + "> joined " + join_delta + " ago\n**Roles: **" + roles + "\n\n**Kicked by <@" + str(entries[0].user.id) + ">**"
                 if entries[0].reason is not None:
                     self.embed.description += "\n**Reason:** " + entries[0].reason
+
+                await Config.logging["overwrite_channels"]["mod"].send(embed=self.embed)
 
             else:
                 self.embed.title = "Member left"
@@ -479,8 +481,6 @@ class Logging(commands.Cog):
 
             await Config.logging["overwrite_channels"]["member_tracking"].send(embed=self.embed)
 
-            if not entries[0].user.bot and entries[0].id != Config.logging["last_audit"]:
-                await Config.logging["overwrite_channels"]["mod"].send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
@@ -575,6 +575,7 @@ class Logging(commands.Cog):
             await Config.logging["overwrite_channels"]["member"].send(embed=self.embed)
 
             if not entries[0].user.bot and entries[0].id != Config.logging["last_audit"]:
+                Config.set_last_audit(entries[0].id)
                 await Config.logging["overwrite_channels"]["mod"].send(embed=self.embed)
 
     async def nickname_update_checks(self, before, after):
@@ -814,7 +815,7 @@ class Logging(commands.Cog):
         if Config.logging["overwrite_channels"]["mod"] is not None:
             logging_channel = Config.logging["overwrite_channels"]["mod"]
             entries = await guild.audit_logs(limit=1).flatten()
-            Config.set_last_audit = entries[0].id
+            Config.set_last_audit(entries[0].id)
 
             self.embed = discord.Embed()
             self.embed.title = "Member banned"
@@ -890,7 +891,7 @@ class Logging(commands.Cog):
             mod_log = Config.logging["overwrite_channels"]["mod"]
 
             entries = await invite.guild.audit_logs(limit=1).flatten()
-            Config.set_last_audit = entries[0].id
+            Config.set_last_audit(entries[0].id)
             deleter = entries[0].user.id
 
             Config.remove_invite(invite.code)

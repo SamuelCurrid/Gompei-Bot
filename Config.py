@@ -94,7 +94,10 @@ async def update_guild_settings():
 
     logging["last_audit"] = raw_settings["logging"]["last_audit"]
     logging["staff"] = guild.get_channel(raw_settings["logging"]["staff"])
-    logging["invites"] = raw_settings["logging"]["invites"]
+
+    invites = await guild.invites()
+    for invite in invites:
+        add_invite(invite.code, invite.inviter.id, invite.uses)
 
     for role_id in raw_settings["access_roles"]:
         access_roles.append(guild.get_role(role_id))
@@ -337,7 +340,7 @@ def add_invite(invite: str, user_id: int, uses: int):
     """
     global logging, raw_settings
 
-    logging["invites"][invite] = raw_settings["logging"]["invites"] = {
+    logging["invites"][invite] = raw_settings["logging"]["invites"][invite] = {
         "inviter_id": user_id,
         "uses": uses
     }

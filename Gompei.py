@@ -250,13 +250,17 @@ async def on_member_update(before, after):
     added_roles = [x for x in after.roles if x not in before.roles]
     removed_roles = [x for x in before.roles if x not in after.roles]
 
+    for role in added_roles:
+        if role.id == 630589807084699653:
+            await after.send("Welcome to the WPI Discord Server!\n\nIf you have any prospective student questions, feel free to shoot them in #help-me. Hopefully we, or someone else in the community, can answer them :smile:.")
+
     # If roles edited
     if len(added_roles) + len(removed_roles) > 0:
         role_list = []
         for role in after.roles:
             if role in Config.access_roles:
                 return
-            if role not in Config.access_roles:
+            if role not in Config.opt_in_roles:
                 role_list.append(role)
 
         await after.edit(roles=role_list)
