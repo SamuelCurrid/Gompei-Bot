@@ -98,7 +98,7 @@ class Administration(commands.Cog):
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
     @commands.guild_only()
-    async def echo(self, ctx, channel: discord.TextChannel, *, msg):
+    async def echo(self, ctx, channel: discord.TextChannel, *, msg: typing.Optional[str]):
         """
         Forwards message / attachments appended to the command to the given channel
         Usage: .echo <channel> <message>
@@ -113,7 +113,7 @@ class Administration(commands.Cog):
             for i in ctx.message.attachments:
                 attachments.append(await i.to_file())
 
-        if len(msg) > 0:
+        if len(msg) is not None:
             message = await channel.send(msg, files=attachments)
             await ctx.send("Message sent (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(message.channel.id) + "/" + str(message.id) + ">)")
         elif len(attachments) > 0:
