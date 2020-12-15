@@ -4,12 +4,14 @@ from Permissions import dm_commands, administrator_perms
 from ReactionRoles import ReactionRoles
 from Leaderboards import Leaderboards
 from MovieVoting import MovieVoting
+from Information import Information
 from Minesweeper import Minesweeper
 from discord.ext import commands
 from datetime import datetime
 from Hangman import Hangman
 from Logging import Logging
 from Voting import Voting
+
 
 import discord
 import Config
@@ -47,6 +49,7 @@ gompei.add_cog(Administration(gompei))
 
 gompei.add_cog(Hangman(gompei))
 gompei.add_cog(Minesweeper(gompei))
+gompei.add_cog(Information(gompei))
 gompei.add_cog(Logging(gompei))
 gompei.add_cog(ReactionRoles(gompei))
 gompei.add_cog(Voting(gompei))
