@@ -1,5 +1,5 @@
 from GompeiFunctions import time_delta_string
-from Permissions import moderator_perms
+from Permissions import command_channels
 from discord.ext import commands
 from datetime import datetime
 
@@ -13,7 +13,7 @@ class Information(commands.Cog):
         self.embed = discord.Embed(color=0x8899d4)
 
     @commands.command(pass_context=True, aliases=["i"])
-    @commands.check(moderator_perms)
+    @commands.check(command_channels)
     @commands.guild_only()
     async def info(self, ctx, *targets: typing.Union[discord.TextChannel, discord.VoiceChannel, discord.Role, discord.Emoji, discord.PartialEmoji, discord.Member, discord.User, str]):
         """
