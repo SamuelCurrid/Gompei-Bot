@@ -15,7 +15,7 @@ class Information(commands.Cog):
     @commands.command(pass_context=True, aliases=["i"])
     @commands.check(command_channels)
     @commands.guild_only()
-    async def info(self, ctx, *targets: typing.Union[discord.TextChannel, discord.VoiceChannel, discord.Role, discord.Emoji, discord.PartialEmoji, discord.Member, discord.User, str]):
+    async def info(self, ctx, *, target: typing.Union[discord.TextChannel, discord.VoiceChannel, discord.Role, discord.Emoji, discord.PartialEmoji, discord.Member, discord.User, str]):
         """
         Info command that gives information for various discord items
         Usage: .info <item>
@@ -34,15 +34,14 @@ class Information(commands.Cog):
             str: self.keywords
         }
 
-        for target in targets:
-            self.embed = discord.Embed()
+        self.embed = discord.Embed()
 
-            if isinstance(target, str):
-                await switcher[type(target)](ctx, target)
-            else:
-                await switcher[type(target)](target)
+        if isinstance(target, str):
+            await switcher[type(target)](ctx, target)
+        else:
+            await switcher[type(target)](target)
 
-            await ctx.send(embed=self.embed)
+        await ctx.send(embed=self.embed)
 
     async def channel_info(self, channel: typing.Union[discord.TextChannel, discord.VoiceChannel]):
         """
@@ -71,26 +70,24 @@ class Information(commands.Cog):
 
 
         for target in channel.overwrites:
-            field_description = ""
             permissions = []
             values = []
 
-            # self.embed.description += target.mention + "\n"
             for permission in channel.overwrites[target]:
                 if permission[1] is not None:
                     permissions.append(permission[0].replace("_", " ").title())
-                    # self.embed.description += "​ ​ ​ ​ ​​ ​ ​ ​ ​ ​ ​ ​" + permission[0].replace("_", " ").title()
                     if permission[1] is True:
-                        values.append(":white_check_mark:")
-                        # self.embed.description += " :white_check_mark:\n"
+                        values.append("✔")
                     else:
-                        values.append(":x:")
-                        # self.embed.description += " :x:\n"
+                        values.append("✘")
 
 
             max_length = len(max(permissions, key=len))
+
+            field_description = "```"
             for i in range(0, len(permissions)):
-                field_description += permissions[i] + ("​" * (max_length - len(permissions[i]))) + " " + values[i] + "\n"
+                field_description += permissions[i] + (" " * (max_length - len(permissions[i]))) + " " + values[i] + "\n"
+            field_description += "```"
 
             self.embed.add_field(name=target.name, value=field_description, inline=True)
 
@@ -114,18 +111,23 @@ class Information(commands.Cog):
         self.embed.description += "\n**Position:** " + str(role.position)
         self.embed.description += "\n**Created:** " + role.created_at.strftime("%y-%m-%d %H:%M:%S") + " UTC\n(" + time_delta_string(role.created_at, datetime.utcnow()) + " ago)"
 
-        permissions = ""
-        values = ""
+        permissions = []
+        values = []
 
         for permission in role.permissions:
             if permission[1] is not None:
                 if permission[1] is True:
-                    permissions += permission[0].replace("_", " ").title() + "\n"
-                    values += ":white_check_mark:\n"
+                    permissions.append(permission[0].replace("_", " ").title())
+                    values.append("✔")
 
-        self.embed.add_field(name="Permissions", value=permissions, inline=True)
-        self.embed.add_field(name="​", value=values, inline=True)
+        max_length = len(max(permissions, key=len))
 
+        permission_values = "```"
+        for i in range(0, len(permissions)):
+            permission_values += permissions[i] + (" " * (max_length - len(permissions[i]))) + " " + values[i] + "\n"
+        permission_values += "```"
+
+        self.embed.add_field(name="Permissions", value=permission_values, inline=True)
 
         if len(self.embed.description) > 2048:
             self.embed.description = self.embed.description[0:2047]
