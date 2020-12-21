@@ -431,7 +431,7 @@ async def let_me_in(ctx):
 
     if member is None:
         # Member is not in guild
-        await ctx.send("You are not in the WPI Discord Server")
+        await ctx.send("You are not in the server!")
     else:
         if str(member.id) not in lockout_info:
             await ctx.send("You haven't locked yourself out")

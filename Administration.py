@@ -449,7 +449,7 @@ class Administration(commands.Cog):
         await member.add_roles(muted_role)
         await ctx.send("**Muted** user **" + username + "** for **" + mute_time + "** for: **" + reason + "**")
         await Config.logging["overwrite_channels"]["mod"].send(embed=mute_embed)
-        await member.send("**You were muted in the WPI Discord Server for " + mute_time + ". Reason:**\n> " + reason + "\n\nYou can respond here to contact WPI Discord staff.")
+        await member.send("**You were muted in the " + ctx.guild.name + " for " + mute_time + ". Reason:**\n> " + reason + "\n\nYou can respond here to contact staff.")
 
         await self.mute_helper(member, seconds, muted_role)
 
@@ -491,7 +491,7 @@ class Administration(commands.Cog):
                 attachments.append(await i.to_file())
 
         if len(reason) > 0:
-            await member.send("You were warned in the WPI Discord Server. Reason:\n> " + reason, files=attachments)
+            await member.send("You were warned in the " + ctx.guild.name + ". Reason:\n> " + reason, files=attachments)
         else:
             await ctx.send("No warning to send")
             return
@@ -687,7 +687,7 @@ class Administration(commands.Cog):
         else:
             await member.edit(roles=[Config.nitro_role])
 
-        await member.send("You have been locked out of the server for " + jail_time + ". Reason:\n> " + reason + "\n\nYou can respond here to contact WPI Discord staff.")
+        await member.send("You have been locked out of the server for " + jail_time + ". Reason:\n> " + reason + "\n\nYou can respond here to contact staff.")
         await Config.logging["overwrite_channels"]["mod"].send(embed=jail_embed)
         await ctx.send("**Jailed** user **" + member.display_name + "** for **" + jail_time + "** for: **" + reason + "**")
         await self.jail_helper(member, seconds, roles)
