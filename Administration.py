@@ -4,7 +4,6 @@ from discord.ext import commands
 from datetime import timedelta
 from datetime import datetime
 
-
 import pytimeparse
 import dateparser
 import asyncio
@@ -94,6 +93,37 @@ class Administration(commands.Cog):
                         message = await channel.fetch_message(payload.message_id)
                         if len(message.embeds) > 0:
                             await Config.logging["staff"].send("Message forwarded by <@" + str(payload.user_id) + "> from <#" + str(channel.id) + ">", embed=message.embeds[0])
+
+    @commands.command(pass_context=True)
+    @commands.check(moderator_perms)
+    @commands.guild_only()
+    async def avatar(self, ctx, user: typing.Union[discord.Member, discord.User, str]):
+        # Fetch user from ID
+        if isinstance(user, str) and (len(user) == 18 or len(user) == 17):
+            try:
+                user = int(user)
+                user = await self.user_info(await self.bot.fetch_user(user))
+            except ValueError:
+                await ctx.send("Did not find the user to ban")
+                return
+            except discord.NotFound:
+                await ctx.send("Did not find the user with that ID")
+                return
+            except discord.HTTPException:
+                await ctx.send("Bot could not connect with gateway")
+                return
+
+        embed = discord.Embed()
+        embed.colour = discord.Colour(0x8899d4)
+        embed.set_author(name=user.name + "#" + user.discriminator, icon_url=user.avatar_url)
+        embed.set_image(url=user.avatar_url)
+        embed.description = "<@" + str(user.id) + ">"
+
+        embed.set_footer(text="ID: " + str(user.id))
+        embed.timestamp = datetime.utcnow()
+
+        avatar_channel = Config.guild.get_channel(738536336016801793)
+        await ctx.send(embed=embed)
 
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
@@ -758,21 +788,39 @@ class Administration(commands.Cog):
     @commands.command(pass_context=True)
     @commands.check(administrator_perms)
     @commands.guild_only()
-    async def ban(self, ctx, member: discord.Member, *, reason):
+    async def ban(self, ctx, user: typing.Union[discord.Member, str], *, reason):
         """
         Bans a user from the server, requires a reason as well
         Usage: .ban <member> <reason>
 
-        :param ctx: context object
-        :param member: member to ban
-        :param reason: reason for the ban, DM'ed to user
+        :param ctx: Context object
+        :param user: User to ban
+        :param reason: Reason for the ban, DM'ed to user
         """
+        # Fetch user from ID
+        if isinstance(user, str) and (len(user) == 18 or len(user) == 17):
+            try:
+                user = int(user)
+                user = await self.user_info(await self.bot.fetch_user(user))
+            except ValueError:
+                await ctx.send("Did not find the user to ban")
+                return
+            except discord.NotFound:
+                await ctx.send("Did not find the user with that ID")
+                return
+            except discord.HTTPException:
+                await ctx.send("Bot could not connect with gateway")
+                return
+
         if len(reason) < 1:
             await ctx.send("Must include a reason with the ban")
         else:
-            await member.send(member.guild.name + " banned you for reason:\n> " + reason)
-            await member.kick(reason=reason)
-            await ctx.send("Successfully banned user " + member.name + member.discriminator)
+
+            if isinstance(user, discord.Member):
+                await user.send(user.guild.name + " banned you for reason:\n> " + reason)
+
+            await user.ban(reason=reason)
+            await ctx.send("Successfully banned user " + user.name + user.discriminator)
 
     @commands.command(pass_context=True, name="modLog")
     @commands.check(administrator_perms)
