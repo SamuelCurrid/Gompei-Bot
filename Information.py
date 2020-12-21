@@ -107,6 +107,7 @@ class Information(commands.Cog):
 
         self.embed.description = "**Name:** " + role.name
         self.embed.description += "\n**Mention:** " + role.mention
+        self.embed.description += "\n**Members:** " + str(len(role.members))
         self.embed.description += "\n**(R,G,B):** " + str(role.color.to_rgb())
         self.embed.description += "\n**Position:** " + str(role.position)
         self.embed.description += "\n**Created:** " + role.created_at.strftime("%y-%m-%d %H:%M:%S") + " UTC\n(" + time_delta_string(role.created_at, datetime.utcnow()) + " ago)"
@@ -160,6 +161,7 @@ class Information(commands.Cog):
             self.embed.add_field(name="Joined at", value=user.joined_at.strftime("%y-%m-%d %H:%M:%S") + " UTC\n(" + time_delta_string(user.joined_at, datetime.utcnow()) + " ago)", inline=True)
         else:
             self.embed.title = "User info"
+            self.embed.add_field(name="Created at", value=user.created_at.strftime("%y-%m-%d %H:%M:%S") + " UTC\n(" + time_delta_string(user.created_at, datetime.utcnow()) + " ago)", inline=True)
 
         if len(self.embed.description) > 2048:
             self.embed.description = self.embed.description[0:2047]
@@ -280,7 +282,23 @@ class Information(commands.Cog):
             await self.guild_info(ctx.guild)
         elif keyword == "roles" or keyword == "role" or keyword == "r":
             await self.guild_role_info(ctx.guild)
+        elif len(keyword) == 18 or len(keyword) == 17:
+            try:
+                id = int(keyword)
+                await self.user_info(await self.bot.fetch_user(id))
+            except ValueError:
+                self.embed.title = "Unrecognized keyword"
+                self.embed.description = "Make sure you have the correct name/ID"
+                self.embed.timestamp = datetime.utcnow()
+            except discord.NotFound:
+                self.embed.title = "User not found"
+                self.embed.description = "Make sure you have the correct ID"
+                self.embed.timestamp = datetime.utcnow()
+            except discord.HTTPException:
+                self.embed.title = "HTTP Error"
+                self.embed.description = "Bot could not connect with the gateway"
+                self.embed.timestamp = datetime.utcnow()
         else:
             self.embed.title = "Unrecognized keyword"
-            self.embed.description = "Make sure you have the correct name/id"
+            self.embed.description = "Make sure you have the correct name/ID"
             self.embed.timestamp = datetime.utcnow()
