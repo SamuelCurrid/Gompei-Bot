@@ -702,7 +702,6 @@ class Logging(commands.Cog):
 
                 avatar_channel = Config.guild.get_channel(738536336016801793)
                 await avatar_channel.send(embed=self.embed)
-                return
 
             # Check for name update
             elif before.name != after.name:

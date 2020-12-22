@@ -104,7 +104,7 @@ class Administration(commands.Cog):
                 user = int(user)
                 user = await self.user_info(await self.bot.fetch_user(user))
             except ValueError:
-                await ctx.send("Did not find the user to ban")
+                await ctx.send("Did not find the user")
                 return
             except discord.NotFound:
                 await ctx.send("Did not find the user with that ID")
@@ -783,7 +783,7 @@ class Administration(commands.Cog):
         else:
             await member.send(member.guild.name + " kicked you for reason:\n> " + reason)
             await member.kick(reason=reason)
-            await ctx.send("Successfully kicked user " + member.name + member.discriminator)
+            await ctx.send("Successfully kicked user " + member.name + "#" + member.discriminator)
 
     @commands.command(pass_context=True)
     @commands.check(administrator_perms)
@@ -820,7 +820,7 @@ class Administration(commands.Cog):
                 await user.send(user.guild.name + " banned you for reason:\n> " + reason)
 
             await user.ban(reason=reason)
-            await ctx.send("Successfully banned user " + user.name + user.discriminator)
+            await ctx.send("Successfully banned user " + user.name + "#" + user.discriminator)
 
     @commands.command(pass_context=True, name="modLog")
     @commands.check(administrator_perms)
