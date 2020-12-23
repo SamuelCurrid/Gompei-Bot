@@ -330,9 +330,9 @@ async def help(ctx, command_name=None):
     :param command_name: command in question
     """
     if command_name is None:
-        help_embed = discord.Embed(title="Gompei Bot", colour=discord.Colour.blue())
+        help_embed = discord.Embed(title=gompei.user.display_name, colour=discord.Colour.blue())
         help_embed.add_field(name="Documentation", value="https://samuelcurrid.github.io/Gompei-Bot/documentation.html")
-        help_embed.set_thumbnail(url="https://raw.githubusercontent.com/SamuelCurrid/Gompei-Bot/master/assets/gompei.png")
+        help_embed.set_thumbnail(url=gompei.user.avatar_url)
         help_embed.set_footer(text="Source: https://github.com/SamuelCurrid/Gompei-Bot/")
         await ctx.send(embed=help_embed)
     else:
