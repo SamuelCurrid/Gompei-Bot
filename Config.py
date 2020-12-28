@@ -82,7 +82,11 @@ async def set_guild(new_guild: discord.Guild):
 
 
 async def update_guild_settings():
-    global dm_channel, logging, access_roles, opt_in_roles, administration
+    """
+    Updates guild settings for the currently selected guild
+    Updates guild settings for the currently selected guild
+    """
+    global dm_channel, logging, access_roles, opt_in_roles, command_channels, administration
 
     update_nitro_role()
 
@@ -104,7 +108,11 @@ async def update_guild_settings():
 
     logging["last_audit"] = (await guild.audit_logs(limit=1).flatten())[0]
     logging["staff"] = guild.get_channel(raw_settings["logging"]["staff"])
-    logging["invites"] = raw_settings["logging"]["invites"]
+    for invite in await guild.invites():
+        logging["invites"][invite] = {
+            "inviter_id": invite.inviter.id,
+            "uses": invite.uses
+        }
 
     for role_id in raw_settings["access_roles"]:
         access_roles.append(guild.get_role(role_id))
@@ -325,19 +333,18 @@ def set_overwrite_logging_channel(logging_type: str, channel: discord.TextChanne
     save_json(os.path.join("config", "settings.json"), raw_settings)
 
 
-def set_last_audit(audit: str):
+def set_last_audit(audit: discord.AuditLogEntry):
     """
     Sets the last audit
 
-    :param audit: code for the last audit
+    :param audit: Last audit log entry
     """
     global logging, raw_settings
 
-    logging["last_audit"] = raw_settings["logging"]["last_audit"] = audit
-    save_json(os.path.join("config", "settings.json"), raw_settings)
+    logging["last_audit"] = audit
 
 
-def add_invite(invite: str, user_id: int, uses: int):
+def add_invite(invite: discord.Invite):
     """
     Adds an invite
 
@@ -347,11 +354,10 @@ def add_invite(invite: str, user_id: int, uses: int):
     """
     global logging, raw_settings
 
-    logging["invites"][invite] = raw_settings["logging"]["invites"] = {
-        "inviter_id": user_id,
-        "uses": uses
+    logging["invites"][invite] = {
+        "inviter_id": invite.inviter.id,
+        "uses": invite.inviter.id
     }
-    save_json(os.path.join("config", "settings.json"), raw_settings)
 
 
 def remove_invite(invite: str):
@@ -363,11 +369,9 @@ def remove_invite(invite: str):
     global logging, raw_settings
 
     del logging["invites"][invite]
-    del raw_settings["logging"]["invites"]
-    save_json(os.path.join("config", "settings.json"), raw_settings)
 
 
-def update_invite_uses(invite: str, uses: int):
+def update_invite_uses(invite: discord.Invite):
     """
     Updates the amount of times an invite has been used
 

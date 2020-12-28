@@ -18,9 +18,7 @@
             "status": null,
             "voice": null
         },
-        "staff": null,
-        "last_audit": null,
-        "invites": {}
+        "staff": null
     },
     "administration": {
         "mutes": {},

@@ -843,6 +843,13 @@ class Administration(commands.Cog):
     @commands.check(administrator_perms)
     @commands.guild_only()
     async def change_staff_channel(self, ctx, channel: discord.TextChannel):
+        """
+        Changes the staff channel to forward Gompei events to
+        Usage: .staffChannel <channel>
+
+        :param ctx: Context object
+        :param channel: Channel to be the staff channel
+        """
         if Config.logging["staff"] != channel:
             Config.set_staff_channel(channel)
             await ctx.send("Successfully updated staff channel")

@@ -148,7 +148,7 @@ class Logging(commands.Cog):
                 if entries[0].action == discord.AuditLogAction.message_delete and entries[0].id != Config.logging["last_audit"]["last_audit"]:
                     user_id = entries[0].user.id
                     self.embed.description = message.content + "\n\n**Deleted by <@" + str(user_id) + ">**"
-                    Config.set_last_audit = entries[0].id
+                    Config.set_last_audit(entries[0])
                 else:
                     self.embed.description = message.content
 
@@ -161,7 +161,7 @@ class Logging(commands.Cog):
 
                 await logging_channel.send(embed=self.embed)
 
-                if not entries[0].user.bot and entries[0].id != Config.logging["last_audit"]:
+                if not entries[0].user.bot and entries[0].id != Config.logging["last_audit"].id:
                     await Config.logging["overwrite_channels"]["mod"].send(embed=self.embed)
 
     @commands.Cog.listener()
@@ -186,10 +186,10 @@ class Logging(commands.Cog):
                 self.embed.set_footer(text="Uncached message: " + str(payload.message_id))
                 self.embed.timestamp = datetime.utcnow()
 
-                if entries[0].action == discord.AuditLogAction.message_delete and entries[0].id != Config.logging["last_audit"]:
+                if entries[0].action == discord.AuditLogAction.message_delete and entries[0].id != Config.logging["last_audit"].id:
                     user_id = entries[0].user.id
                     self.embed.description = "**Deleted by <@" + str(user_id) + ">**"
-                    Config.set_last_audit = entries[0].id
+                    Config.set_last_audit(entries[0])
 
                 await Config.logging["overwrite_channels"]["mod"].send(embed=self.embed)
 
@@ -427,23 +427,22 @@ class Logging(commands.Cog):
             invites = await member.guild.invites()
 
             for invite in invites:
-                if Config.logging["invites"][invite.code]["uses"] != invite.uses:
-                    inviter_id = Config.logging["invites"][invite.code]["inviter_id"]
-                    invite_code = invite.code
-                    Config.update_invite(invite)
+                if Config.logging["invites"][invite]["uses"] != invite.uses:
+                    Config.update_invite_uses(invite)
 
-            self.embed = discord.Embed()
-            self.embed.colour = discord.Colour(0x43b581)
-            self.embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
-            self.embed.title = "Member joined"
+                    self.embed = discord.Embed()
+                    self.embed.colour = discord.Colour(0x43b581)
+                    self.embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
+                    self.embed.title = "Member joined"
 
-            creation_delta = time_delta_string(member.created_at, datetime.utcnow())
+                    creation_delta = time_delta_string(member.created_at, datetime.utcnow())
 
-            self.embed.description = "<@" + str(member.id) + "> " + make_ordinal(member.guild.member_count) + " to join\ncreated " + creation_delta + " ago\n\nInvite link created by <@" + str(inviter_id) + "> (" + invite_code + ")"
-            self.embed.set_footer(text="ID: " + str(member.id))
-            self.embed.timestamp = datetime.utcnow()
+                    self.embed.description = "<@" + str(member.id) + "> " + make_ordinal(member.guild.member_count) + " to join\ncreated " + creation_delta + " ago\n\nInvite link created by <@" + str(invite.inviter.id) + "> (" + invite.code + ")"
+                    self.embed.set_footer(text="ID: " + str(member.id))
+                    self.embed.timestamp = datetime.utcnow()
 
-            await Config.logging["overwrite_channels"]["member_tracking"].send(embed=self.embed)
+                    await Config.logging["overwrite_channels"]["member_tracking"].send(embed=self.embed)
+                    return
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
@@ -463,8 +462,8 @@ class Logging(commands.Cog):
                 roles += "<@&" + str(member.roles[index].id) + "> "
 
             entries = await member.guild.audit_logs(limit=1).flatten()
-            if entries[0].action == discord.AuditLogAction.kick and entries[0].id != Config.logging["last_audit"]:
-                Config.set_last_audit = entries[0].id
+            if entries[0].action == discord.AuditLogAction.kick and entries[0].id != Config.logging["last_audit"].id:
+                Config.set_last_audit(entries[0])
                 self.embed.title = "Member kicked"
                 self.embed.description = "<@" + str(member.id) + "> joined " + join_delta + " ago\n**Roles: **" + roles + "\n\n**Kicked by <@" + str(entries[0].user.id) + ">**"
                 if entries[0].reason is not None:
@@ -479,7 +478,7 @@ class Logging(commands.Cog):
 
             await Config.logging["overwrite_channels"]["member_tracking"].send(embed=self.embed)
 
-            if not entries[0].user.bot and entries[0].id != Config.logging["last_audit"]:
+            if not entries[0].user.bot and entries[0].id != Config.logging["last_audit"].id:
                 await Config.logging["overwrite_channels"]["mod"].send(embed=self.embed)
 
     @commands.Cog.listener()
@@ -574,7 +573,8 @@ class Logging(commands.Cog):
 
             await Config.logging["overwrite_channels"]["member"].send(embed=self.embed)
 
-            if not entries[0].user.bot and entries[0].id != Config.logging["last_audit"]:
+            if not entries[0].user.bot and entries[0].id != Config.logging["last_audit"].id:
+                Config.set_last_audit(entries[0])
                 await Config.logging["overwrite_channels"]["mod"].send(embed=self.embed)
 
     async def nickname_update_checks(self, before, after):
@@ -688,6 +688,28 @@ class Logging(commands.Cog):
         if Config.logging["overwrite_channels"]["member"] is not None:
             logging_channel = Config.logging["overwrite_channels"]["member"]
 
+            # Check for name update
+            if before.name != after.name:
+                self.embed = discord.Embed()
+                self.embed.colour = discord.Colour(0x8899d4)
+                self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+                self.embed.title = "Name change"
+                self.embed.description = "**Before:** " + before.name + "\n**+After:** " + after.name
+                self.embed.set_footer(text="ID: " + str(after.id))
+                self.embed.timestamp = datetime.utcnow()
+                await logging_channel.send(embed=self.embed)
+
+            # Check for discriminator update
+            if before.discriminator != after.discriminator:
+                self.embed = discord.Embed()
+                self.embed.colour = discord.Colour(0x8899d4)
+                self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+                self.embed.title = "Discriminator update"
+                self.embed.description = "**Before:** " + before.discriminator + "\n**+After:** " + after.discriminator
+                self.embed.set_footer(text="ID: " + str(after.id))
+                self.embed.timestamp = datetime.utcnow()
+                await logging_channel.send(embed=self.embed)
+
             # Check for avatar update
             if before.avatar != after.avatar:
                 self.embed = discord.Embed()
@@ -702,28 +724,6 @@ class Logging(commands.Cog):
 
                 avatar_channel = Config.guild.get_channel(738536336016801793)
                 await avatar_channel.send(embed=self.embed)
-
-            # Check for name update
-            elif before.name != after.name:
-                self.embed = discord.Embed()
-                self.embed.colour = discord.Colour(0x8899d4)
-                self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
-                self.embed.title = "Name change"
-                self.embed.description = "**Before:** " + before.name + "\n**+After:** " + after.name
-                self.embed.set_footer(text="ID: " + str(after.id))
-                self.embed.timestamp = datetime.utcnow()
-
-            # Check for discriminator update
-            elif before.discriminator != after.discriminator:
-                self.embed = discord.Embed()
-                self.embed.colour = discord.Colour(0x8899d4)
-                self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
-                self.embed.title = "Discriminator update"
-                self.embed.description = "**Before:** " + before.discriminator + "\n**+After:** " + after.discriminator
-                self.embed.set_footer(text="ID: " + str(after.id))
-                self.embed.timestamp = datetime.utcnow()
-
-            await logging_channel.send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_guild_update(self, before, after):
@@ -772,7 +772,7 @@ class Logging(commands.Cog):
         the id, name, and updated voice properties of the member
         """
         if Config.logging["overwrite_channels"]["voice"] is not None:
-            logging_channel = member.guild.get_channel(int(Config.logging["overwrite_channels"]["voice"]))
+            logging_channel = Config.logging["overwrite_channels"]["voice"]
 
             if before.channel is None:
                 self.embed = discord.Embed()
@@ -813,7 +813,7 @@ class Logging(commands.Cog):
         if Config.logging["overwrite_channels"]["mod"] is not None:
             logging_channel = Config.logging["overwrite_channels"]["mod"]
             entries = await guild.audit_logs(limit=1).flatten()
-            Config.set_last_audit = entries[0].id
+            Config.set_last_audit(entries[0])
 
             self.embed = discord.Embed()
             self.embed.title = "Member banned"
@@ -869,7 +869,7 @@ class Logging(commands.Cog):
             else:
                 expires = "1 day"
 
-            Config.add_invite(invite.code, invite.inviter.id, invite.uses)
+            Config.add_invite(invite)
             self.embed = discord.Embed()
             self.embed.title = "Invite created to #" + invite.channel.name
             self.embed.description = "Code: " + invite.code + "\nMax Uses: " + str(invite.max_uses) + "\nExpires: " + expires + "\nTemporary Membership: " + str(invite.temporary) + "\n\n**Creator: <@" + str(invite.inviter.id) + ">**"
@@ -889,10 +889,10 @@ class Logging(commands.Cog):
             mod_log = Config.logging["overwrite_channels"]["mod"]
 
             entries = await invite.guild.audit_logs(limit=1).flatten()
-            Config.set_last_audit = entries[0].id
+            Config.set_last_audit(entries[0])
             deleter = entries[0].user.id
 
-            Config.remove_invite(invite.code)
+            Config.remove_invite(invite)
             self.embed = discord.Embed()
             self.embed.title = "Invite deleted to #" + invite.channel.name
             self.embed.description = "Code: " + invite.code + "\n\n**Deleted by <@" + str(deleter) + ">**"
