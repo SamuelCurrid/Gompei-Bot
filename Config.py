@@ -14,6 +14,7 @@ dm_channel = None
 prefix = None
 access_roles = []
 opt_in_roles = []
+command_channels = []
 logging = {
     "channel": None,
     "overwrite_channels": {
@@ -92,7 +93,16 @@ async def update_guild_settings():
     for key in logging["overwrite_channels"]:
         logging["overwrite_channels"][key] = guild.get_channel(raw_settings["logging"]["overwrite_channels"][key])
 
-    logging["last_audit"] = raw_settings["logging"]["last_audit"]
+    for channel_id in raw_settings["command_channels"]:
+        channel = guild.get_channel(channel_id)
+
+        if channel is None:
+            print("Could not find old command channel (" + channel.id + ")")
+            raw_settings["command_channels"].remove(channel_id)
+        else:
+            command_channels.append(channel)
+
+    logging["last_audit"] = (await guild.audit_logs(limit=1).flatten())[0]
     logging["staff"] = guild.get_channel(raw_settings["logging"]["staff"])
     logging["invites"] = raw_settings["logging"]["invites"]
 
@@ -366,8 +376,7 @@ def update_invite_uses(invite: str, uses: int):
     """
     global logging, raw_settings
 
-    logging["invites"][invite]["uses"] = raw_settings["logging"]["invites"][invite]["uses"] = uses
-    save_json(os.path.join("config", "settings.json"), raw_settings)
+    logging["invites"][invite]["uses"] = discord.Invite.uses
 
 
 def automod_setting_enable(automod_type: str):
@@ -457,4 +466,18 @@ def clear_close_time():
     global close_time, raw_settings
 
     close_time = raw_settings["close_time"] = None
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+def add_command_channel(channel: discord.TextChannel):
+    global command_channels
+
+    raw_settings["command_channels"].append(channel.id)
+    command_channels.append(channel)
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+def remove_command_channel(channel: discord.TextChannel):
+    global command_channels
+
+    raw_settings["command_channels"].remove(channel.id)
+    command_channels.remove(channel)
     save_json(os.path.join("config", "settings.json"), raw_settings)

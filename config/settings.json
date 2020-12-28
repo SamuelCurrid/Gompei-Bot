@@ -6,6 +6,7 @@
     "prefix": ".",
     "access_roles": [],
     "opt_in_roles": [],
+    "command_channels": [],
     "logging": {
         "channel": null,
         "overwrite_channels": {

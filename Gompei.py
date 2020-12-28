@@ -1,6 +1,6 @@
-from GompeiFunctions import load_json, save_json, parse_id, time_delta_string
+from GompeiFunctions import save_json, parse_id, time_delta_string
+from Permissions import dm_commands, administrator_perms, owner
 from Administration import Administration
-from Permissions import dm_commands, administrator_perms
 from ReactionRoles import ReactionRoles
 from Leaderboards import Leaderboards
 from MovieVoting import MovieVoting
@@ -645,6 +645,41 @@ async def roll(ctx, number):
             await ctx.send(ctx.author.nick.replace("@", "") + " rolled a " + str(random.randint(1, sides)) + "!")
         else:
             await ctx.send(ctx.author.name.replace("@", "") + " rolled a " + str(random.randint(1, sides)) + "!")
+
+@gompei.command(pass_context=True, name="setGuild")
+@commands.check(owner)
+@commands.guild_only()
+async def set_guild(ctx):
+    """
+    Sets the guild for the bot
+
+    :param ctx: Context object
+    """
+    await Config.set_guild(ctx.guild)
+    await ctx.send("Successfully set guild")
+
+
+@gompei.command(pass_context=True, name="addCommandChannel")
+@commands.check(administrator_perms)
+@commands.guild_only()
+async def add_command_channel(ctx, channel: discord.TextChannel):
+    if channel not in Config.command_channels:
+        Config.add_command_channel(channel)
+        await ctx.send("Successfully added " + channel.mention + " as a command channel")
+    else:
+        await ctx.send("This is already a command channel")
+
+
+@gompei.command(pass_context=True, name="removeCommandChannel")
+@commands.check(administrator_perms)
+@commands.guild_only()
+async def remove_command_channel(ctx, channel: discord.TextChannel):
+    if channel in Config.command_channels:
+        Config.remove_command_chanel(channel)
+        await ctx.send("Successfully removed " + channel.mention + " as a command channel")
+    else:
+        await ctx.send("Cannot remove a channel that is not already a command channel")
+
 
 
 # Run the bot
