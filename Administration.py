@@ -855,3 +855,30 @@ class Administration(commands.Cog):
             await ctx.send("Successfully updated staff channel")
         else:
             await ctx.send("This is already the staff channel")
+
+    @commands.command(pass_context=True, name="moderationLevel")
+    @commands.check(moderator_perms)
+    @commands.guild_only()
+    async def change_moderation_level(self, ctx, key):
+        """
+        Changes a servers moderation level ("none", "low", "medium", "high")
+        Usage: .moderationLevel <none/low/medium/high>
+
+        :param ctx: Context object
+        :param key: Key to set the moderation level to
+        """
+        key = key.lower()
+
+        if key == "none":
+            await ctx.guild.edit(verification_level=discord.VerificationLevel.none)
+        elif key == "low":
+            await ctx.guild.edit(verification_level=discord.VerificationLevel.low)
+        elif key == "medium":
+            await ctx.guild.edit(verification_level=discord.VerificationLevel.medium)
+        elif key == "high":
+            await ctx.guild.edit(verification_level=discord.VerificationLevel.high)
+        else:
+            await ctx.send("Did not recognize that verification level (None, Low, Medium, or High")
+            return
+
+        await ctx.send("Successfully updated the guild verification level to: **" + key.title() + "**")
