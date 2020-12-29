@@ -801,7 +801,7 @@ class Administration(commands.Cog):
         if isinstance(user, str) and (len(user) == 18 or len(user) == 17):
             try:
                 user = int(user)
-                user = await self.user_info(await self.bot.fetch_user(user))
+                user = (await self.bot.fetch_user(user))
             except ValueError:
                 await ctx.send("Did not find the user to ban")
                 return
@@ -819,7 +819,7 @@ class Administration(commands.Cog):
             if isinstance(user, discord.Member):
                 await user.send(user.guild.name + " banned you for reason:\n> " + reason)
 
-            await user.ban(reason=reason)
+            await ctx.guild.ban(user=user, reason=reason)
             await ctx.send("Successfully banned user " + user.name + "#" + user.discriminator)
 
     @commands.command(pass_context=True, name="modLog")
