@@ -2,6 +2,7 @@ from GompeiFunctions import load_json, save_json
 from datetime import datetime
 
 import discord
+import pickle
 import os
 
 raw_settings = None
@@ -472,6 +473,7 @@ def clear_close_time():
     close_time = raw_settings["close_time"] = None
     save_json(os.path.join("config", "settings.json"), raw_settings)
 
+
 def add_command_channel(channel: discord.TextChannel):
     global command_channels
 
@@ -479,9 +481,17 @@ def add_command_channel(channel: discord.TextChannel):
     command_channels.append(channel)
     save_json(os.path.join("config", "settings.json"), raw_settings)
 
+
 def remove_command_channel(channel: discord.TextChannel):
     global command_channels
 
     raw_settings["command_channels"].remove(channel.id)
     command_channels.remove(channel)
     save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def save_statuses(statuses):
+    pickle.dump(statuses, open(os.path.join("config", "statuses.p"), "+wb"))
+
+def load_statuses():
+    return pickle.load( open(os.path.join("config", "statuses.p"), "+rb" ) )
