@@ -237,21 +237,38 @@ class Logging(commands.Cog):
         """
         if not before.author.bot:
             if Config.logging["overwrite_channels"]["message"] is not None:
+                if before.pinned != after.pinned:
+                    channel = after.channel
+                    self.embed = discord.Embed(url=after.jump_url)
 
-                if before.content is after.content:
-                    return
+                    if after.pinned:
+                        self.embed.colour = discord.Colour(0x43b581)
+                        self.embed.title = "Message pinned in #" + channel.name
+                    else:
+                        self.embed.colour = discord.Colour(0xbe4041)
+                        self.embed.title = "Message unpinned in #" + channel.name
 
-                channel = before.channel
+                    self.embed.set_author(name=before.author.name + "#" + before.author.discriminator, icon_url=before.author.avatar_url)
+                    self.embed.description = after.content
+                    self.embed.set_footer(text="ID: " + str(before.author.id))
+                    self.embed.timestamp = datetime.utcnow()
+                    await Config.logging["overwrite_channels"]["message"].send(embed=self.embed)
 
-                self.embed = discord.Embed(url=before.jump_url)
-                self.embed.colour = discord.Colour(0x8899d4)
-                self.embed.set_author(name=before.author.name + "#" + before.author.discriminator, icon_url=before.author.avatar_url)
-                self.embed.title = "Message edited in #" + channel.name
-                self.embed.description = "**Before:** " + before.content + "\n**+After:** " + after.content
-                self.embed.set_footer(text="ID: " + str(before.author.id))
-                self.embed.timestamp = datetime.utcnow()
+                else:
+                    if before.content is after.content:
+                        return
 
-                await Config.logging["overwrite_channels"]["message"].send(embed=self.embed)
+                    channel = before.channel
+
+                    self.embed = discord.Embed(url=before.jump_url)
+                    self.embed.colour = discord.Colour(0x8899d4)
+                    self.embed.set_author(name=before.author.name + "#" + before.author.discriminator, icon_url=before.author.avatar_url)
+                    self.embed.title = "Message edited in #" + channel.name
+                    self.embed.description = "**Before:** " + before.content + "\n**+After:** " + after.content
+                    self.embed.set_footer(text="ID: " + str(before.author.id))
+                    self.embed.timestamp = datetime.utcnow()
+
+                    await Config.logging["overwrite_channels"]["message"].send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_raw_message_edit(self, payload):
@@ -273,7 +290,6 @@ class Logging(commands.Cog):
                 message = await channel.fetch_message(payload.message_id)
 
                 if not message.author.bot:
-
                     self.embed = discord.Embed(url=message.jump_url)
                     self.embed.colour = discord.Colour(0x8899d4)
                     self.embed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
@@ -524,15 +540,6 @@ class Logging(commands.Cog):
 
             await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
 
-
-    @commands.Cog.listener()
-    async def on_guild_channel_pins_update(self, channel, last_pin):
-        """
-        Sends a logging message containing
-        the name of the channel, the content of the pinned message, and a link to the message
-        """
-        return
-
     @commands.Cog.listener()
     async def on_guild_integrations_update(self, guild):
         """
@@ -649,6 +656,8 @@ class Logging(commands.Cog):
             entries = await before.guild.audit_logs(limit=1).flatten()
             if entries[0].action == discord.AuditLogAction.member_role_update:
                 editor = "\n\nEdited by <@" + str(entries[0].user.id) + ">"
+            else:
+                editor = "Edited by Discord"
 
             if len(added_roles) > 0:
 
