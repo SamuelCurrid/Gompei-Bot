@@ -541,20 +541,6 @@ class Logging(commands.Cog):
             await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
 
     @commands.Cog.listener()
-    async def on_guild_integrations_update(self, guild):
-        """
-        WTF are guild integrations???
-        """
-        return
-
-    @commands.Cog.listener()
-    async def on_webhooks_update(self, channel):
-        """
-        WTF are webhooks???
-        """
-        return
-
-    @commands.Cog.listener()
     async def on_member_join(self, member):
         """
         Sends a logging message containing
