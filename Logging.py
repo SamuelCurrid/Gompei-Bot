@@ -146,10 +146,11 @@ class Logging(commands.Cog):
                 entries = await message.guild.audit_logs(limit=1).flatten()
 
                 self.embed.title = "Message deleted in " + "#" + channel.name
-                if entries[0].action == discord.AuditLogAction.message_delete and entries[0].id != Config.logging["last_audit"]["last_audit"]:
+                if entries[0].action == discord.AuditLogAction.message_delete and entries[0].id != Config.logging["last_audit"]:
                     user_id = entries[0].user.id
                     self.embed.description = message.content + "\n\n**Deleted by <@" + str(user_id) + ">**"
                     Config.set_last_audit(entries[0])
+                    await Config.logging["overwrite_channels"]["mod"].send(embed=self.embed)
                 else:
                     self.embed.description = message.content
 
@@ -161,9 +162,6 @@ class Logging(commands.Cog):
                 self.embed.timestamp = datetime.utcnow()
 
                 await logging_channel.send(embed=self.embed)
-
-                if not entries[0].user.bot and entries[0].action == discord.AuditLogAction.message_delete and entries[0].id != Config.logging["last_audit"].id:
-                    await Config.logging["overwrite_channels"]["mod"].send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload):
@@ -857,7 +855,251 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the property of the guild updated before and after
         """
-        return
+        if Config.logging["overwrite_channels"]["server"] is not None:
+            self.embed = discord.Embed()
+            self.embed.set_footer(text="ID: " + str(after.id))
+            self.embed.timestamp = datetime.utcnow()
+
+            # AFK Channel / Timeout
+            if before.afk_channel != after.afk_channel:
+                if before.afk_channel is None:
+                    self.embed.title = "AFK Channel Added"
+                    self.embed.colour = discord.Colour(0x43b581)
+                    self.embed.description = "**Before:**\n**+After:** " + after.afk_channel.mention
+                elif after.afk_channel is None:
+                    self.embed.title = "AFK Channel Removed"
+                    self.embed.colour = discord.Colour(0xbe4041)
+                    self.embed.description = "**Before:** " + before.afk_channel.mention + "\n**+After:** "
+                else:
+                    self.embed.title = "AFK Channel Edited"
+                    self.embed.colour = discord.Colour(0x8899d4)
+                    self.embed.description = "**Before:** " + before.afk_channel.mention + "\n**+After:** " + after.afk_channel.mention
+
+                await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
+
+            # Notification Setting
+            if before.default_notifications != after.default_notifications:
+                self.embed.title = "Default Notification Setting Changed"
+                self.embed.colour = discord.Colour(0x8899d4)
+                self.embed.description = "**Before:** " + before.default_notifications + "\n**+After:** " + after.default_notifications
+
+                await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
+
+            # Description
+            if before.description != after.description:
+                if before.description is None:
+                    self.embed.title = "Description added"
+                    self.embed.colour = discord.Colour(0x43b581)
+                    self.embed.description = after.description
+                elif after.description is None:
+                    self.embed.title = "Description removed"
+                    self.embed.colour = discord.Colour(0xbe4041)
+                    self.embed.description = before.description
+                else:
+                    self.embed.title = "Description updated"
+                    self.embed.colour = discord.Colour(0x8899d4)
+                    self.embed.description = "***Before:** " + before.description + "\n**+After:** " + after.description
+
+                await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
+
+            # Features
+            if before.features != after.features:
+                self.embed.title = "Features Edited"
+
+                added_features = [x for x in after.features if x not in before.features]
+                removed_features = [x for x in before.features if x not in after.features]
+
+                if len(removed_features) == 0:
+                    self.embed.colour = discord.Colour(0x43b581)
+                    self.embed.description = "__Added Features__\n"
+                    for feature in added_features:
+                        self.embed.description += feature.replace("_", " ").title() + "\n"
+                elif len(added_features) == 0:
+                    self.embed.colour = discord.Colour(0xbe4041)
+                    self.embed.description = "__Removed Features__\n"
+                    for feature in removed_features:
+                        self.embed.description += feature.replace("_", " ").title() + "\n"
+                else:
+                    self.embed.colour = discord.Colour(0x8899d4)
+                    self.embed.description = "__Added Features__\n"
+                    for feature in added_features:
+                        self.embed.description += feature.replace("_", " ").title() + "\n"
+                    self.embed.description += "\n__Removed Features__\n"
+                    for feature in removed_features:
+                        self.embed.description += feature.replace("_", " ").title() + "\n"
+
+                await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
+
+
+            # File Size Limit
+            if before.filesize_limit != after.filesize_limit:
+                if after.filesize_limit > before.filesize_limit:
+                    self.embed.title = "Upload Limit Increased"
+                    self.embed.colour = discord.Colour(0x43b581)
+                    self.embed.description = str(after.filesize_limit / 1000000) + " MB"
+                else:
+                    self.embed.title = "Upload Limit Decreased"
+                    self.embed.colour = discord.Colour(0xbe4041)
+                    self.embed.description = str(after.filesize_limit / 1000000) + " MB"
+
+                await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
+
+            # Emoji Limit
+            if before.emoji_limit != after.emoji_limit:
+                if after.emoji_limit > before.emoji_limit:
+                    self.embed.title = "Emoji Limit Increased"
+                    self.embed.colour = discord.Colour(0x43b581)
+                    self.embed.description = str(after.emoji_limit) + " emojis"
+                else:
+                    self.embed.title = "Emoji Limit Decreased"
+                    self.embed.colour = discord.Colour(0xbe4041)
+                    self.embed.description = str(before.emoji_limit) + " emojis"
+
+                await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
+
+            # 2FA moderation
+            if before.mfa_level != after.mfa_level:
+                self.embed.title = "2FA Moderation Requirement"
+                self.embed.colour = discord.Colour(0x8899d4)
+                if after.mfa_level == 1:
+                    self.embed.description = "True"
+                else:
+                    self.embed.description = "False"
+
+                await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
+
+            # Owner
+            if before.owner != after.owner:
+                self.embed.title = "Server Owner Updated"
+                self.embed.colour = discord.Colour(0x8899d4)
+                self.embed.description = "**Before:** " + before.owner.mention + "\n" + "**+After:** " + after.owner.mention
+
+                await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
+
+            # Name
+            if before.name != after.name:
+                self.embed.title = "Server Name Updated"
+                self.embed.colour = discord.Colour(0x8899d4)
+                self.embed.description = "**Before:** " + before.name + "\n" + "**+After:** " + after.name
+
+                await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
+
+            # Public updates channel
+            if before.public_updates_channel != after.public_updates_channel:
+                if before.public_updates_channel is None:
+                    self.embed.title = "Public Updates Channel Added"
+                    self.embed.colour = discord.Colour(0x43b581)
+                    self.embed.description = after.public_updates_channel.mention
+                elif after.public_updates_channel is None:
+                    self.embed.title = "Public Updates Channel Removed"
+                    self.embed.colour = discord.Colour(0xbe4041)
+                    self.embed.description = after.public_updates_channel.mention
+                else:
+                    self.embed.title = "Public Updates Channel Updated"
+                    self.embed.colour = discord.Colour(0x8899d4)
+                    self.embed.description = "**Before:** " + before.public_updates_channel.mention + "**+After: " + after.public_updates_channel.mention
+
+                await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
+
+            # Rules channel
+            if before.rules_channel != after.rules_channel:
+                if before.rules_channel is None:
+                    self.embed.title = "Rules Channel Added"
+                    self.embed.colour = discord.Colour(0x43b581)
+                    self.embed.description = after.rules_channel.mention
+                elif after.rules_channel is None:
+                    self.embed.title = "Rules Channel Removed"
+                    self.embed.colour = discord.Colour(0xbe4041)
+                    self.embed.description = after.rules_channel.mention
+                else:
+                    self.embed.title = "Rules Channel Updated"
+                    self.embed.colour = discord.Colour(0x8899d4)
+                    self.embed.description = "**Before:** " + before.rules_channel.mention + "**+After: " + after.rules_channel.mention
+
+                await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
+
+            # Region
+            if before.region != after.region:
+                self.embed.title = "Region Updated"
+                self.embed.colour = discord.Colour(0x8899d4)
+                self.embed.description = str(after.region).replace("-", " ").title()
+
+                await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
+
+            # System Channel
+            if before.system_channel != after.system_channel:
+                if before.system_channel is None:
+                    self.embed.title = "System Channel Added"
+                    self.embed.colour = discord.Colour(0x43b581)
+                    self.embed.description = after.system_channel.mention
+                elif after.rules_channel is None:
+                    self.embed.title = "System Channel Removed"
+                    self.embed.colour = discord.Colour(0xbe4041)
+                    self.embed.description = before.system_channel.mention
+                else:
+                    self.embed.title = "System Channel Updated"
+                    self.embed.colour = discord.Colour(0x8899d4)
+                    self.embed.description = "**Before:** " + before.system_channel.mention + "**+After: " + after.system_channel.mention
+
+                await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
+
+            # Verification Level
+            if before.verification_level != after.verification_level:
+                self.embed.title = "Moderation Level Changed"
+                self.embed.colour = discord.Colour(0x8899d4)
+                self.embed.description = str(after.verification_level).title()
+                await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
+
+            # Banner
+            if before.banner != after.banner:
+                if before.banner is None:
+                    self.embed.title = "Banner Added"
+                    self.embed.colour = discord.Colour(0x43b581)
+                    self.embed.set_image(url=after.banner_url)
+                elif after.banner is None:
+                    self.embed.title = "Banner Removed"
+                    self.embed.colour = discord.Colour(0xbe4041)
+                    self.embed.set_image(url=before.banner_url)
+                else:
+                    self.embed.title = "Banner Changed"
+                    self.embed.colour = discord.Colour(0x8899d4)
+                    self.embed.set_image(url=after.banner_url)
+
+                await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
+
+            # Discovery Splash
+            if before.discovery_splash != after.discovery_splash:
+                self.embed.title = "Splash Changed"
+                self.embed.colour = discord.Colour(0x8899d4)
+                self.embed.set_image(url=after.discovery_splash_url)
+
+                await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
+
+            # Icon
+            if before.icon != after.icon:
+                self.embed.title = "Server Icon Updated"
+                self.embed.colour = discord.Colour(0x8899d4)
+                self.embed.set_image(url=after.icon_url)
+
+                await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
+
+            # Splash
+            if before.splash != after.splash:
+                if before.splash is None:
+                    self.embed.title = "Invite Splash Added"
+                    self.embed.colour = discord.Colour(0x43b581)
+                    self.embed.set_image(url=after.splash_url)
+                elif after.splash is None:
+                    self.embed.title = "Invite Splash Removed"
+                    self.embed.colour = discord.Colour(0xbe4041)
+                    self.embed.set_image(url=before.splash_url)
+                else:
+                    self.embed.title = "Invite Splash Updated"
+                    self.embed.colour = discord.Colour(0x8899d4)
+                    self.embed.set_image(url=after.splash_url)
+
+                await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
+
 
     @commands.Cog.listener()
     async def on_guild_role_create(self, role):
