@@ -1,6 +1,7 @@
 from GompeiFunctions import make_ordinal, time_delta_string
 from Permissions import administrator_perms
 from discord.ext import commands
+from datetime import timedelta
 from datetime import datetime
 
 import discord
@@ -300,17 +301,6 @@ class Logging(commands.Cog):
                 self.embed.title = "Category created"
                 description = "**Name:** " + channel.name + "\n**Position:** " + str(channel.position)
 
-                if len(channel.overwrites) > 0:
-                    for role in channel.overwrites:
-
-                        # If you have permission to read messages
-                        if channel.overwrites[role].pair()[0].read_messages is True:
-                            permissions += "**Read Text Channels & See Voice Channels:** :white_check_mark:\n"
-                            permissions += "**Connect:** :white_check_mark:"
-                        else:
-                            permissions += "**Read Text Channels & See Voice Channels:** :x:\n"
-                            permissions += "**Connect:** :x:"
-
             else:
                 description = "**Name:** " + channel.name + "\n**Position:** " + str(channel.position) + "\n**Category:** "
                 if channel.category is not None:
@@ -341,7 +331,27 @@ class Logging(commands.Cog):
                             else:
                                 permissions += "**Connect:** :x:"
 
-            self.embed.add_field(name="Overwrites for " + str(role.name), value=permissions, inline=False)
+            for target in channel.overwrites:
+                permissions = []
+                values = []
+
+                for permission in channel.overwrites[target]:
+                    if permission[1] is not None:
+                        permissions.append(permission[0].replace("_", " ").title())
+                        if permission[1] is True:
+                            values.append("✔")
+                        else:
+                            values.append("✘")
+
+                max_length = len(max(permissions, key=len))
+
+                field_description = "```"
+                for i in range(0, len(permissions)):
+                    field_description += permissions[i] + (" " * (max_length - len(permissions[i]))) + " " + values[i] + "\n"
+                field_description += "```"
+
+                self.embed.add_field(name=target.name, value=field_description, inline=True)
+
             self.embed.description = description
             self.embed.set_footer(text="ID: " + str(channel.id))
             self.embed.timestamp = datetime.utcnow()
@@ -360,7 +370,7 @@ class Logging(commands.Cog):
 
             if channel.type is discord.ChannelType.category:
                 self.embed.title = "Category deleted"
-                description = "**Name:** " + channel.name
+                description = "**Name:** " + channel.name + "**Position:** " + channel.position
 
             else:
                 if channel.type is discord.ChannelType.text:
@@ -368,7 +378,7 @@ class Logging(commands.Cog):
                 else:
                     self.embed.title = "Voice channel deleted"
 
-                description = "**Name:** " + channel.name + "\n**Category:** "
+                description = "**Name:** " + channel.name + "**Position:** " + channel.position + "\n**Category:** "
 
                 if channel.category is not None:
                     description += channel.category.name
@@ -384,16 +394,136 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the updated properties of the channel
         """
-        # Check name update
-        if before.name != after.name:
-            if before.type is discord.ChannelType.category:
-                self.embed.title
-        # Check position update
-        # Check permission update
-        # Slow mode
-        # NSFW
+        if Config.logging["overwrite_channels"]["server"] is not None:
+            self.embed = discord.Embed()
+            self.embed.description = ""
+            before_value = ""
+            after_value = ""
 
-        return
+            # Check name update
+            if before.name != after.name:
+                before_value += "**Name:** " + before.name
+                after_value += "**Name:** " + after.name
+
+            # TODO Position updates
+
+            # Check permission update
+            added_overwrites = [x for x in after.overwrites if x not in before.overwrites]
+            removed_overwrites = [x for x in before.overwrites if x not in after.overwrites]
+
+            for role in added_overwrites:
+                self.embed.description += "\n" + role.mention + " overwrites added"
+                permissions = []
+                values = []
+                for permission in after.overwrites[role]:
+                    if permission[1] is not None:
+                        permissions.append(permission[0].replace("_", " ").title())
+                        if permission[1] is True:
+                            values.append("✔")
+                        else:
+                            values.append("✘")
+
+                if len(permissions) != 0:
+                    max_length = len(max(permissions, key=len))
+
+                    field_description = "```"
+                    for i in range(0, len(permissions)):
+                        field_description += permissions[i] + (" " * (max_length - len(permissions[i]))) + " " + values[i] + "\n"
+                    field_description += "```"
+
+            for role in removed_overwrites:
+                self.embed.description += "\n" + role.mention + " overwrites removed"
+
+            kept_overwrites = [x for x in after.overwrites if x in before.overwrites]
+
+            for key in kept_overwrites:
+                if before.overwrites[key] != after.overwrites[key]:
+                    # Compare permissions
+                    edited_permissions = [x for x in after.overwrites[key] if x not in before.overwrites[key]]
+                    permissions = []
+                    values = []
+                    for perm in edited_permissions:
+                        permissions.append(perm[0].replace("_", " ").title())
+                        if perm[1] is True:
+                            values.append("✔")
+                        elif perm[1] is False:
+                            values.append("✘")
+                        else:
+                            values.append("-")
+
+                    max_length = len(max(permissions, key=len))
+
+                    field_description = "```"
+                    for i in range(0, len(permissions)):
+                        field_description += permissions[i] + (" " * (max_length - len(permissions[i]))) + " " + values[i] + "\n"
+                    field_description += "```"
+
+                    self.embed.add_field(name=key.name, value=field_description, inline=True)
+
+            # If a text channel
+            if isinstance(before, discord.TextChannel):
+                self.embed.title = "Text Channel Updated"
+                self.embed.description = after.mention + "\n" + self.embed.description
+
+                # Category
+                if before.category != after.category:
+                    before_value += "\n**Category:** " + str(before.category)
+                    after_value += "\n**Category:** " + str(after.category)
+
+                # Topic
+                if before.topic != after.topic:
+                    before_value += "\n**__Description__**```" + str(before.topic) + "```"
+                    after_value += "\n**__Description__**```" + str(after.topic) + "```"
+
+                # Slow mode
+                if before.slowmode_delay != after.slowmode_delay:
+                    if before.slowmode_delay > 0:
+                        before_value += "\n**Slowmode:** " + time_delta_string(datetime.now(), datetime.now() + timedelta(seconds=before.slowmode_delay))
+                    else:
+                        before_value += "\n**Slowmode:** None"
+                    if after.slowmode_delay > 0:
+                        after_value += "\n**Slowmode:** " + time_delta_string(datetime.now(), datetime.now() + timedelta(seconds=after.slowmode_delay))
+                    else:
+                        after_value += "\n**Slowmode:** None"
+
+                # NSFW
+                if before.is_nsfw() != after.is_nsfw():
+                    before_value += "\n**NSFW:** " + str(before.is_nsfw())
+                    after_value += "\n**NSFW:** " + str(after.is_nsfw())
+
+            # If a voice channel
+            elif isinstance(before, discord.VoiceChannel):
+                self.embed.title = "Voice Channel Updated"
+                self.embed.description = after.mention + "\n" + self.embed.description
+
+                # Category
+                if before.category != after.category:
+                    before_value += "\n**Category:** " + str(before.category)
+                    after_value += "\n**Category:** " + str(after.category)
+
+                # Bitrate
+                if before.bitrate != after.bitrate:
+                    before_value += "\n**Bitrate:** " + str(before.bitrate)
+                    after_value += "\n**Bitrate:** " + str(after.bitrate)
+
+                # User limit
+                if before.user_limit != after.user_limit:
+                    before_value += "\n**Max Users:** " + str(before.user_limit)
+                    after_value += "\n**Max Users:** " + str(after.user_limit)
+
+            # If a category
+            else:
+                self.embed.title = "Category Updated"
+                self.embed.description = after.mention + "\n" + self.embed.description
+
+            if before_value != "":
+                self.embed.add_field(name="Before", value=before_value, inline=True)
+                self.embed.add_field(name="After", value=after_value, inline=True)
+            self.embed.set_footer(text="ID: " + str(after.id))
+            self.embed.colour = discord.Colour(0x8899d4)
+
+            await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
+
 
     @commands.Cog.listener()
     async def on_guild_channel_pins_update(self, channel, last_pin):
@@ -661,6 +791,7 @@ class Logging(commands.Cog):
                     self.embed = discord.Embed()
                     self.embed.colour = discord.Colour(0x43b581)
                     self.embed.title = "Custom status added"
+
             # If they had a custom status before and it is now gone
             elif isinstance(before.activity, discord.CustomActivity):
                 if before.activity.emoji is not None:
