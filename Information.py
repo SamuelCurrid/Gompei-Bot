@@ -109,6 +109,8 @@ class Information(commands.Cog):
         self.embed.description += "\n**Mention:** " + role.mention
         self.embed.description += "\n**Members:** " + str(len(role.members))
         self.embed.description += "\n**(R,G,B):** " + str(role.color.to_rgb())
+        self.embed.description += "\n**Hoisted:** " + str(role.hoist)
+        self.embed.description += "\n**Mentionable:** " + str(role.mentionable)
         self.embed.description += "\n**Position:** " + str(role.position)
         self.embed.description += "\n**Created:** " + role.created_at.strftime("%y-%m-%d %H:%M:%S") + " UTC\n(" + time_delta_string(role.created_at, datetime.utcnow()) + " ago)"
 
