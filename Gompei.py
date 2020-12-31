@@ -8,6 +8,7 @@ from Information import Information
 from Minesweeper import Minesweeper
 from discord.ext import commands
 from datetime import datetime
+from Automod import Automod
 from Hangman import Hangman
 from Logging import Logging
 from Voting import Voting
@@ -54,6 +55,7 @@ gompei.add_cog(Information(gompei))
 gompei.add_cog(Logging(gompei))
 gompei.add_cog(ReactionRoles(gompei))
 gompei.add_cog(Voting(gompei))
+gompei.add_cog(Automod(gompei))
 print("Cogs loaded")
 
 # Overwrite help command

@@ -3,6 +3,8 @@
     "nitro_booster_id": null,
     "status": null,
     "dm_channel_id": null,
+    "mod_action_channel_id": null,
+    "muted_role_id": null,
     "prefix": ".",
     "access_roles": [],
     "opt_in_roles": [],
