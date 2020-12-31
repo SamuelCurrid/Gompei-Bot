@@ -35,6 +35,7 @@ def get_prefix(client, message):
 intents = discord.Intents.default()
 intents.members = True
 intents.presences = True
+intents.guilds = True
 gompei = commands.Bot(command_prefix=get_prefix, case_insensitive=True, intents=intents)
 
 # Load Extensions

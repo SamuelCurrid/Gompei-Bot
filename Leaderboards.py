@@ -49,7 +49,7 @@ class Leaderboards(commands.Cog):
             save_json(os.path.join("config", "leaderboards.json"), self.leaderboards)
 
     @commands.Cog.listener()
-    async def on_guild_emojis_update(self, before, after):
+    async def on_guild_emojis_update(self, guild, before, after):
         emoji_leaderboard = self.leaderboards["emojiLeaderboard"]
 
         add_emoji = [x for x in after if x not in before]
