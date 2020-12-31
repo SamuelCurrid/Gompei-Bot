@@ -431,12 +431,12 @@ class Logging(commands.Cog):
             before_value = ""
             after_value = ""
 
+            entries = await after.guild.audit_logs(limit=1).flatten()
+
             # Check name update
             if before.name != after.name:
                 before_value += "**Name:** " + before.name
                 after_value += "**Name:** " + after.name
-
-            # TODO Position updates
 
             # Check permission update
             added_overwrites = [x for x in after.overwrites if x not in before.overwrites]
@@ -494,7 +494,6 @@ class Logging(commands.Cog):
             # If a text channel
             if isinstance(before, discord.TextChannel):
                 self.embed.title = "Text Channel Updated"
-                self.embed.description = after.mention + "\n" + self.embed.description
 
                 # Category
                 if before.category != after.category:
@@ -525,7 +524,6 @@ class Logging(commands.Cog):
             # If a voice channel
             elif isinstance(before, discord.VoiceChannel):
                 self.embed.title = "Voice Channel Updated"
-                self.embed.description = after.mention + "\n" + self.embed.description
 
                 # Category
                 if before.category != after.category:
@@ -545,7 +543,6 @@ class Logging(commands.Cog):
             # If a category
             else:
                 self.embed.title = "Category Updated"
-                self.embed.description = after.mention + "\n" + self.embed.description
 
             if before_value != "":
                 self.embed.add_field(name="Before", value=before_value, inline=True)
@@ -554,14 +551,13 @@ class Logging(commands.Cog):
             self.embed.colour = discord.Colour(0x8899d4)
 
             # Log who the editor is
-            entries = await after.guild.audit_logs(limit=1).flatten()
             if entries[0].action == discord.AuditLogAction.channel_update and entries[0] != Config.logging["last_audit"]:
                 Config.set_last_audit(entries[0])
                 self.embed.description += "\n\nUpdated by <@" + str(entries[0].user.id) + ">"
-            else:
-                self.embed.description += "\n\nUpdated by Discord"
 
-            await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
+            if len(self.embed.description) > 0 or len(self.embed.fields) > 0:
+                self.embed.description = after.mention + "\n" + self.embed.description
+                await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -1408,8 +1404,6 @@ class Logging(commands.Cog):
             await self.role_update_helper(after)
             await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
 
-        # TODO Position
-
     async def role_update_helper(self, role):
         self.embed.set_footer(text=str(role.id))
         self.embed.timestamp = datetime.utcnow()
@@ -1429,13 +1423,21 @@ class Logging(commands.Cog):
         """
         self.embed = discord.Embed()
 
+        # Log who the editor is
+        entries = await guild.audit_logs(limit=1).flatten()
+        if (entries[0].action == discord.AuditLogAction.emoji_create or entries[0].action == discord.AuditLogAction.emoji_delete) and entries[0] != Config.logging["last_audit"]:
+            Config.set_last_audit(entries[0])
+            editor = "\n\nCreated by <@" + str(entries[0].user.id) + ">"
+        else:
+            editor = "\n\nCreated by Discord"
+
         added_emojis = [x for x in after if x not in before]
         removed_emojis = [x for x in before if x not in after]
 
         self.embed.colour = discord.Colour(0x43b581)
         self.embed.title = "Emoji Added"
         for emoji in added_emojis:
-            self.embed.description = emoji.name
+            self.embed.description = emoji.name + editor
             self.embed.set_image(url=emoji.url)
             self.embed.set_footer(text="ID: " + str(emoji.id))
             self.embed.timestamp = datetime.utcnow()
@@ -1445,7 +1447,7 @@ class Logging(commands.Cog):
         self.embed.colour = discord.Colour(0xbe4041)
         self.embed.title = "Emoji Removed"
         for emoji in removed_emojis:
-            self.embed.description = emoji.name
+            self.embed.description = emoji.name + editor
             self.embed.set_image(url=emoji.url)
             self.embed.set_footer(text="ID: " + str(emoji.id))
             self.embed.timestamp = datetime.utcnow()
