@@ -1234,7 +1234,46 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the id, name, color, mentionable, and hoisted properties of the role
         """
-        return
+        self.embed = discord.Embed()
+        self.embed.title = "Role created"
+        self.embed.description = "**Name:** " + role.name
+        self.embed.description += "\n**Mention:** " + role.mention
+        self.embed.description += "\n**(R,G,B):** " + str(role.color.to_rgb())
+        self.embed.description += "\n**Position:** " + str(role.position)
+
+        permissions = []
+        values = []
+
+        for permission in role.permissions:
+            if permission[1] is not None:
+                if permission[1] is True:
+                    permissions.append(permission[0].replace("_", " ").title())
+                    values.append("✔")
+
+        max_length = len(max(permissions, key=len))
+
+        permission_values = "```"
+        for i in range(0, len(permissions)):
+            permission_values += permissions[i] + (" " * (max_length - len(permissions[i]))) + " " + values[i] + "\n"
+        permission_values += "```"
+
+        self.embed.add_field(name="Permissions", value=permission_values, inline=True)
+
+        if len(self.embed.description) > 2048:
+            self.embed.description = self.embed.description[0:2047]
+
+        self.embed.set_footer(text=str(role.id))
+        self.embed.timestamp = datetime.utcnow()
+
+        # Log who the editor is
+        entries = await role.guild.audit_logs(limit=1).flatten()
+        if entries[0].action == discord.AuditLogAction.role_create and entries[0] != Config.logging["last_audit"]:
+            Config.set_last_audit(entries[0])
+            self.embed.description += "\n\nCreated by <@" + str(entries[0].user.id) + ">"
+        else:
+            self.embed.description += "\n\nCreated by Discord"
+
+        await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_guild_role_delete(self, role):
@@ -1242,7 +1281,46 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the id, name, color, mentionable, and hoisted properties of the role
         """
-        return
+        self.embed = discord.Embed()
+        self.embed.title = "Role created"
+        self.embed.description = "**Name:** " + role.name
+        self.embed.description += "\n**Mention:** " + role.mention
+        self.embed.description += "\n**(R,G,B):** " + str(role.color.to_rgb())
+        self.embed.description += "\n**Position:** " + str(role.position)
+
+        permissions = []
+        values = []
+
+        for permission in role.permissions:
+            if permission[1] is not None:
+                if permission[1] is True:
+                    permissions.append(permission[0].replace("_", " ").title())
+                    values.append("✔")
+
+        max_length = len(max(permissions, key=len))
+
+        permission_values = "```"
+        for i in range(0, len(permissions)):
+            permission_values += permissions[i] + (" " * (max_length - len(permissions[i]))) + " " + values[i] + "\n"
+        permission_values += "```"
+
+        self.embed.add_field(name="Permissions", value=permission_values, inline=True)
+
+        if len(self.embed.description) > 2048:
+            self.embed.description = self.embed.description[0:2047]
+
+        self.embed.set_footer(text=str(role.id))
+        self.embed.timestamp = datetime.utcnow()
+
+        # Log who the editor is
+        entries = await role.guild.audit_logs(limit=1).flatten()
+        if entries[0].action == discord.AuditLogAction.role_delete and entries[0] != Config.logging["last_audit"]:
+            Config.set_last_audit(entries[0])
+            self.embed.description += "\n\nCreated by <@" + str(entries[0].user.id) + ">"
+        else:
+            self.embed.description += "\n\nCreated by Discord"
+
+        await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_guild_role_update(self, before, after):
@@ -1250,7 +1328,96 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the property of the role updated before and after
         """
-        return
+        # Name
+        if before.name != after.name:
+            self.embed = discord.Embed()
+            self.embed.title = "Role Name Changed"
+            self.embed.colour = discord.Colour(0x8899d4)
+            self.embed.description = after.mention + "\n\n**Before:** " + before.name + "\n**+After:** " + after.name
+
+            await self.role_update_helper(after)
+            await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
+
+        # Colour
+        if before.colour != after.colour:
+            self.embed = discord.Embed()
+            self.embed.title = "Role Color Changed"
+            self.embed.colour = discord.Colour(0x8899d4)
+            self.embed.description = after.mention + "\n\n**Before:** " + str(before.color.to_rgb()) + "\n**+After:** " + str(after.color.to_rgb())
+
+            await self.role_update_helper(after)
+            await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
+        
+        # Hoisted
+        if before.hoist != after.hoist:
+            self.embed = discord.Embed()
+            self.embed.colour = discord.Colour(0x8899d4)
+            self.embed.description = after.mention
+
+            if before.hoist is False:
+                self.embed.title = "Role Hoisted"
+            else:
+                self.embed.title = "Role Unhoisted"
+
+            await self.role_update_helper(after)
+            await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
+
+        # Mentionable
+        if before.mentionable != after.mentionable:
+            self.embed = discord.Embed()
+            self.embed.colour = discord.Colour(0x8899d4)
+            self.embed.description = after.mention
+
+            if before.mentionable is False:
+                self.embed.title = "Role Made Mentionable"
+            else:
+                self.embed.title = "Role Made Unmentionable"
+
+            await self.role_update_helper(after)
+            await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
+
+        # Permissions
+        if before.permissions != after.permissions:
+
+            self.embed = discord.Embed()
+            self.embed.title = "Role Permissions Edited"
+            self.embed.colour = discord.Colour(0x8899d4)
+            self.embed.description = after.mention
+            edited_perms = [x for x in after.permissions if x not in before.permissions]
+
+            permissions = []
+            values = []
+
+            for perm in edited_perms:
+                permissions.append(perm[0].replace("_", " ").title())
+                if perm[1] is True:
+                    values.append("✔")
+                else:
+                    values.append("-")
+
+            max_length = len(max(permissions, key=len))
+
+            field_description = "```"
+            for i in range(0, len(permissions)):
+                field_description += permissions[i] + (" " * (max_length - len(permissions[i]))) + " " + values[i] + "\n"
+            field_description += "```"
+
+            self.embed.add_field(name="​", value=field_description, inline=True)
+            await self.role_update_helper(after)
+            await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
+
+        # TODO Position
+
+    async def role_update_helper(self, role):
+        self.embed.set_footer(text=str(role.id))
+        self.embed.timestamp = datetime.utcnow()
+
+        entries = await role.guild.audit_logs(limit=1).flatten()
+        if entries[0].action == discord.AuditLogAction.role_update and entries[0] != Config.logging["last_audit"]:
+            Config.set_last_audit(entries[0])
+            self.embed.description += "\n\nEdited by <@" + str(entries[0].user.id) + ">"
+        else:
+            self.embed.description += "\n\nEdited by Discord"
 
     @commands.Cog.listener()
     async def on_guild_emojis_update(self, guild, before, after):

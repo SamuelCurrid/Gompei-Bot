@@ -491,7 +491,10 @@ def remove_command_channel(channel: discord.TextChannel):
 
 
 def save_statuses(statuses):
-    pickle.dump(statuses, open(os.path.join("config", "statuses.p"), "+wb"))
+    pickle.dump(statuses, open(os.path.join("config", "statuses.p"), "wb+"))
 
 def load_statuses():
-    return pickle.load( open(os.path.join("config", "statuses.p"), "+rb" ) )
+    try:
+        return pickle.load(open(os.path.join("config", "statuses.p"), "rb" ))
+    except (OSError, IOError) as e:
+        return {}
