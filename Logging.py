@@ -1240,6 +1240,7 @@ class Logging(commands.Cog):
         self.embed.description += "\n**Mention:** " + role.mention
         self.embed.description += "\n**(R,G,B):** " + str(role.color.to_rgb())
         self.embed.description += "\n**Position:** " + str(role.position)
+        self.embed.colour = discord.Colour(0x43b581)
 
         permissions = []
         values = []
@@ -1287,6 +1288,7 @@ class Logging(commands.Cog):
         self.embed.description += "\n**Mention:** " + role.mention
         self.embed.description += "\n**(R,G,B):** " + str(role.color.to_rgb())
         self.embed.description += "\n**Position:** " + str(role.position)
+        self.embed.colour = discord.Colour(0xbe4041)
 
         permissions = []
         values = []
@@ -1425,7 +1427,30 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the id, name, and picture of the emoji
         """
-        return
+        self.embed = discord.Embed()
+
+        added_emojis = [x for x in after if x not in before]
+        removed_emojis = [x for x in before if x not in after]
+
+        self.embed.colour = discord.Colour(0x43b581)
+        self.embed.title = "Emoji Added"
+        for emoji in added_emojis:
+            self.embed.description = emoji.name
+            self.embed.set_image(url=emoji.url)
+            self.embed.set_footer(text="ID: " + str(emoji.id))
+            self.embed.timestamp = datetime.utcnow()
+
+            await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
+
+        self.embed.colour = discord.Colour(0xbe4041)
+        self.embed.title = "Emoji Removed"
+        for emoji in removed_emojis:
+            self.embed.description = emoji.name
+            self.embed.set_image(url=emoji.url)
+            self.embed.set_footer(text="ID: " + str(emoji.id))
+            self.embed.timestamp = datetime.utcnow()
+
+            await Config.logging["overwrite_channels"]["server"].send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
