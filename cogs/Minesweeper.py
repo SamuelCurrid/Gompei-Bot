@@ -1,4 +1,4 @@
-from cogs.Permissions import command_channels
+from config.Permissions import command_channels
 from discord.ext import commands
 
 import discord

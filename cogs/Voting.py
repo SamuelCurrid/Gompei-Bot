@@ -1,4 +1,4 @@
-from cogs.Permissions import dm_commands, moderator_perms
+from config.Permissions import dm_commands, moderator_perms
 from GompeiFunctions import load_json, save_json
 from dateutil.parser import parse
 from discord.ext import commands

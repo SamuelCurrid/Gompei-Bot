@@ -1,14 +1,14 @@
 from GompeiFunctions import make_ordinal, time_delta_string, load_json, save_json
-from cogs.Permissions import moderator_perms, administrator_perms
+from config.Permissions import moderator_perms, administrator_perms
 from discord.ext import commands
 from datetime import timedelta
 from datetime import datetime
 
+from config import Config
 import pytimeparse
 import dateparser
 import asyncio
 import discord
-from config import Config
 import typing
 import os
 
