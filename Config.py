@@ -19,6 +19,7 @@ command_channels = []
 logging = {
     "channel": None,
     "overwrite_channels": {
+        "avatar": None,
         "member": None,
         "message": None,
         "member_tracking": None,

@@ -10,6 +10,7 @@
     "logging": {
         "channel": null,
         "overwrite_channels": {
+            "avatar": null,
             "member": null,
             "message": null,
             "member_tracking": null,
