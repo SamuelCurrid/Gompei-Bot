@@ -1,5 +1,5 @@
 import discord
-import Config
+from config import Config
 
 moderator_id = 742118136458772551
 

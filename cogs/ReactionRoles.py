@@ -1,5 +1,5 @@
 from GompeiFunctions import load_json, save_json
-from Permissions import moderator_perms
+from cogs.Permissions import moderator_perms
 from discord.ext import commands
 
 import discord

@@ -1,20 +1,22 @@
+# Utility
 from GompeiFunctions import save_json, parse_id, time_delta_string
-from Permissions import dm_commands, administrator_perms, owner
-from Administration import Administration
-from ReactionRoles import ReactionRoles
-from Leaderboards import Leaderboards
-from MovieVoting import MovieVoting
-from Information import Information
-from Minesweeper import Minesweeper
+from config import Config
+
+# Cogs
+from cogs.Permissions import dm_commands, administrator_perms, owner
+from cogs.Administration import Administration
+from cogs.ReactionRoles import ReactionRoles
+from cogs.Leaderboards import Leaderboards
+from cogs.Information import Information
+from cogs.Minesweeper import Minesweeper
+from cogs.Hangman import Hangman
+from cogs.Logging import Logging
+from cogs.Voting import Voting
+
+# Libraries
 from discord.ext import commands
 from datetime import datetime
-from Hangman import Hangman
-from Logging import Logging
-from Voting import Voting
-
-
 import discord
-import Config
 import random
 import json
 import os
@@ -54,7 +56,7 @@ gompei.add_cog(Information(gompei))
 gompei.add_cog(Logging(gompei))
 gompei.add_cog(ReactionRoles(gompei))
 gompei.add_cog(Voting(gompei))
-print("Cogs loaded")
+print("cogs loaded")
 
 # Overwrite help command
 gompei.remove_command("help")
@@ -87,6 +89,7 @@ async def on_ready():
         await Config.dm_channel.send(embed=start_embed)
 
     Config.clear_close_time()
+
 
 @gompei.event
 async def on_message(message):
@@ -247,8 +250,8 @@ async def on_member_update(before, after):
     """
     Removes opt in channel roles if losing access role
 
-    :param before: member roles before
-    :param after: member roles after
+    :param before: Member before
+    :param after: Member after
     """
     # Role checks
     added_roles = [x for x in after.roles if x not in before.roles]
@@ -256,7 +259,7 @@ async def on_member_update(before, after):
 
     for role in added_roles:
         if role.id == 630589807084699653:
-            await after.send("Welcome to the WPI Discord Server!\n\nIf you have any prospective student questions, feel free to shoot them in #help-me. Hopefully we, or someone else in the community, can answer them :smile:.")
+            await after.send("Welcome to the " + after.guild.name + "!\n\nIf you have any prospective student questions, feel free to shoot them in #help-me. Hopefully we, or someone else in the community, can answer them :smile:.")
 
     # If roles edited
     if len(added_roles) + len(removed_roles) > 0:
@@ -413,6 +416,7 @@ async def lockout(ctx):
 
         # DM User
         await member.send("Locked you out of the server. To get access back just type \".letmein\" here")
+
 
 @gompei.command(pass_context=True, aliases=["letMeIn"])
 @commands.check(dm_commands)
@@ -647,6 +651,7 @@ async def roll(ctx, number):
         else:
             await ctx.send(ctx.author.name.replace("@", "") + " rolled a " + str(random.randint(1, sides)) + "!")
 
+
 @gompei.command(pass_context=True, name="setGuild")
 @commands.check(owner)
 @commands.guild_only()
@@ -676,11 +681,10 @@ async def add_command_channel(ctx, channel: discord.TextChannel):
 @commands.guild_only()
 async def remove_command_channel(ctx, channel: discord.TextChannel):
     if channel in Config.command_channels:
-        Config.remove_command_chanel(channel)
+        Config.remove_command_channel(channel)
         await ctx.send("Successfully removed " + channel.mention + " as a command channel")
     else:
         await ctx.send("Cannot remove a channel that is not already a command channel")
-
 
 
 # Run the bot
