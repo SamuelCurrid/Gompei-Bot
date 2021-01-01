@@ -6,6 +6,7 @@ import json
 def make_ordinal(number):
     """
     Coverts an integer to an ordinal string
+
     :param number: integer to convert
     :return: ordinal string
     """
@@ -19,6 +20,7 @@ def make_ordinal(number):
 def time_delta_string(before, after):
     """
     Returns a string with three most significant time deltas between date1 and date2
+
     :param before: datetime 1
     :param after: datetime 2
     :return: string
@@ -112,6 +114,12 @@ def time_delta_string(before, after):
 
 
 def load_json(file_path):
+    """
+    Loads json from a file
+
+    :param file_path: the path to the file
+    :return: dictionary
+    """
     try:
         with open(file_path, "r+") as file:
             return json.loads(file.read())
@@ -124,6 +132,12 @@ def load_json(file_path):
 
 
 def save_json(file_path, data):
+    """
+    Saves a dictionary to a json file
+
+    :param file_path: file to save to
+    :param data: dictionary to save
+    """
     with open(file_path, "r+") as file:
         file.truncate(0)
         file.seek(0)
@@ -133,6 +147,7 @@ def save_json(file_path, data):
 def parse_id(arg):
     """
     Parses an ID from a discord @
+
     :param arg: @ or ID passed
     :return: ID
     """

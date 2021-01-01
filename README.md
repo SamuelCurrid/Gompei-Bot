@@ -8,7 +8,7 @@
 ---
 
 ## About
-Gompei is a community driven bot created for the (unofficial) WPI Discord Server. It's only intended for use in single servers. It has support for:
+Gompei is a community driven bot created for the (unofficial) WPI Discord Server. It has support for:
 
 * Message/Reaction/Quote Leaderboards
 * Message & avatar logging

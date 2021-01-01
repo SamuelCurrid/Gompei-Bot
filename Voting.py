@@ -1,11 +1,10 @@
-import asyncio
-
-from Permissions import dm_commands, command_channels, moderator_perms
+from Permissions import dm_commands, moderator_perms
 from GompeiFunctions import load_json, save_json, parse_id
 from dateutil.parser import parse
 from discord.ext import commands
 from datetime import datetime
 
+import asyncio
 import discord
 import os
 
@@ -18,7 +17,7 @@ class Voting(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.settings = load_json(os.path.join("config", "settings.json"))
-        self.votes = load_json(os.path.join("config", "votes.json"))
+        self.votes = None
         self.vote_open = False
         self.poll_message = None
 
@@ -27,6 +26,9 @@ class Voting(commands.Cog):
         await self.load_voting()
 
     async def load_voting(self):
+
+        self.votes = load_json(os.path.join("config", "votes.json"))
+
         # If the poll hasn't been created, nothing to load
         if self.votes["close"] is None:
             return
@@ -74,6 +76,12 @@ class Voting(commands.Cog):
     @commands.command(pass_context=True, aliases=["closePoll"])
     @commands.check(moderator_perms)
     async def close_poll(self, ctx):
+        """
+        Closes the poll
+        Usage: .closePoll
+
+        :param ctx: context object
+        """
         lastVotes = 0
         lastCount = 1
         count = 1
@@ -109,41 +117,99 @@ class Voting(commands.Cog):
     @commands.command(pass_context=True, aliases=['createOpenVote'])
     @commands.check(moderator_perms)
     @commands.guild_only()
-    async def create_open_vote(self, ctx, channel, title, close_timestamp):
+    async def create_open_vote(self, ctx, channel: discord.TextChannel, title, close_timestamp, *, message):
+        """
+        Creates an open poll that users can add options to vote for
+        Usage: .createOpenVote <channel> <title> <closeTime> <message>
+
+        :param ctx: context object
+        :param channel: channel for the poll
+        :param title: embed title for the poll
+        :param close_timestamp: closing time for the poll
+        :param message: message to accompany the poll
+        """
         if str(ctx.guild.id) in self.votes:
             await ctx.send("A vote is already running for this server")
         else:
-            channel_object = ctx.guild.get_channel(parse_id(channel))
-            if channel_object is None:
-                await ctx.send("Not a valid channel to send the poll to")
+            closes = parse(close_timestamp)
+
+            if closes is None:
+                await ctx.send("Not a valid close time")
+            elif (closes - datetime.now()).total_seconds() < 0:
+                await ctx.send("Close time cannot be before current time")
             else:
-                closes = parse(close_timestamp)
+                modifier = 4
+                for char in ctx.message.content[:ctx.message.content.find(close_timestamp)]:
+                    if char == "\"":
+                        modifier += 1
 
-                if closes is None:
-                    await ctx.send("Not a valid close time")
-                elif (closes - datetime.now()).total_seconds() < 0:
-                    await ctx.send("Close time cannot be before current time")
-                else:
-                    modifier = 4
-                    for char in ctx.message.content[:ctx.message.content.find(close_timestamp)]:
-                        if char == "\"":
-                            modifier += 1
+                embed = discord.Embed(title=title, color=0x43b581)
 
-                    message = ctx.message.content[ctx.message.content.find(" ") + len(channel) + len(close_timestamp) + len(title) + modifier:]
+                self.poll_message = await channel.send(message + "```.addOption <option> - Create an option to vote for and cast your vote for it\n.vote <option> - Cast a vote for an option in the poll\n.removeVote <option> - Removes a vote you casted for an option\n.sendPoll - sends the poll embed (does not update live)```", embed=embed)
 
-                    embed = discord.Embed(title=title, color=0x43b581)
+                self.votes = {"type": "open", "close": close_timestamp, "title": title, "channel_id": channel.id, "message_id": self.poll_message.id, "votes": []}
+                save_json(os.path.join("config", "votes.json"), self.votes)
+                await self.poll_timer(closes)
 
-                    self.poll_message = await channel_object.send(message + "```.addOption <option> - Create an option to vote for and cast your vote for it\n.vote <option> - Cast a vote for an option in the poll\n.removeVote <option> - Removes a vote you casted for an option\n.sendPoll - sends the poll embed (does not update live)```", embed=embed)
+    @commands.command(pass_context=True, aliases=['createDecisionVote'])
+    @commands.check(moderator_perms)
+    @commands.guild_only()
+    async def create_decision_vote(self, ctx, channel: discord.TextChannel, title, close_timestamp, *, message):
+        if str(ctx.guild.id) in self.votes:
+            await ctx.send("A vote is already running for this server")
+        else:
+            closes = parse(close_timestamp)
 
-                    self.votes = {"close": close_timestamp, "title": title, "channel_id": channel_object.id, "message_id": self.poll_message.id, "votes": []}
-                    save_json(os.path.join("config", "votes.json"), self.votes)
-                    await self.poll_timer(closes)
+            if closes is None:
+                await ctx.send("Not a valid close time")
+            elif (closes - datetime.now()).total_seconds() < 0:
+                await ctx.send("Close time cannot be before current time")
+            else:
+                modifier = 4
+                for char in ctx.message.content[:ctx.message.content.find(close_timestamp)]:
+                    if char == "\"":
+                        modifier += 1
+
+                def check_author(msg):
+                    return msg.author.id == ctx.author.id
+
+                self.votes = {"type": "decision", "close": close_timestamp, "title": title, "channel_id": channel.id, "message_id": None, "votes": []}
+
+                query = await ctx.send("What options would you like to add to this decision poll? (Put each option on a new line)")
+
+                response = await self.bot.wait_for('message', check=check_author)
+
+                options = response.content.splitlines()
+                for option in options:
+                    self.votes["votes"].append({"name": option, "creator": None, "voters": []})
+
+                embed = discord.Embed(title=title, color=0x43b581)
+
+                if len(self.votes["votes"]) == 0:
+                    await ctx.send("You need at least one option in your poll")
+                    return
+
+                self.poll_message = await channel.send(message + "```.vote <option> - Cast a vote for an option in the poll\n.removeVote <option> - Removes a vote you casted for an option\n.sendPoll - sends the poll embed (does not update live)```", embed=embed)
+                self.votes["message_id"] = self.poll_message.id
+                await self.update_poll_message()
+                save_json(os.path.join("config", "votes.json"), self.votes)
+                await self.poll_timer(closes)
 
     @commands.command(pass_context=True, aliases=["addOption"])
     @commands.check(dm_commands)
     async def add_option(self, ctx):
+        """
+        Adds an option to the poll
+        Usage: .addOption <option>
+
+        :param ctx: context object
+        """
         if not self.vote_open:
             await ctx.send("There is no poll currently open")
+            return
+
+        if not self.votes["type"] == "open":
+            await ctx.send("Cannot add options to this type of poll")
             return
 
         user_option = ctx.message.content[ctx.message.content.find(" ") + 1:]
@@ -183,29 +249,80 @@ class Voting(commands.Cog):
     @commands.command(pass_context=True)
     @commands.check(dm_commands)
     async def vote(self, ctx):
+        """
+        Votes for an option in the poll
+        Usage: .vote <option>
+
+        :param ctx: context object
+        """
         if not self.vote_open:
             await ctx.send("There is no poll currently open")
             return
 
         user_option = ctx.message.content[ctx.message.content.find(" ") + 1:]
 
-        for option in self.votes["votes"]:
-            if user_option == option["name"]:
-                if ctx.author.id == option["voters"]:
-                    await ctx.send("You already voted for this option")
+        if self.votes["type"] == "open":
+            for option in self.votes["votes"]:
+                if user_option == option["name"]:
+                    if ctx.author.id in option["voters"]:
+                        await ctx.send("You already voted for this option")
+                        return
+
+                    option["voters"].append(ctx.author.id)
+                    save_json(os.path.join("config", "votes.json"), self.votes)
+                    await self.update_poll_message()
+                    await ctx.send("Successfully voted for " + user_option)
                     return
+        elif self.votes["type"] == "decision":
+            print("got here")
+            for option in self.votes["votes"]:
+                if user_option == option["name"]:
+                    if ctx.author.id in option["voters"]:
+                        await ctx.send("You already voted for this option")
+                        return
+                    else:
+                        for other_option in self.votes["votes"]:
+                            if user_option != other_option["name"]:
+                                if ctx.author.id in other_option["voters"]:
+                                    def check_author(message):
+                                        return message.author.id == ctx.author.id
 
-                option["voters"].append(ctx.author.id)
-                save_json(os.path.join("config", "votes.json"), self.votes)
-                await self.update_poll_message()
-                await ctx.send("Successfully voted for " + user_option)
-                return
+                                    query = await ctx.send("You already voted for an option (" + other_option["name"] + "). Would you like to switch your vote to " + option["name"] + "? (Y/N)")
 
-        await ctx.send("This option doesn't exist. If you'd like to add it do it with `" + self.settings["prefix"] + "addOption <option>`")
+                                    response = await self.bot.wait_for('message', check=check_author)
+
+                                    if response.content.lower() == "y" or response.content.lower() == "yes":
+                                        other_option["voters"].remove(ctx.author.id)
+                                        option["voters"].append(ctx.author.id)
+                                        save_json(os.path.join("config", "votes.json"), self.votes)
+                                        await self.update_poll_message()
+                                        await ctx.send("Successfully voted for " + user_option)
+                                    else:
+                                        await ctx.send("Kept your vote for " + other_option["name"])
+
+                                    return
+
+                        option["voters"].append(ctx.author.id)
+                        save_json(os.path.join("config", "votes.json"), self.votes)
+                        await self.update_poll_message()
+                        await ctx.send("Successfully voted for " + user_option)
+
+                        return
+
+        if self.votes["type"] == "open":
+            await ctx.send("This option doesn't exist. If you'd like to add it do it with `" + self.settings["prefix"] + "addOption <option>`")
+        else:
+            await ctx.send("This option doesn't exist.")
 
     @commands.command(pass_context=True, aliases=["removeVote"])
     @commands.check(dm_commands)
     async def remove_vote(self, ctx):
+        """
+        Removes your vote for an option in the poll
+        Usage: .removeVote <option>
+
+        :param ctx: context object
+        """
         if not self.vote_open:
             await ctx.send("There is no poll currently open")
             return
@@ -219,7 +336,7 @@ class Voting(commands.Cog):
                     return
 
                 option["voters"].remove(ctx.author.id)
-                if len(option["voters"]) == 0:
+                if len(option["voters"]) == 0 and self.votes["type"] == "open":
                     self.votes["votes"].pop(count)
                 save_json(os.path.join("config", "votes.json"), self.votes)
                 await self.update_poll_message()
@@ -232,6 +349,12 @@ class Voting(commands.Cog):
     @commands.command(pass_context=True, aliases=["removeOption"])
     @commands.check(moderator_perms)
     async def remove_option(self, ctx):
+        """
+        Removes an option from the poll entirely
+        Usage: .removeOption <option>
+
+        :param ctx: context object
+        """
         user_option = ctx.message.content[ctx.message.content.find(" ") + 1:]
         count = 0
 
@@ -247,6 +370,16 @@ class Voting(commands.Cog):
     @commands.command(pass_context=True, aliases=["sendPoll"])
     @commands.check(dm_commands)
     async def send_poll(self, ctx):
+        """
+        Sends the poll
+        Usage: .sendPoll
+
+        :param ctx: context object
+        """
+        if not self.vote_open:
+            await ctx.send("There is no poll currently open")
+            return
+
         lastVotes = 0
         lastCount = 1
         count = 1

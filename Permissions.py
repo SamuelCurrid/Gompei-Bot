@@ -1,6 +1,6 @@
 import discord
+import Config
 
-# Mod role ID
 moderator_id = 742118136458772551
 
 # Command channels
@@ -16,8 +16,15 @@ def moderator_perms(ctx):
 
 
 def command_channels(ctx):
-    return ctx.channel.id in channels
+    return ctx.message.author.guild_permissions.administrator or ctx.message.author.top_role.id == moderator_id or ctx.channel in Config.command_channels
 
 
 def dm_commands(ctx):
-    return type(ctx.message.channel) is discord.DMChannel or command_channels(ctx)
+    if isinstance(ctx.message.author, discord.User):
+        return type(ctx.message.channel) is discord.DMChannel or command_channels(ctx)
+    else:
+        return ctx.message.author.guild_permissions.administrator or ctx.message.author.top_role.id == moderator_id or type(ctx.message.channel) is discord.DMChannel or command_channels(ctx)
+
+def owner(ctx):
+    return ctx.message.author.id == Config.client.owner_id
+

@@ -62,9 +62,12 @@ class Hangman(commands.Cog):
 
     @commands.command(pass_context=True, name="hangman")
     @commands.check(command_channels)
-    async def hangman(self, ctx: commands.Context):
+    async def hangman(self, ctx):
         """
         Starts a game of hangman
+        Usage: .hangman
+
+        :param ctx: context object
         """
         hangman = HangmanGame(random.choice(self.words))
         msg = await ctx.send(embed=self.render_embed(hangman))
