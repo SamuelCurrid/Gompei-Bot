@@ -758,7 +758,6 @@ class Logging(commands.Cog):
         :param after: Member object after
         """
         if Config.logging["overwrite_channels"]["status"] is not None:
-            logging_channel = Config.logging["overwrite_channels"]["status"]
 
             statusBefore = ""
             statusAfter = ""
@@ -823,7 +822,8 @@ class Logging(commands.Cog):
                 self.embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
                 self.embed.set_footer(text="ID: " + str(after.id))
                 self.embed.timestamp = datetime.utcnow()
-                await logging_channel.send(embed=self.embed)
+
+                await Config.logging["overwrite_channels"]["status"].send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_user_update(self, before, after):
@@ -832,7 +832,6 @@ class Logging(commands.Cog):
         the property of the user updated before and after
         """
         if Config.logging["overwrite_channels"]["member"] is not None:
-            logging_channel = Config.logging["overwrite_channels"]["member"]
 
             # Check for name update
             if before.name != after.name:
@@ -843,7 +842,7 @@ class Logging(commands.Cog):
                 self.embed.description = "**Before:** " + before.name + "\n**+After:** " + after.name
                 self.embed.set_footer(text="ID: " + str(after.id))
                 self.embed.timestamp = datetime.utcnow()
-                await logging_channel.send(embed=self.embed)
+                await Config.logging["overwrite_channels"]["member"].send(embed=self.embed)
 
             # Check for discriminator update
             if before.discriminator != after.discriminator:
@@ -854,7 +853,7 @@ class Logging(commands.Cog):
                 self.embed.description = "**Before:** " + before.discriminator + "\n**+After:** " + after.discriminator
                 self.embed.set_footer(text="ID: " + str(after.id))
                 self.embed.timestamp = datetime.utcnow()
-                await logging_channel.send(embed=self.embed)
+                await Config.logging["overwrite_channels"]["member"].send(embed=self.embed)
 
             # Check for avatar update
             if before.avatar != after.avatar:
