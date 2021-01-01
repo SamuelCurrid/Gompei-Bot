@@ -1,9 +1,11 @@
 # Utility
-from GompeiFunctions import save_json, parse_id, time_delta_string
+from config.Permissions import dm_commands, administrator_perms, owner
+from GompeiFunctions import save_json, time_delta_string
 from config import Config
 
 # Cogs
 from cogs.Administration import Administration
+from cogs.DirectMessages import DirectMessages
 from cogs.ReactionRoles import ReactionRoles
 from cogs.Leaderboards import Leaderboards
 from cogs.Information import Information
@@ -37,6 +39,7 @@ gompei = commands.Bot(command_prefix=get_prefix, case_insensitive=True, intents=
 print("Loading cogs...")
 gompei.add_cog(Leaderboards(gompei))
 gompei.add_cog(Administration(gompei))
+gompei.add_cog(DirectMessages(gompei))
 
 # if len(sys.argv) > 2:
 #     gompei.add_cog(MovieVoting(gompei, sys.argv[2]))
