@@ -9,10 +9,9 @@ from cogs.DirectMessages import DirectMessages
 from cogs.ReactionRoles import ReactionRoles
 from cogs.Leaderboards import Leaderboards
 from cogs.Information import Information
-from cogs.Minesweeper import Minesweeper
-from cogs.Hangman import Hangman
 from cogs.Logging import Logging
 from cogs.Voting import Voting
+from cogs.Games import Games
 
 # Libraries
 from discord.ext import commands
@@ -46,13 +45,12 @@ gompei.add_cog(DirectMessages(gompei))
 # else:
 #     print("No OMDb token passed! Not loading MovieVoting")
 
-gompei.add_cog(Hangman(gompei))
-gompei.add_cog(Minesweeper(gompei))
+gompei.add_cog(Games(gompei))
 gompei.add_cog(Information(gompei))
 gompei.add_cog(Logging(gompei))
 gompei.add_cog(ReactionRoles(gompei))
 gompei.add_cog(Voting(gompei))
-print("cogs loaded")
+print("Cogs loaded")
 
 # Overwrite help command
 gompei.remove_command("help")
@@ -300,10 +298,6 @@ async def let_me_in(ctx):
 
             await member.send("Welcome back to the server :)")
 
-
-
-
-
 @gompei.command(pass_context=True, aliases=["addAccessRole"])
 @commands.check(administrator_perms)
 @commands.guild_only()
@@ -399,73 +393,6 @@ async def set_status(ctx, *, status: str):
     else:
         Config.set_status(status)
         await ctx.send("Successfully updated status")
-
-
-@gompei.command(pass_context=True)
-@commands.check(dm_commands)
-async def roll(ctx, number):
-    """
-    Rolls a die for the number
-    Usage: .roll <number>
-
-    :param ctx: context object
-    :param number: number of sides on the die
-    """
-    if "d" in number:
-        sides = 0
-        try:
-            if number[:number.find("d")] != "":
-                dice = int(number[:number.find("d")])
-            else:
-                dice = 1
-            sides = int(number[number.find("d") + 1:])
-        except ValueError:
-            await ctx.send("Could not parse this roll")
-            return
-
-        if dice < 1 or sides < 1:
-            await ctx.send("Not a valid number of dice/sides")
-            return
-
-        total = 0
-        response = " ("
-        for i in range(0, dice):
-            roll_num = random.randint(1, sides)
-            total += roll_num
-            response += str(roll_num)
-            if i == dice - 1:
-                break
-            response += " + "
-
-        response += " = " + str(total) + ")"
-
-        if dice == 1:
-            response = ""
-
-        if ctx.author.nick is not None:
-            response = ctx.author.nick.replace("@", "") + " rolled a " + str(total) + "!" + response
-        else:
-            response = ctx.author.name.replace("@", "") + " rolled a " + str(total) + "!" + response
-
-        if len(response) > 500:
-            await ctx.send(response[:response.find("(") - 1])
-        else:
-            await ctx.send(response)
-    else:
-        try:
-            sides = int(number)
-        except ValueError:
-            await ctx.send("Could not parse this roll")
-            return
-
-        if sides < 1:
-            await ctx.send("Not a valid number of sides")
-            return
-
-        if ctx.author.nick is not None:
-            await ctx.send(ctx.author.nick.replace("@", "") + " rolled a " + str(random.randint(1, sides)) + "!")
-        else:
-            await ctx.send(ctx.author.name.replace("@", "") + " rolled a " + str(random.randint(1, sides)) + "!")
 
 
 @gompei.command(pass_context=True, name="setGuild")
