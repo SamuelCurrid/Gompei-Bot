@@ -6,6 +6,7 @@ from datetime import datetime
 
 import discord
 import Config
+import typing
 
 
 class Logging(commands.Cog):
@@ -25,10 +26,32 @@ class Logging(commands.Cog):
         :param channel: channel ID or mention
         """
         if Config.logging["channel"] != channel:
-            Config.set_logging_channel(channel)
-            await ctx.send("Successfully updated logging channel to <#" + str(channel.id) + ">")
+
+            # If logging has been disabled set all overwrites
+            if Config.logging["channel"] is None:
+                Config.set_logging_channels(channel)
+            else:
+                Config.set_logging_channel(channel)
+
+            await ctx.send("Successfully updated logging channel to <#" + str(channel.id) + ">. If you'd like to set specific logging channels try using `" + Config.prefix + "loggingOverwrite`.")
         else:
-            await ctx.send("This channel is already being used for logging")
+            await ctx.send("This channel is already being used for logging.")
+
+    @commands.command(pass_context=True, name="loggingOverwrite")
+    @commands.check(administrator_perms)
+    async def change_overwrite_logging(self, ctx, overwrite: str, channel: discord.TextChannel):
+        if overwrite.lower() in Config.logging["overwrite_channels"]:
+            if Config.logging["overwrite_channels"][overwrite] != channel:
+                Config.set_overwrite_logging_channel(overwrite.lower(), channel)
+                await ctx.send("Successfully set " + overwrite.replace("_", " ").title() + " logging to " + channel.mention)
+            else:
+                await ctx.send(overwrite.replace("_", " ").title() + " logging is already using " + channel.mention)
+        else:
+            overwrites = ""
+            for overwrite in Config.logging["overwrite_channels"].keys():
+                overwrites = "`" + overwrite + "`\n"
+
+            await ctx.send("The logging overwrite" + overwrite + " does not exist. The supported overwrites are:\n" + overwrites)
 
     @commands.command(pass_context=True, name="memberLogging")
     @commands.check(administrator_perms)
@@ -867,8 +890,7 @@ class Logging(commands.Cog):
                 self.embed.set_footer(text="ID: " + str(after.id))
                 self.embed.timestamp = datetime.utcnow()
 
-                avatar_channel = Config.guild.get_channel(738536336016801793)
-                await avatar_channel.send(embed=self.embed)
+                await Config.logging["overwrite_channels"]["avatar"].send(embed=self.embed)
 
     @commands.Cog.listener()
     async def on_guild_update(self, before, after):

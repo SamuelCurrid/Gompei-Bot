@@ -69,7 +69,9 @@ class Administration(commands.Cog):
                 jail_embed.set_footer(text="ID: " + str(after.id))
                 jail_embed.timestamp = datetime.utcnow()
 
-                await Config.logging["overwrite_channels"]["mod"].send(embed=jail_embed)
+                if Config.logging["overwrite_channels"]["mod"] is not None:
+                    await Config.logging["overwrite_channels"]["mod"].send(embed=jail_embed)
+
                 if after.premium_since is None:
                     await after.edit(roles=[])
                 else:
@@ -80,7 +82,7 @@ class Administration(commands.Cog):
         """
         Checks for logging reactions to elevate to staff channel
 
-        :param payload:
+        :param payload: Emoji payload
         """
         # If a staff channel exists
         if Config.logging["staff"] is not None:
@@ -478,7 +480,8 @@ class Administration(commands.Cog):
 
         await member.add_roles(muted_role)
         await ctx.send("**Muted** user **" + username + "** for **" + mute_time + "** for: **" + reason + "**")
-        await Config.logging["overwrite_channels"]["mod"].send(embed=mute_embed)
+        if Config.logging["overwrite_channels"]["mod"] is not None:
+            await Config.logging["overwrite_channels"]["mod"].send(embed=mute_embed)
         await member.send("**You were muted in the " + ctx.guild.name + " for " + mute_time + ". Reason:**\n> " + reason + "\n\nYou can respond here to contact staff.")
 
         await self.mute_helper(member, seconds, muted_role)
@@ -501,7 +504,8 @@ class Administration(commands.Cog):
         mute_embed.set_footer(text="ID: " + str(member.id))
         mute_embed.timestamp = datetime.utcnow()
 
-        await Config.logging["overwrite_channels"]["mod"].send(embed=mute_embed)
+        if Config.logging["overwrite_channels"]["mod"] is not None:
+            await Config.logging["overwrite_channels"]["mod"].send(embed=mute_embed)
 
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
@@ -718,7 +722,9 @@ class Administration(commands.Cog):
             await member.edit(roles=[Config.nitro_role])
 
         await member.send("You have been locked out of the server for " + jail_time + ". Reason:\n> " + reason + "\n\nYou can respond here to contact staff.")
-        await Config.logging["overwrite_channels"]["mod"].send(embed=jail_embed)
+
+        if Config.logging["overwrite_channels"]["mod"] is not None:
+            await Config.logging["overwrite_channels"]["mod"].send(embed=jail_embed)
         await ctx.send("**Jailed** user **" + member.display_name + "** for **" + jail_time + "** for: **" + reason + "**")
         await self.jail_helper(member, seconds, roles)
 
@@ -740,7 +746,8 @@ class Administration(commands.Cog):
         jail_embed.set_footer(text="ID: " + str(member.id))
         jail_embed.timestamp = datetime.utcnow()
 
-        await Config.logging["overwrite_channels"]["mod"].send(embed=jail_embed)
+        if Config.logging["overwrite_channels"]["mod"] is not None:
+            await Config.logging["overwrite_channels"]["mod"].send(embed=jail_embed)
 
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
@@ -821,23 +828,6 @@ class Administration(commands.Cog):
 
             await ctx.guild.ban(user=user, reason=reason)
             await ctx.send("Successfully banned user " + user.name + "#" + user.discriminator)
-
-    @commands.command(pass_context=True, name="modLog")
-    @commands.check(administrator_perms)
-    @commands.guild_only()
-    async def change_mod_log(self, ctx, channel: discord.TextChannel):
-        """
-        Changes the channel in which to log mod actions into
-        Usage: .modLog <channel>
-
-        :param ctx: context object
-        :param channel: channel
-        """
-        if Config.raw_settings["mod_log"] != channel.id:
-            Config.set_mod_log(channel)
-            await ctx.send("Successfully updated mod log channel")
-        else:
-            await ctx.send("This is already the mod log channel")
 
     @commands.command(pass_context=True, name="staffChannel")
     @commands.check(administrator_perms)

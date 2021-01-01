@@ -162,16 +162,30 @@ def update_nitro_role():
             raw_settings["nitro_booster_id"] = role.id
 
 
-def set_mod_log(channel: discord.TextChannel):
+def set_logging_channel(type: str, channel: discord.TextChannel):
     """
-    Sets the mod log channel for the bot
+    Sets the logging channel for the bot
 
+    :param type: Type of logging channel to set
     :param channel:
     """
     global logging, raw_settings
 
-    logging["overwrite_channels"]["mod"] = channel
+    logging["overwrite_channels"][type] = channel
     raw_settings["logging"]["overwrite_channels"]["mod"] = channel.id
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+def set_logging_channels(channel: discord.TextChannel):
+    """
+    Sets all logging channels to a singular one
+
+    :param channel: Channel to send logging messages to
+    """
+
+    for overwrite in logging["overwrite_channels"].keys():
+        logging["overwrite_channels"][overwrite] = channel
+        raw_settings["logging"]["overwrite_channels"][overwrite] = channel.id
+
     save_json(os.path.join("config", "settings.json"), raw_settings)
 
 
@@ -312,6 +326,17 @@ def set_logging_channel(channel: discord.TextChannel):
 
     logging["channel"] = channel
     raw_settings["logging"]["channel"] = channel.id
+
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def set_all_logging_channels(channel: discord.TextChannel):
+    """
+    Sets all logging channels/overwrites
+
+    :param channel: Channel to send logging messages to
+    """
+    set_logging_channel(channel)
 
     for overwrite in logging["overwrite_channels"]:
         if logging["overwrite_channels"][overwrite] is None:
