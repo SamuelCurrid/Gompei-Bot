@@ -1,5 +1,5 @@
 from GompeiFunctions import make_ordinal, time_delta_string, load_json, save_json
-from config.Permissions import moderator_perms, administrator_perms
+from cogs.Permissions import moderator_perms, administrator_perms
 from discord.ext import commands
 from datetime import timedelta
 from datetime import datetime

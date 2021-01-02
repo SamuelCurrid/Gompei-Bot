@@ -1,6 +1,6 @@
 # Utility
-from config.Permissions import dm_commands, administrator_perms, owner
-from GompeiFunctions import save_json, time_delta_string
+from cogs.Permissions import dm_commands, administrator_perms, owner
+from GompeiFunctions import time_delta_string
 from config import Config
 
 # Cogs

@@ -1,5 +1,5 @@
 from GompeiFunctions import time_delta_string
-from config.Permissions import command_channels
+from cogs.Permissions import command_channels
 from discord.ext import commands
 from datetime import datetime
 

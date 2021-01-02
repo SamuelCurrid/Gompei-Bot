@@ -1,4 +1,4 @@
-from config.Permissions import command_channels, dm_commands
+from cogs.Permissions import command_channels, dm_commands
 from discord.ext import commands
 from typing import Dict, List
 
