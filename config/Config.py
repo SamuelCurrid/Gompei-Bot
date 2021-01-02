@@ -15,6 +15,7 @@ dm_channel = None
 prefix = None
 access_roles = []
 opt_in_roles = []
+lockouts = {}
 command_channels = []
 logging = {
     "channel": None,
@@ -88,13 +89,28 @@ async def update_guild_settings():
     Updates guild settings for the currently selected guild
     Updates guild settings for the currently selected guild
     """
-    global dm_channel, logging, access_roles, opt_in_roles, command_channels, administration
+    global dm_channel, logging, access_roles, opt_in_roles, lockouts, command_channels, administration
 
     update_nitro_role()
 
     dm_channel = guild.get_channel(raw_settings["dm_channel_id"])
 
     logging["channel"] = guild.get_channel(raw_settings["logging"]["channel"])
+
+    for user_id in raw_settings["lockouts"]:
+        member = guild.get_member(user_id)
+
+        if member is None:
+            del raw_settings["lockouts"][user_id]
+            continue
+
+        roles = []
+        for role_id in raw_settings["lockouts"][user_id]:
+            role = guild.get_role(role_id)
+            if role is not None:
+                roles.append(role)
+
+        lockouts[guild.get_member(user_id)] = roles
 
     for key in logging["overwrite_channels"]:
         logging["overwrite_channels"][key] = guild.get_channel(raw_settings["logging"]["overwrite_channels"][key])
@@ -174,6 +190,7 @@ def set_logging_channel(type: str, channel: discord.TextChannel):
     logging["overwrite_channels"][type] = channel
     raw_settings["logging"]["overwrite_channels"]["mod"] = channel.id
     save_json(os.path.join("config", "settings.json"), raw_settings)
+
 
 def set_logging_channels(channel: discord.TextChannel):
     """
@@ -376,8 +393,6 @@ def add_invite(invite: discord.Invite):
     Adds an invite
 
     :param invite: invite code
-    :param user_id: user who created the invite
-    :param uses: uses the invite has
     """
     global logging, raw_settings
 
@@ -403,7 +418,6 @@ def update_invite_uses(invite: discord.Invite):
     Updates the amount of times an invite has been used
 
     :param invite: invite code
-    :param uses: times used
     """
     global logging, raw_settings
 
@@ -444,13 +458,13 @@ def automod_set_message_rate_limit(number: int, seconds: int):
 
 def add_mute(member: discord.Member, date: datetime):
     administration["mutes"][member] = {"date": date}
-    raw_settings["administration"]["mutes"][member.id] = {"date": date.strftime("%Y-%m-%d %H:%M:%S")}
+    raw_settings["administration"]["mutes"][str(member.id)] = {"date": date.strftime("%Y-%m-%d %H:%M:%S")}
     save_json(os.path.join("config", "settings.json"), raw_settings)
 
 
 def remove_mute(member: discord.Member):
     del administration["mutes"][member]
-    del raw_settings["administration"]["mutes"][member.id]
+    del raw_settings["administration"]["mutes"][str(member.id)]
     save_json(os.path.join("config", "settings.json"), raw_settings)
 
 
@@ -460,13 +474,13 @@ def add_jail(member: discord.Member, date: datetime, roles):
         role_ids.append(role.id)
 
     administration["jails"][member] = {"date": date, "roles": roles}
-    raw_settings["administration"]["jails"][member.id] = {"date": date.strftime("%Y-%m-%d %H:%M:%S"), "roles": role_ids}
+    raw_settings["administration"]["jails"][str(member.id)] = {"date": date.strftime("%Y-%m-%d %H:%M:%S"), "roles": role_ids}
     save_json(os.path.join("config", "settings.json"), raw_settings)
 
 
 def remove_jail(member: discord.Member):
     del administration["jails"][member]
-    del raw_settings["administration"]["jails"][member.id]
+    del raw_settings["administration"]["jails"][str(member.id)]
     save_json(os.path.join("config", "settings.json"), raw_settings)
 
 
@@ -519,8 +533,30 @@ def remove_command_channel(channel: discord.TextChannel):
 def save_statuses(statuses):
     pickle.dump(statuses, open(os.path.join("config", "statuses.p"), "wb+"))
 
+
 def load_statuses():
     try:
-        return pickle.load(open(os.path.join("config", "statuses.p"), "rb" ))
+        return pickle.load(open(os.path.join("config", "statuses.p"), "rb"))
     except (OSError, IOError) as e:
         return {}
+
+
+def add_lockout(member: discord.Member):
+    global lockouts, raw_settings
+
+    lockouts[member] = member.roles
+
+    role_ids = []
+    for role in member.roles:
+        role_ids.append(role.id)
+
+    raw_settings["lockouts"][str(member.id)] = role_ids
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def remove_lockout(member: discord.Member):
+    global lockouts, raw_settings
+
+    del lockouts[member]
+    del raw_settings["lockouts"][str(member.id)]
+    save_json(os.path.join("config", "settings.json"), raw_settings)
