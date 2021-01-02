@@ -68,7 +68,6 @@ class Information(commands.Cog):
         self.embed.description += "\n**Position:** " + str(channel.position)
         self.embed.description += "\n**Created:** " + channel.created_at.strftime("%y-%m-%d %H:%M:%S") + " UTC\n(" + time_delta_string(channel.created_at, datetime.utcnow()) + " ago)" + "\n\n**__Overwrites__\n**"
 
-
         for target in channel.overwrites:
             permissions = []
             values = []
@@ -80,7 +79,6 @@ class Information(commands.Cog):
                         values.append("✔")
                     else:
                         values.append("✘")
-
 
             max_length = len(max(permissions, key=len))
 
@@ -229,7 +227,6 @@ class Information(commands.Cog):
         if feature_values == "":
             feature_values = "None"
 
-
         if guild.premium_subscription_count >= 30:
             boosts = "Level 3\n" + str(guild.premium_subscription_count) + "/30 boosts"
         elif guild.premium_subscription_count >= 15:
@@ -286,8 +283,8 @@ class Information(commands.Cog):
             await self.guild_role_info(ctx.guild)
         elif len(keyword) == 18 or len(keyword) == 17:
             try:
-                id = int(keyword)
-                await self.user_info(await self.bot.fetch_user(id))
+                user_id = int(keyword)
+                await self.user_info(await self.bot.fetch_user(user_id))
             except ValueError:
                 self.embed.title = "Unrecognized keyword"
                 self.embed.description = "Make sure you have the correct name/ID"

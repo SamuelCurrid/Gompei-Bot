@@ -18,29 +18,30 @@ class DirectMessages(commands.Cog):
 
         :param message: message
         """
-        if not message.author.bot:
-            if isinstance(message.channel, discord.channel.DMChannel) and Config.dm_channel is not None:
+        if Config.dm_channel is not None:
+            if not message.author.bot:
+                if isinstance(message.channel, discord.channel.DMChannel) and Config.dm_channel is not None:
 
-                message_embed = discord.Embed(description=message.content, timestamp=datetime.utcnow())
-                message_embed.set_author(name="DM from " + message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
-                message_embed.set_footer(text=message.author.id)
+                    message_embed = discord.Embed(description=message.content, timestamp=datetime.utcnow())
+                    message_embed.set_author(name="DM from " + message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
+                    message_embed.set_footer(text=message.author.id)
 
-                attachments = []
-                if len(message.attachments) > 0:
-                    for i in message.attachments:
-                        attachments.append(await i.to_file())
+                    attachments = []
+                    if len(message.attachments) > 0:
+                        for i in message.attachments:
+                            attachments.append(await i.to_file())
 
-                if len(attachments) > 0:
-                    if len(message.content) > 0:
-                        message_embed.description = message.content + "\n\n**<File(s) Attached>**"
+                    if len(attachments) > 0:
+                        if len(message.content) > 0:
+                            message_embed.description = message.content + "\n\n**<File(s) Attached>**"
+                        else:
+                            message_embed.description = message.content + "**<File(s) Attached>**"
+
+                        message_embed.timestamp = datetime.utcnow()
+                        await Config.dm_channel.send(embed=message_embed)
+                        await Config.dm_channel.send(files=attachments)
                     else:
-                        message_embed.description = message.content + "**<File(s) Attached>**"
-
-                    message_embed.timestamp = datetime.utcnow()
-                    await Config.dm_channel.send(embed=message_embed)
-                    await Config.dm_channel.send(files=attachments)
-                else:
-                    await Config.dm_channel.send(embed=message_embed)
+                        await Config.dm_channel.send(embed=message_embed)
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
@@ -50,19 +51,20 @@ class DirectMessages(commands.Cog):
         :param before: message before edit
         :param after: message after edit
         """
-        if isinstance(before.channel, discord.channel.DMChannel) and not before.author.bot and Config.dm_channel is not None:
-            if before.content is after.content:
-                return
+        if Config.dm_channel is not None:
+            if isinstance(before.channel, discord.channel.DMChannel) and not before.author.bot and Config.dm_channel is not None:
+                if before.content is after.content:
+                    return
 
-            message_embed = discord.Embed(timestamp=datetime.utcnow())
-            message_embed.colour = discord.Colour(0x8899d4)
-            message_embed.set_author(name=after.author.name + "#" + before.author.discriminator, icon_url=after.author.avatar_url)
-            message_embed.title = "Message edited by " + after.author.name + "#" + str(after.author.discriminator)
-            message_embed.description = "**Before:** " + before.content + "\n**+After:** " + after.content
-            message_embed.set_footer(text="ID: " + str(before.author.id))
-            message_embed.timestamp = datetime.utcnow()
+                message_embed = discord.Embed(timestamp=datetime.utcnow())
+                message_embed.colour = discord.Colour(0x8899d4)
+                message_embed.set_author(name=after.author.name + "#" + before.author.discriminator, icon_url=after.author.avatar_url)
+                message_embed.title = "Message edited by " + after.author.name + "#" + str(after.author.discriminator)
+                message_embed.description = "**Before:** " + before.content + "\n**+After:** " + after.content
+                message_embed.set_footer(text="ID: " + str(before.author.id))
+                message_embed.timestamp = datetime.utcnow()
 
-            await Config.dm_channel.send(embed=message_embed)
+                await Config.dm_channel.send(embed=message_embed)
 
     @commands.Cog.listener()
     async def on_raw_message_edit(self, payload):
@@ -71,21 +73,22 @@ class DirectMessages(commands.Cog):
 
         :param payload: uncached message edit payload
         """
-        # If the message is not cached
-        if payload.cached_message is None:
-            guild = Config.guild
-            dm_channel = Config.dm_channel
-            channel = guild.get_channel(payload.channel_id)
+        if Config.dm_channel is not None:
+            # If the message is not cached
+            if payload.cached_message is None:
+                guild = Config.guild
+                dm_channel = Config.dm_channel
+                channel = guild.get_channel(payload.channel_id)
 
-            # If not in the guild
-            if channel is None:
-                message_embed = discord.Embed()
-                message_embed.colour = discord.Colour(0x8899d4)
-                message_embed.title = "Message edited by ???"
-                message_embed.set_footer(text="Uncached message: " + str(payload.message_id))
-                message_embed.timestamp = datetime.utcnow()
+                # If not in the guild
+                if channel is None:
+                    message_embed = discord.Embed()
+                    message_embed.colour = discord.Colour(0x8899d4)
+                    message_embed.title = "Message edited by ???"
+                    message_embed.set_footer(text="Uncached message: " + str(payload.message_id))
+                    message_embed.timestamp = datetime.utcnow()
 
-                await dm_channel.send(embed=message_embed)
+                    await dm_channel.send(embed=message_embed)
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
@@ -94,22 +97,23 @@ class DirectMessages(commands.Cog):
 
         :param message: Message that was deleted
         """
-        # If a DM message
-        if isinstance(message.channel, discord.channel.DMChannel) and not message.author.bot and Config.dm_channel is not None:
-            message_embed = discord.Embed()
-            message_embed.colour = discord.Colour(0xbe4041)
-            message_embed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
-            message_embed.title = "Message deleted by " + message.author.name + "#" + str(message.author.discriminator)
-            message_embed.description = message.content
+        if Config.dm_channel is not None:
+            # If a DM message
+            if isinstance(message.channel, discord.channel.DMChannel) and not message.author.bot and Config.dm_channel is not None:
+                message_embed = discord.Embed()
+                message_embed.colour = discord.Colour(0xbe4041)
+                message_embed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
+                message_embed.title = "Message deleted by " + message.author.name + "#" + str(message.author.discriminator)
+                message_embed.description = message.content
 
-            if len(message.attachments) > 0:  # Check for attachments
-                for attachment in message.attachments:
-                    message_embed.add_field(name="Attachment", value=attachment.proxy_url)
+                if len(message.attachments) > 0:  # Check for attachments
+                    for attachment in message.attachments:
+                        message_embed.add_field(name="Attachment", value=attachment.proxy_url)
 
-            message_embed.set_footer(text="ID: " + str(message.author.id))
-            message_embed.timestamp = datetime.utcnow()
+                message_embed.set_footer(text="ID: " + str(message.author.id))
+                message_embed.timestamp = datetime.utcnow()
 
-            await Config.dm_channel.send(embed=message_embed)
+                await Config.dm_channel.send(embed=message_embed)
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload):
@@ -118,17 +122,18 @@ class DirectMessages(commands.Cog):
 
         :param payload: Uncached deleted message payload
         """
-        # If a DM message
-        if not hasattr(payload, "guild_id") and Config.dm_channel is not None:
-            # If the message is not cached
-            if payload.cached_message is None:
-                message_embed = discord.Embed()
-                message_embed.colour = discord.Colour(0xbe4041)
-                message_embed.title = "Message deleted by ???"
-                message_embed.set_footer(text="Uncached message: " + str(payload.message_id))
-                message_embed.timestamp = datetime.utcnow()
+        if Config.dm_channel is not None:
+            # If a DM message
+            if not hasattr(payload, "guild_id") and Config.dm_channel is not None:
+                # If the message is not cached
+                if payload.cached_message is None:
+                    message_embed = discord.Embed()
+                    message_embed.colour = discord.Colour(0xbe4041)
+                    message_embed.title = "Message deleted by ???"
+                    message_embed.set_footer(text="Uncached message: " + str(payload.message_id))
+                    message_embed.timestamp = datetime.utcnow()
 
-                await Config.dm_channel.send(embed=message_embed)
+                    await Config.dm_channel.send(embed=message_embed)
 
     @commands.Cog.listener()
     async def on_typing(self, channel, user, when):
@@ -139,12 +144,13 @@ class DirectMessages(commands.Cog):
         :param user: user that is typing
         :param when: when the user was typing
         """
-        if isinstance(channel, discord.channel.DMChannel) and not user.bot and Config.dm_channel is not None:
-            await Config.dm_channel.trigger_typing()
+        if Config.dm_channel is not None:
+            if isinstance(channel, discord.channel.DMChannel) and not user.bot and Config.dm_channel is not None:
+                await Config.dm_channel.trigger_typing()
 
     @commands.command(pass_context=True, aliases=["dmChannel"])
-    @commands.check(administrator_perms)
     @commands.guild_only()
+    @commands.is_owner()
     async def set_dm_channel(self, ctx, channel):
         """
         Sets the channel for DM events to be forwarded to

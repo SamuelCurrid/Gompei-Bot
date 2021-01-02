@@ -1,5 +1,4 @@
 from discord.ext import commands
-from config import Config
 
 greetings = ["hello", "hi", "greetings", "howdy", "salutations", "hey", "oi", "dear", "yo ", "morning", "afternoon", "evening", "sup", "G'day", "good day", "bonjour"]
 gompei_references = ["gompei", "672453835863883787", "goat"]
@@ -7,7 +6,8 @@ love_references = ["gompeiHug", "love", "ily", "<3", "❤"]
 hate_references = ["fuck you", "sucks", "fucker", "idiot", "shithead", "eat shit", "hate"]
 violent_references = ["kill", "murder", "attack", "skin", "ambush", "stab"]
 
-class DirectMessages(commands.Cog):
+
+class Triggers(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 

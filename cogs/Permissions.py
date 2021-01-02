@@ -22,8 +22,3 @@ def dm_commands(ctx):
         return type(ctx.message.channel) is discord.DMChannel or command_channels(ctx)
     else:
         return ctx.message.author.guild_permissions.administrator or ctx.message.author.top_role.id == moderator_id or type(ctx.message.channel) is discord.DMChannel or command_channels(ctx)
-
-
-def owner(ctx):
-    return ctx.message.author.id == Config.client.owner_id
-

@@ -147,10 +147,8 @@ class MovieVoting(commands.Cog):
                     self.user_list[self.movie_list[title]["request"]]["requests"].remove(title)
                     del self.movie_list[title]
                     await ctx.send("Vote for " + title + " removed. Since you were the only vote for this movie, it has been removed from the list.")
-                    return
                 else:
                     await ctx.send("Vote for " + title + " removed.")
-                    return
             else:
                 await ctx.send("You have not voted for this movie.")
                 return

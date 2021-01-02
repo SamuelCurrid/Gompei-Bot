@@ -211,8 +211,8 @@ async def set_status(ctx, *, status: str):
 
 
 @gompei.command(pass_context=True, name="setGuild")
-@commands.check(owner)
 @commands.guild_only()
+@commands.is_owner()
 async def set_guild(ctx):
     """
     Sets the guild for the bot
