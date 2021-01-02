@@ -12,14 +12,12 @@ from cogs.Information import Information
 from cogs.Logging import Logging
 from cogs.Voting import Voting
 from cogs.Games import Games
+from cogs.Roles import Roles
 
 # Libraries
 from discord.ext import commands
 from datetime import datetime
 import discord
-import random
-import json
-import os
 import sys
 
 
@@ -50,6 +48,7 @@ gompei.add_cog(Information(gompei))
 gompei.add_cog(Logging(gompei))
 gompei.add_cog(ReactionRoles(gompei))
 gompei.add_cog(Voting(gompei))
+gompei.add_cog(Roles(gompei))
 print("Cogs loaded")
 
 # Overwrite help command
@@ -83,34 +82,6 @@ async def on_ready():
         await Config.dm_channel.send(embed=start_embed)
 
     Config.clear_close_time()
-
-
-@gompei.event
-async def on_member_update(before, after):
-    """
-    Removes opt in channel roles if losing access role
-
-    :param before: Member before
-    :param after: Member after
-    """
-    # Role checks
-    added_roles = [x for x in after.roles if x not in before.roles]
-    removed_roles = [x for x in before.roles if x not in after.roles]
-
-    for role in added_roles:
-        if role.id == 630589807084699653:
-            await after.send("Welcome to the " + after.guild.name + "!\n\nIf you have any prospective student questions, feel free to shoot them in #help-me. Hopefully we, or someone else in the community, can answer them :smile:.")
-
-    # If roles edited
-    if len(added_roles) + len(removed_roles) > 0:
-        role_list = []
-        for role in after.roles:
-            if role in Config.access_roles:
-                return
-            if role not in Config.opt_in_roles:
-                role_list.append(role)
-
-        await after.edit(roles=role_list)
 
 
 @gompei.event
@@ -219,162 +190,6 @@ async def ping(ctx):
     :param ctx: context object
     """
     await ctx.send(f'Pong! `{int(gompei.latency * 1000)}ms`')
-
-
-@gompei.command(pass_context=True)
-@commands.check(dm_commands)
-async def lockout(ctx):
-    """
-    Removes user roles and stores them to be returned after
-    Usage: .lockout
-
-    :param ctx: context object
-    """
-    member = await Config.guild.fetch_member(ctx.message.author.id)
-
-    # Get lockout info
-    with open(os.path.join("config", "lockout.json"), "r+") as lockout_file:
-        lockout_info = json.loads(lockout_file.read())
-
-    if str(member.id) in lockout_info:
-        await ctx.send("You've already locked yourself out")
-    else:
-        # Get current roles
-        role_ids = []
-        for role in member.roles:
-            role_ids.append(role.id)
-
-        # Remove members roles (check if nitro booster)
-        if member.premium_since is None:
-            await member.edit(roles=[])
-        else:
-            await member.edit(roles=[Config.nitro_role])
-
-        # Store roles
-        lockout_info[str(member.id)] = role_ids
-        save_json(os.path.join("config", "lockout.json"), lockout_info)
-
-        # DM User
-        await member.send("Locked you out of the server. To get access back just type \".letmein\" here")
-
-
-@gompei.command(pass_context=True, aliases=["letMeIn"])
-@commands.check(dm_commands)
-async def let_me_in(ctx):
-    """
-    Returns user roles from a lockout command
-    Usage: .letMeIn
-
-    :param ctx: context object
-    """
-    guild = Config.guild
-    member = await guild.fetch_member(ctx.message.author.id)
-
-    # Get lockout info
-    with open(os.path.join("config", "lockout.json"), "r+") as lockout_file:
-        lockout_info = json.loads(lockout_file.read())
-
-    if member is None:
-        # Member is not in guild
-        await ctx.send("You are not in the server!")
-    else:
-        if str(member.id) not in lockout_info:
-            await ctx.send("You haven't locked yourself out")
-        else:
-            role_list = []
-            for role_id in lockout_info[str(member.id)]:
-
-                # Check if the role exists
-                if guild.get_role(role_id) is not None:
-                    role_list.append(guild.get_role(role_id))
-
-            await member.edit(roles=role_list)
-
-            del lockout_info[str(member.id)]
-            with open(os.path.join("config", "lockout.json"), "r+") as lockout_file:
-                lockout_file.truncate(0)
-                lockout_file.seek(0)
-                json.dump(lockout_info, lockout_file, indent=4)
-
-            await member.send("Welcome back to the server :)")
-
-@gompei.command(pass_context=True, aliases=["addAccessRole"])
-@commands.check(administrator_perms)
-@commands.guild_only()
-async def add_access_role(ctx, *roles: discord.Role):
-    """
-    Adds roles to the list that give read access to the server
-    Usage: .addAccessRole <role(s)>
-
-    :param ctx: context object
-    :param roles: role(s) to add
-    """
-    if ctx.guild != Config.guild:
-        await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up here: <INSERT LINK>")
-    elif len(roles) == 0:
-        await ctx.send("You must include a role to add")
-    else:
-        Config.add_access_roles(roles)
-        await ctx.send("Successfully added roles")
-
-
-@gompei.command(pass_context=True, aliases=["removeAccessRole"])
-@commands.check(administrator_perms)
-@commands.guild_only()
-async def remove_access_role(ctx, *roles: discord.Role):
-    """
-    Removes roles from the access list
-    Usage: .removeAccessRoles <role(s)>
-
-    :param ctx: context object
-    :param roles: role(s) to remove
-    """
-    if ctx.guild != Config.guild:
-        await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up here: <INSERT LINK>")
-    elif len(roles) == 0:
-        await ctx.send("You must include a role to remove")
-    else:
-        Config.remove_access_roles(roles)
-        await ctx.send("Successfully removed roles")
-
-
-@gompei.command(pass_context=True, aliases=["addOptInRole"])
-@commands.check(administrator_perms)
-@commands.guild_only()
-async def add_opt_in_role(ctx, *roles: discord.Role):
-    """
-    Adds roles to the opt in list that will be removed if a user loses an access role
-
-    :param ctx: context object
-    :param roles: role(s) to add
-    """
-    if ctx.guild != Config.guild:
-        await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up here: <INSERT LINK>")
-    elif len(roles) == 0:
-        await ctx.send("You must include a role to add")
-    else:
-        Config.add_opt_in_roles(roles)
-        await ctx.send("Successfully added roles")
-
-
-@gompei.command(pass_context=True, aliases=["removeOptInRole"])
-@commands.check(administrator_perms)
-@commands.guild_only()
-async def remove_opt_in_role(ctx, *roles: discord.Role):
-    """
-    Removes roles from the opt in list
-    Usage: .removeOptInRole <role(s)>
-
-    :param ctx: context object
-    :param roles: role(s) to remove
-    """
-    if ctx.guild != Config.guild:
-        await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up here: <INSERT LINK>")
-    elif len(roles) == 0:
-        await ctx.send("You must include a role to remove")
-    else:
-        Config.remove_opt_in_roles(roles)
-        await ctx.send("Successfully removed roles")
 
 
 @gompei.command(pass_context=True, aliases=["status"])
