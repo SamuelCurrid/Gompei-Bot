@@ -50,18 +50,18 @@ class Voting(commands.Cog):
     async def update_poll_message(self):
         self.votes["votes"] = sorted(self.votes["votes"], key=lambda i: len(i["voters"]), reverse=True)
 
-        lastVotes = 0
-        lastCount = 1
+        last_votes = 0
+        last_count = 1
         count = 1
         leaderboard = ""
         for option in self.votes["votes"]:
-            if len(option["voters"]) == lastVotes:
-                leaderboard += "**" + str(lastCount) + ". **" + option["name"] + " - " + str(len(option["voters"])) + "\n"
+            if len(option["voters"]) == last_votes:
+                leaderboard += "**" + str(last_count) + ". **" + option["name"] + " - " + str(len(option["voters"])) + "\n"
                 count += 1
             else:
                 leaderboard += "**" + str(count) + ". **" + option["name"] + " - " + str(len(option["voters"])) + "\n"
-                lastVotes = len(option["voters"])
-                lastCount = count
+                last_votes = len(option["voters"])
+                last_count = count
                 count += 1
 
         embed = discord.Embed(title=self.votes["title"], color=0x43b581)
@@ -82,19 +82,19 @@ class Voting(commands.Cog):
 
         :param ctx: context object
         """
-        lastVotes = 0
-        lastCount = 1
+        last_votes = 0
+        last_count = 1
         count = 1
         leaderboard = ""
         for option in self.votes["votes"]:
-            if len(option["voters"]) == lastVotes:
-                leaderboard += "**" + str(lastCount) + ". **" + option["name"] + " - " + str(
+            if len(option["voters"]) == last_votes:
+                leaderboard += "**" + str(last_count) + ". **" + option["name"] + " - " + str(
                     len(option["voters"])) + "\n"
                 count += 1
             else:
                 leaderboard += "**" + str(count) + ". **" + option["name"] + " - " + str(len(option["voters"])) + "\n"
-                lastVotes = len(option["voters"])
-                lastCount = count
+                last_votes = len(option["voters"])
+                last_count = count
                 count += 1
 
         embed = discord.Embed(title=self.votes["title"], color=0x43b581)
@@ -380,19 +380,19 @@ class Voting(commands.Cog):
             await ctx.send("There is no poll currently open")
             return
 
-        lastVotes = 0
-        lastCount = 1
+        last_votes = 0
+        last_count = 1
         count = 1
         leaderboard = ""
         for option in self.votes["votes"]:
-            if len(option["voters"]) == lastVotes:
-                leaderboard += "**" + str(lastCount) + ". **" + option["name"] + " - " + str(
+            if len(option["voters"]) == last_votes:
+                leaderboard += "**" + str(last_count) + ". **" + option["name"] + " - " + str(
                     len(option["voters"])) + "\n"
                 count += 1
             else:
                 leaderboard += "**" + str(count) + ". **" + option["name"] + " - " + str(len(option["voters"])) + "\n"
-                lastVotes = len(option["voters"])
-                lastCount = count
+                last_votes = len(option["voters"])
+                last_count = count
                 count += 1
 
         embed = discord.Embed(title=self.votes["title"], color=0x43b581)
