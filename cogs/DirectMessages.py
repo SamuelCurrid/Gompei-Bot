@@ -1,4 +1,3 @@
-from cogs.Permissions import administrator_perms
 from GompeiFunctions import parse_id
 from discord.ext import commands
 from config import Config

@@ -1,5 +1,5 @@
 # Utility
-from cogs.Permissions import dm_commands, administrator_perms, owner
+from cogs.Permissions import dm_commands, administrator_perms
 from GompeiFunctions import time_delta_string
 from config import Config
 
@@ -37,12 +37,6 @@ print("Loading cogs...")
 gompei.add_cog(Leaderboards(gompei))
 gompei.add_cog(Administration(gompei))
 gompei.add_cog(DirectMessages(gompei))
-
-# if len(sys.argv) > 2:
-#     gompei.add_cog(MovieVoting(gompei, sys.argv[2]))
-# else:
-#     print("No OMDb token passed! Not loading MovieVoting")
-
 gompei.add_cog(Games(gompei))
 gompei.add_cog(Information(gompei))
 gompei.add_cog(Logging(gompei))
