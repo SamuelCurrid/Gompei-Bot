@@ -83,8 +83,8 @@ class Games(commands.Cog):
         :param ctx: context object
         """
         hangman = HangmanGame(random.choice(self.hangman_words))
-        msg = await ctx.send(embed=self.render_embed(hangman))
-        self.games[msg.id] = hangman
+        msg = await ctx.send(embed=self.render_hangman_embed(hangman))
+        self.hangman_games[msg.id] = hangman
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
@@ -92,16 +92,16 @@ class Games(commands.Cog):
         Adds a guess and updates game state
         """
         guild = self.bot.get_guild(payload.guild_id)
-        if payload.message_id in self.games and guild is not None and len(payload.emoji.name) == 1:
+        if payload.message_id in self.hangman_games and guild is not None and len(payload.emoji.name) == 1:
             letter = chr(ord(payload.emoji.name) - 127365)
             if 'a' <= letter <= 'z':
                 channel = guild.get_channel(payload.channel_id)
                 message = await channel.fetch_message(payload.message_id)
-                hangman = self.games[payload.message_id]
+                hangman = self.hangman_games[payload.message_id]
                 hangman.guess(letter)
                 if '*' not in hangman.visible:
-                    del self.games[payload.message_id]
-                await message.edit(embed=self.render_embed(hangman))
+                    del self.hangman_games[payload.message_id]
+                await message.edit(embed=self.render_hangman_embed(hangman))
                 await message.clear_reaction(payload.emoji)
 
     def render_hangman_embed(self, hangman: HangmanGame):

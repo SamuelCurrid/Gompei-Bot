@@ -806,46 +806,46 @@ class Logging(commands.Cog):
         """
         if Config.logging["overwrite_channels"]["status"] is not None:
 
-            statusBefore = ""
-            statusAfter = ""
+            status_before = ""
+            status_after = ""
 
             # If they have a custom status
             if isinstance(after.activity, discord.CustomActivity):
                 if after.activity.emoji is not None:
-                    statusAfter += str(after.activity.emoji) + " "
+                    status_after += str(after.activity.emoji) + " "
                 if after.activity.name is not None:
-                    statusAfter += after.activity.name
+                    status_after += after.activity.name
 
                 # If the user had a custom status before
                 if isinstance(before.activity, discord.CustomActivity):
                     if before.activity.emoji is not None:
-                        statusBefore += str(before.activity.emoji) + " "
+                        status_before += str(before.activity.emoji) + " "
                     if before.activity.name is not None:
-                        statusBefore += before.activity.name
+                        status_before += before.activity.name
 
                     # If the status has changed
-                    if statusAfter != statusBefore:
+                    if status_after != status_before:
                         embed = discord.Embed()
                         embed.colour = discord.Colour(0x8899d4)
                         embed.title = "Custom status edited"
                     else:
-                        statusBefore = ""
-                        statusAfter = ""
+                        status_before = ""
+                        status_after = ""
 
                 # If the user had a custom status stored from before
                 elif str(after.id) in self.statuses:
-                    statusBefore = self.statuses[str(after.id)]
+                    status_before = self.statuses[str(after.id)]
 
                     # If the status has been updated
-                    if statusAfter != statusBefore:
+                    if status_after != status_before:
                         embed = discord.Embed()
                         embed.colour = discord.Colour(0x8899d4)
                         embed.title = "Custom status edited"
 
                         del self.statuses[str(after.id)]
                     else:
-                        statusBefore = ""
-                        statusAfter = ""
+                        status_before = ""
+                        status_after = ""
                 # A status was added
                 else:
                     embed = discord.Embed()
@@ -855,17 +855,17 @@ class Logging(commands.Cog):
             # If they had a custom status before and it is now gone
             elif isinstance(before.activity, discord.CustomActivity):
                 if before.activity.emoji is not None:
-                    statusBefore += str(before.activity.emoji) + " "
+                    status_before += str(before.activity.emoji) + " "
                 if before.activity.name is not None:
-                    statusBefore += before.activity.name
+                    status_before += before.activity.name
 
                 # Store the status
-                self.statuses[str(after.id)] = statusBefore
-                statusBefore = ""
+                self.statuses[str(after.id)] = status_before
+                status_before = ""
 
-            if statusBefore != "" or statusAfter != "":
+            if status_before != "" or status_after != "":
                 Config.save_statuses(self.statuses)
-                embed.description = "**Before:** " + statusBefore + "\n**+After:** " + statusAfter
+                embed.description = "**Before:** " + status_before + "\n**+After:** " + status_after
                 embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
                 embed.set_footer(text="ID: " + str(after.id))
                 embed.timestamp = datetime.utcnow()
@@ -1446,10 +1446,10 @@ class Logging(commands.Cog):
             field_description += "```"
 
             embed.add_field(name="​", value=field_description, inline=True)
-            await self.role_update_helper(after)
+            await self.role_update_helper(after, embed)
             await Config.logging["overwrite_channels"]["server"].send(embed=embed)
 
-    async def role_update_helper(self, role):
+    async def role_update_helper(self, role, embed):
         embed.set_footer(text=str(role.id))
         embed.timestamp = datetime.utcnow()
 
