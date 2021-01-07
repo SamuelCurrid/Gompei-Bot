@@ -23,7 +23,10 @@ class Roles(commands.Cog):
 
         for role in added_roles:
             if role.id == 630589807084699653:
-                await after.send("Welcome to the " + after.guild.name + "!\n\nIf you have any prospective student questions, feel free to shoot them in #help-me. Hopefully we, or someone else in the community, can answer them :smile:.")
+                await after.send("Welcome to the " + after.guild.name + "!\n\nIf you have any prospective student "
+                                                                        "questions, feel free to shoot them in "
+                                                                        "#help-me. Hopefully we, or someone else in "
+                                                                        "the community, can answer them :smile:.")
 
         # If roles edited
         if len(added_roles) + len(removed_roles) > 0:
@@ -97,7 +100,8 @@ class Roles(commands.Cog):
         :param roles: role(s) to add
         """
         if ctx.guild != Config.guild:
-            await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up here: <INSERT LINK>")
+            await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up "
+                           "here: <INSERT LINK>")
         elif len(roles) == 0:
             await ctx.send("You must include a role to add")
         else:
@@ -116,7 +120,8 @@ class Roles(commands.Cog):
         :param roles: role(s) to remove
         """
         if ctx.guild != Config.guild:
-            await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up here: <INSERT LINK>")
+            await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up "
+                           "here: <INSERT LINK>")
         elif len(roles) == 0:
             await ctx.send("You must include a role to remove")
         else:
@@ -134,7 +139,8 @@ class Roles(commands.Cog):
         :param roles: role(s) to add
         """
         if ctx.guild != Config.guild:
-            await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up here: <INSERT LINK>")
+            await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up "
+                           "here: <INSERT LINK>")
         elif len(roles) == 0:
             await ctx.send("You must include a role to add")
         else:
@@ -153,7 +159,8 @@ class Roles(commands.Cog):
         :param roles: role(s) to remove
         """
         if ctx.guild != Config.guild:
-            await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up here: <INSERT LINK>")
+            await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up "
+                           "here: <INSERT LINK>")
         elif len(roles) == 0:
             await ctx.send("You must include a role to remove")
         else:

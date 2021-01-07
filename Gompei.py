@@ -9,6 +9,7 @@ from cogs.DirectMessages import DirectMessages
 from cogs.ReactionRoles import ReactionRoles
 from cogs.Leaderboards import Leaderboards
 from cogs.Information import Information
+from cogs.Triggers import Triggers
 from cogs.Logging import Logging
 from cogs.Voting import Voting
 from cogs.Games import Games
@@ -39,6 +40,7 @@ gompei.add_cog(Administration(gompei))
 gompei.add_cog(DirectMessages(gompei))
 gompei.add_cog(Games(gompei))
 gompei.add_cog(Information(gompei))
+gompei.add_cog(Triggers(gompei))
 gompei.add_cog(Logging(gompei))
 gompei.add_cog(ReactionRoles(gompei))
 gompei.add_cog(Voting(gompei))
@@ -110,7 +112,7 @@ async def kill(ctx):
     def check_author(message):
         return message.author.id == ctx.author.id
 
-    query = await ctx.send("You are about to shut down the bot, are you sure you want to do this? (Y/N)")
+    await ctx.send("You are about to shut down the bot, are you sure you want to do this? (Y/N)")
 
     response = await gompei.wait_for('message', check=check_author)
 
@@ -151,8 +153,12 @@ async def help(ctx, command_name=None):
         else:
             description = command.help[:command.help.find("Usage:") - 1]
             usage = command.help[command.help.find("Usage:") + 7:command.help.find("\n\n")]
-            embed = discord.Embed(title=command.name, colour=discord.Colour.blue())
-            embed.description = description + "\n\n**Usage:** `" + usage + "`\n\n**Aliases:** " + ", ".join(command.aliases)
+            embed = discord.Embed(
+                title=command.name,
+                colour=discord.Colour.blue(),
+                description=description + "\n\n**Usage:** `" + usage + "`\n\n**Aliases:** " + ", ".join(command.aliases)
+            )
+
             embed.set_footer(text="<> = required, () = optional")
             await ctx.send(embed=embed)
 

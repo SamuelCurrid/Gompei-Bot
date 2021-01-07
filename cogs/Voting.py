@@ -145,9 +145,21 @@ class Voting(commands.Cog):
 
                 embed = discord.Embed(title=title, color=0x43b581)
 
-                self.poll_message = await channel.send(message + "```.addOption <option> - Create an option to vote for and cast your vote for it\n.vote <option> - Cast a vote for an option in the poll\n.removeVote <option> - Removes a vote you casted for an option\n.sendPoll - sends the poll embed (does not update live)```", embed=embed)
+                self.poll_message = await channel.send(message + "```.addOption <option> - Create an option to vote "
+                                                                 "for and cast your vote for it\n.vote <option> - "
+                                                                 "Cast a vote for an option in the poll\n.removeVote "
+                                                                 "<option> - Removes a vote you casted for an "
+                                                                 "option\n.sendPoll - sends the poll embed (does not "
+                                                                 "update live)```", embed=embed)
 
-                self.votes = {"type": "open", "close": close_timestamp, "title": title, "channel_id": channel.id, "message_id": self.poll_message.id, "votes": []}
+                self.votes = {
+                    "type": "open",
+                    "close": close_timestamp,
+                    "title": title,
+                    "channel_id": channel.id,
+                    "message_id": self.poll_message.id,
+                    "votes": []
+                }
                 save_json(os.path.join("config", "votes.json"), self.votes)
                 await self.poll_timer(closes)
 
@@ -173,9 +185,17 @@ class Voting(commands.Cog):
                 def check_author(msg):
                     return msg.author.id == ctx.author.id
 
-                self.votes = {"type": "decision", "close": close_timestamp, "title": title, "channel_id": channel.id, "message_id": None, "votes": []}
+                self.votes = {
+                    "type": "decision",
+                    "close": close_timestamp,
+                    "title": title,
+                    "channel_id": channel.id,
+                    "message_id": None,
+                    "votes": []
+                }
 
-                query = await ctx.send("What options would you like to add to this decision poll? (Put each option on a new line)")
+                await ctx.send("What options would you like to add to this decision poll? (Put each option on a new "
+                               "line)")
 
                 response = await self.bot.wait_for('message', check=check_author)
 
@@ -189,7 +209,12 @@ class Voting(commands.Cog):
                     await ctx.send("You need at least one option in your poll")
                     return
 
-                self.poll_message = await channel.send(message + "```.vote <option> - Cast a vote for an option in the poll\n.removeVote <option> - Removes a vote you casted for an option\n.sendPoll - sends the poll embed (does not update live)```", embed=embed)
+                self.poll_message = await channel.send(
+                    message + "```.vote <option> - Cast a vote for an option in the poll"
+                              "\n.removeVote <option> - Removes a vote you casted for an option"
+                              "\n.sendPoll - sends the poll embed (does not update live)```",
+                    embed=embed
+                )
                 self.votes["message_id"] = self.poll_message.id
                 await self.update_poll_message()
                 save_json(os.path.join("config", "votes.json"), self.votes)
@@ -287,7 +312,10 @@ class Voting(commands.Cog):
                                     def check_author(message):
                                         return message.author.id == ctx.author.id
 
-                                    query = await ctx.send("You already voted for an option (" + other_option["name"] + "). Would you like to switch your vote to " + option["name"] + "? (Y/N)")
+                                    await ctx.send(
+                                        "You already voted for an option (" + other_option["name"] +
+                                        "). Would you like to switch your vote to " + option["name"] + "? (Y/N)"
+                                    )
 
                                     response = await self.bot.wait_for('message', check=check_author)
 
@@ -310,7 +338,10 @@ class Voting(commands.Cog):
                         return
 
         if self.votes["type"] == "open":
-            await ctx.send("This option doesn't exist. If you'd like to add it do it with `" + self.settings["prefix"] + "addOption <option>`")
+            await ctx.send(
+                "This option doesn't exist. If you'd like to add it do it with `" + self.settings["prefix"] +
+                "addOption <option>`"
+            )
         else:
             await ctx.send("This option doesn't exist.")
 

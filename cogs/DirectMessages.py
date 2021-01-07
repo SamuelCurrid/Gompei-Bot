@@ -22,7 +22,10 @@ class DirectMessages(commands.Cog):
                 if isinstance(message.channel, discord.channel.DMChannel) and Config.dm_channel is not None:
 
                     message_embed = discord.Embed(description=message.content, timestamp=datetime.utcnow())
-                    message_embed.set_author(name="DM from " + message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
+                    message_embed.set_author(
+                        name="DM from " + message.author.name + "#" + message.author.discriminator,
+                        icon_url=message.author.avatar_url
+                    )
                     message_embed.set_footer(text=message.author.id)
 
                     attachments = []
@@ -51,13 +54,17 @@ class DirectMessages(commands.Cog):
         :param after: message after edit
         """
         if Config.dm_channel is not None:
-            if isinstance(before.channel, discord.channel.DMChannel) and not before.author.bot and Config.dm_channel is not None:
+            if isinstance(before.channel, discord.channel.DMChannel) and \
+                    not before.author.bot and Config.dm_channel is not None:
                 if before.content is after.content:
                     return
 
                 message_embed = discord.Embed(timestamp=datetime.utcnow())
                 message_embed.colour = discord.Colour(0x8899d4)
-                message_embed.set_author(name=after.author.name + "#" + before.author.discriminator, icon_url=after.author.avatar_url)
+                message_embed.set_author(
+                    name=after.author.name + "#" + before.author.discriminator,
+                    icon_url=after.author.avatar_url
+                )
                 message_embed.title = "Message edited by " + after.author.name + "#" + str(after.author.discriminator)
                 message_embed.description = "**Before:** " + before.content + "\n**+After:** " + after.content
                 message_embed.set_footer(text="ID: " + str(before.author.id))
@@ -98,12 +105,18 @@ class DirectMessages(commands.Cog):
         """
         if Config.dm_channel is not None:
             # If a DM message
-            if isinstance(message.channel, discord.channel.DMChannel) and not message.author.bot and Config.dm_channel is not None:
-                message_embed = discord.Embed()
-                message_embed.colour = discord.Colour(0xbe4041)
-                message_embed.set_author(name=message.author.name + "#" + message.author.discriminator, icon_url=message.author.avatar_url)
-                message_embed.title = "Message deleted by " + message.author.name + "#" + str(message.author.discriminator)
-                message_embed.description = message.content
+            if isinstance(message.channel, discord.channel.DMChannel) \
+                    and not message.author.bot \
+                    and Config.dm_channel is not None:
+                message_embed = discord.Embed(
+                    title="Message deleted by " + message.author.name + "#" + str(message.author.discriminator),
+                    colour=discord.Colour(0xbe4041),
+                    description=message.content
+                )
+                message_embed.set_author(
+                    name=message.author.name + "#" + message.author.discriminator,
+                    icon_url=message.author.avatar_url
+                )
 
                 if len(message.attachments) > 0:  # Check for attachments
                     for attachment in message.attachments:
@@ -159,7 +172,10 @@ class DirectMessages(commands.Cog):
         :param channel: channel to set to
         """
         if ctx.guild != Config.guild:
-            await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up here: <INSERT LINK>")
+            await ctx.send(
+                "This bot isn't configured to work in this server! Read instructions on how to set it up here: "
+                "<INSERT LINK>"
+            )
         else:
             if channel.lower() == "clear":
                 Config.clear_dm_channel()

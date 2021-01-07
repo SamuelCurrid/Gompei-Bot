@@ -7,7 +7,10 @@ import random
 import os
 
 
-hangman_embed = discord.Embed(title="Reaction Hangman", color=discord.Color.red()).set_footer(text='Tip: search "regional" in the reaction menu')
+hangman_embed = discord.Embed(
+    title="Reaction Hangman",
+    color=discord.Color.red()
+).set_footer(text='Tip: search "regional" in the reaction menu')
 
 bomb = ":anger:"
 numbers = [
@@ -120,7 +123,10 @@ class Games(commands.Cog):
         diagram = f"``` {head}\n{left_arm}{torso}{right_arm}\n {left_leg}{right_leg}```"
 
         embed.add_field(name="Diagram", value=diagram)
-        embed.add_field(name="Word", value=' '.join("🟦" if c == '*' else chr(ord(c) + 127365) for c in hangman.visible))
+        embed.add_field(
+            name="Word",
+            value=' '.join("🟦" if c == '*' else chr(ord(c) + 127365) for c in hangman.visible)
+        )
 
         # padding
         embed.add_field(name="\u200b", value="\u200b")
@@ -150,7 +156,10 @@ class Games(commands.Cog):
         :param y_str: (optional) y dimension
         """
         if not (x_str.isdecimal() and y_str.isdecimal()):
-            await ctx.send(f"Either {x_str} or {y_str} is not a valid dimension for a minesweeper board. Please use the format `minesweeper x y`.")
+            await ctx.send(
+                f"Either {x_str} or {y_str} is not a valid dimension for a minesweeper board. "
+                f"Please use the format `minesweeper x y`."
+            )
             return
 
         x = int(x_str)
@@ -175,8 +184,14 @@ class Games(commands.Cog):
                     board[y][x] = None
                     break
 
-        embed = discord.Embed(title="Spoiler Minesweeper", color=discord.Color.red()).set_footer(text=f"Find all {bomb_count} bombs!")
-        embed.add_field(name="Minefield", value="\n".join(["".join([numbers[0] if cell is None else f"||{cell}||" for cell in row]) for row in board]))
+        embed = discord.Embed(
+            title="Spoiler Minesweeper",
+            color=discord.Color.red()
+        ).set_footer(text=f"Find all {bomb_count} bombs!")
+        embed.add_field(
+            name="Minefield",
+            value="\n".join(["".join([numbers[0] if cell is None else f"||{cell}||" for cell in row]) for row in board])
+        )
 
         await ctx.send(embed=embed)
 

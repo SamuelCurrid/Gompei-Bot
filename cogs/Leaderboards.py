@@ -18,7 +18,11 @@ default_leaderboard = {
 embeds = {
     "message_leaderboard": discord.Embed(title="Message leaderboard", colour=discord.Colour.red()),
     "reaction_leaderboard": discord.Embed(title="Reaction Usage Leaderboard", colour=discord.Colour.red()),
-    "quote_leaderboard": discord.Embed(title="Quotes Leaderboard", description="Calculated from mentions", colour=discord.Colour.red()),
+    "quote_leaderboard": discord.Embed(
+        title="Quotes Leaderboard",
+        description="Calculated from mentions",
+        colour=discord.Colour.red()
+    ),
     "emoji_leaderboard": discord.Embed(title="Emoji leaderboard", colour=discord.Colour.red())
 }
 
@@ -149,22 +153,22 @@ class Leaderboards(commands.Cog):
 
             # Update reaction leaderboards
             if not payload.member.bot:
-                reaction_leaderboard = self.leaderboards[str(payload.guild_id)]["reaction_leaderboard"]
+                reactions = self.leaderboards[str(payload.guild_id)]["reaction_leaderboard"]
 
                 if payload.emoji.id is not None:
                     for guildEmoji in guild.emojis:
                         if payload.emoji.id == guildEmoji.id:
-                            if ("<:" + str(payload.emoji.name) + ":" + str(payload.emoji.id) + ">") not in reaction_leaderboard:
-                                reaction_leaderboard["<:" + str(payload.emoji.name) + ":" + str(payload.emoji.id) + ">"] = 1
+                            if ("<:" + str(payload.emoji.name) + ":" + str(payload.emoji.id) + ">") not in reactions:
+                                reactions["<:" + str(payload.emoji.name) + ":" + str(payload.emoji.id) + ">"] = 1
                             else:
-                                reaction_leaderboard["<:" + str(payload.emoji.name) + ":" + str(payload.emoji.id) + ">"] += 1
+                                reactions["<:" + str(payload.emoji.name) + ":" + str(payload.emoji.id) + ">"] += 1
 
                             break
                 else:
-                    if payload.emoji.name not in reaction_leaderboard:
-                        reaction_leaderboard[str(payload.emoji.name)] = 1
+                    if payload.emoji.name not in reactions:
+                        reactions[str(payload.emoji.name)] = 1
                     else:
-                        reaction_leaderboard[str(payload.emoji.name)] += 1
+                        reactions[str(payload.emoji.name)] += 1
 
                 if str(payload.emoji.id) in self.leaderboards[str(payload.guild_id)]["emoji_leaderboard"]:
                     self.leaderboards[str(payload.guild_id)]["emoji_leaderboard"][str(payload.emoji.id)] += 1
@@ -353,7 +357,11 @@ class Leaderboards(commands.Cog):
             page += modifier
             scores = await self.score_leaderboard(guild, leaderboard, self.cached_messages[message.id]["type"])
             leaderboard_embed.clear_fields()
-            leaderboard_embed.add_field(name="User", value="".join(scores.split("\t")[(page - 1) * 10:page * 10]), inline=True)
+            leaderboard_embed.add_field(
+                name="User",
+                value="".join(scores.split("\t")[(page - 1) * 10:page * 10]),
+                inline=True
+            )
             await message.edit(embed=leaderboard_embed)
 
             self.cached_messages[message.id]["page"] += modifier
@@ -390,32 +398,32 @@ class Leaderboards(commands.Cog):
         Updates leaderboards from last run
         """
         for guild_id in self.leaderboards:
-            leaderboard = self.leaderboards[guild_id]
-            lastUpdate = leaderboard["last_update"]
+            board = self.leaderboards[guild_id]
+            last_update = board["last_update"]
 
-            if lastUpdate is not None:
-                lastUpdate = dateutil.parser.parse(leaderboard["last_update"])
+            if last_update is not None:
+                last_update = dateutil.parser.parse(board["last_update"])
 
             for channel in self.bot.get_guild(int(guild_id)).text_channels:
 
                 # Catch exceptions for no permissions
                 try:
-                    async for message in channel.history(limit=None, after=lastUpdate):
+                    async for message in channel.history(limit=None, after=last_update):
                         if not message.author.bot:
 
                             # Message leaderboard
-                            if str(message.author.id) not in leaderboard["message_leaderboard"]:
-                                leaderboard["message_leaderboard"][str(message.author.id)] = 1
+                            if str(message.author.id) not in board["message_leaderboard"]:
+                                board["message_leaderboard"][str(message.author.id)] = 1
                             else:
-                                leaderboard["message_leaderboard"][str(message.author.id)] += 1
+                                board["message_leaderboard"][str(message.author.id)] += 1
 
                             # Quote leaderboard
-                            if str(message.channel.id) == leaderboard["quotes_channel"]:
+                            if str(message.channel.id) == board["quotes_channel"]:
                                 for user in message.mentions:
-                                    if str(user.id) not in leaderboard["quote_leaderboard"]:
-                                        leaderboard["quote_leaderboard"][str(user.id)] = 1
+                                    if str(user.id) not in board["quote_leaderboard"]:
+                                        board["quote_leaderboard"][str(user.id)] = 1
                                     else:
-                                        leaderboard["quote_leaderboard"][str(user.id)] += 1
+                                        board["quote_leaderboard"][str(user.id)] += 1
 
                             # Reaction + Emoji leaderboard
                             for reaction in message.reactions:
@@ -423,35 +431,43 @@ class Leaderboards(commands.Cog):
                                     if type(reaction.emoji) is not discord.partial_emoji.PartialEmoji:
                                         for guild_emoji in self.bot.get_guild(int(guild_id)).emojis:
                                             if reaction.emoji.id == guild_emoji.id:
-                                                if ("<:" + str(reaction.emoji.name) + ":" + str(reaction.emoji.id) + ">") not in leaderboard["reaction_leaderboard"]:
-                                                    leaderboard["reaction_leaderboard"]["<:" + str(reaction.emoji.name) + ":" + str(reaction.emoji.id) + ">"] = reaction.count
+                                                name = "<:" + \
+                                                       str(reaction.emoji.name) + ":" + str(reaction.emoji.id) + \
+                                                       ">"
+                                                if name not in board["reaction_leaderboard"]:
+                                                    board["reaction_leaderboard"][
+                                                        "<:" + str(reaction.emoji.name) + ":" +
+                                                        str(reaction.emoji.id) + ">"] = reaction.count
                                                 else:
-                                                    leaderboard["reaction_leaderboard"]["<:" + str(reaction.emoji.name) + ":" + str(reaction.emoji.id) + ">"] += reaction.count
+                                                    board["reaction_leaderboard"][
+                                                        "<:" + str(reaction.emoji.name) + ":" +
+                                                        str(reaction.emoji.id) + ">"] += reaction.count
 
                                                 break
 
-                                    if str(reaction.emoji.id) in leaderboard["emoji_leaderboard"]:
-                                        leaderboard["emoji_leaderboard"][str(reaction.emoji.id)] += reaction.count
+                                    if str(reaction.emoji.id) in board["emoji_leaderboard"]:
+                                        board["emoji_leaderboard"][str(reaction.emoji.id)] += reaction.count
 
                                 else:
-                                    if str(reaction.emoji) not in leaderboard["reaction_leaderboard"]:
-                                        leaderboard["reaction_leaderboard"][str(reaction.emoji)] = reaction.count
+                                    if str(reaction.emoji) not in board["reaction_leaderboard"]:
+                                        board["reaction_leaderboard"][str(reaction.emoji)] = reaction.count
                                     else:
-                                        leaderboard["reaction_leaderboard"][str(reaction.emoji)] += reaction.count
+                                        board["reaction_leaderboard"][str(reaction.emoji)] += reaction.count
 
                             # Emoji check
                             for emoji in self.bot.emojis:
                                 emoji_name = "<:" + emoji.name + ":" + str(emoji.id) + ">"
                                 for index in range(0, message.content.count(emoji_name)):
-                                    leaderboard["emoji_leaderboard"][str(emoji.id)] += 1
+                                    board["emoji_leaderboard"][str(emoji.id)] += 1
 
                 except discord.Forbidden:
                     print("Do not have read message history permissions for: " + str(channel))
 
-            leaderboard["lastUpdate"] = datetime.utcnow().isoformat()
+            board["lastUpdate"] = datetime.utcnow().isoformat()
 
         await save_json(os.path.join("config", "leaderboards.json"), self.leaderboards)
         print("Leaderboards up to date")
+
 
     async def message_leaderboard(self, ctx, board_type):
         """

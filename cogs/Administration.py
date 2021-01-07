@@ -90,11 +90,16 @@ class Administration(commands.Cog):
                 channel = Config.guild.get_channel(payload.channel_id)
 
                 # If the channel is a logging channel
-                if channel == Config.logging["channel"] or channel == Config.dm_channel or channel in Config.logging["overwrite_channels"].values():
+                if channel == Config.logging["channel"] \
+                        or channel == Config.dm_channel \
+                        or channel in Config.logging["overwrite_channels"].values():
                     if str(payload.emoji) in ["❗", "‼️", "⁉️", "❕"]:
                         message = await channel.fetch_message(payload.message_id)
                         if len(message.embeds) > 0:
-                            await Config.logging["staff"].send("Message forwarded by <@" + str(payload.user_id) + "> from <#" + str(channel.id) + ">", embed=message.embeds[0])
+                            await Config.logging["staff"].send(
+                                "Message forwarded by <@" + str(payload.user_id) + "> from <#" + str(channel.id) + ">",
+                                embed=message.embeds[0]
+                            )
 
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
@@ -104,7 +109,7 @@ class Administration(commands.Cog):
         if isinstance(user, str) and (len(user) == 18 or len(user) == 17):
             try:
                 user = int(user)
-                user = await self.user_info(await self.bot.fetch_user(user))
+                user = await self.bot.fetch_user(user)
             except ValueError:
                 await ctx.send("Did not find the user")
                 return
@@ -147,10 +152,16 @@ class Administration(commands.Cog):
 
         if len(msg) is not None:
             message = await channel.send(msg, files=attachments)
-            await ctx.send("Message sent (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(message.channel.id) + "/" + str(message.id) + ">)")
+            await ctx.send(
+                "Message sent (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(message.channel.id) +
+                "/" + str(message.id) + ">)"
+            )
         elif len(attachments) > 0:
             message = await channel.send(files=attachments)
-            await ctx.send("Message sent (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(message.channel.id) + "/" + str(message.id) + ">)")
+            await ctx.send(
+                "Message sent (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(message.channel.id) +
+                "/" + str(message.id) + ">)"
+            )
         else:
             await ctx.send("No content to send.")
 
@@ -171,7 +182,10 @@ class Administration(commands.Cog):
             await ctx.send("Cannot edit a message that is not my own")
         else:
             await bot_msg.edit(content=msg)
-            await ctx.send("Message edited (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(bot_msg.channel.id) + "/" + str(bot_msg.id) + ">)")
+            await ctx.send(
+                "Message edited (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" +
+                str(bot_msg.channel.id) + "/" + str(bot_msg.id) + ">)"
+            )
 
     @commands.command(pass_context=True, aliases=["echoPM", "pmEcho"])
     @commands.check(moderator_perms)
@@ -194,10 +208,16 @@ class Administration(commands.Cog):
         # Send message to user via DM
         if len(msg) > 0:
             message = await user.send(msg, files=attachments)
-            await ctx.send("Message sent (<https://discordapp.com/channels/@me/" + str(message.channel.id) + "/" + str(message.id) + ">)")
+            await ctx.send(
+                "Message sent (<https://discordapp.com/channels/@me/" + str(message.channel.id) + "/" +
+                str(message.id) + ">)"
+            )
         elif len(attachments) > 0:
             message = await user.send(files=attachments)
-            await ctx.send("Message sent (<https://discordapp.com/channels/@me/" + str(message.channel.id) + "/" + str(message.id) + ">)")
+            await ctx.send(
+                "Message sent (<https://discordapp.com/channels/@me/" + str(message.channel.id) + "/" +
+                str(message.id) + ">)"
+            )
         else:
             await ctx.send("No content to send")
 
@@ -231,7 +251,10 @@ class Administration(commands.Cog):
                 await ctx.send("Cannot edit a message that is not my own")
             else:
                 await message.edit(content=msg)
-                await ctx.send("Message edited (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(channel.id) + "/" + str(message_id) + ">)")
+                await ctx.send(
+                    "Message edited (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(channel.id) +
+                    "/" + str(message_id) + ">)"
+                )
 
     @commands.command(pass_context=True, aliases=["echoReact", "react"])
     @commands.check(moderator_perms)
@@ -283,7 +306,9 @@ class Administration(commands.Cog):
     @commands.command(pass_context=True, aliases=["selectivePurge", "spurge"])
     @commands.check(moderator_perms)
     @commands.guild_only()
-    async def selective_purge(self, ctx, target: typing.Union[discord.User, discord.TextChannel], user: typing.Optional[discord.User], *, number: int = 0):
+    async def selective_purge(self, ctx,
+                              target: typing.Union[discord.User, discord.TextChannel],
+                              user: typing.Optional[discord.User], *, number: int = 0):
         """
         Purges messages from a specific user in a channel
         Usage: .spurge (channel) <user> <number>
@@ -351,7 +376,11 @@ class Administration(commands.Cog):
                 return
 
             offset = datetime.utcnow() - datetime.now()
-            messages = await channel.history(limit=None, after=after_date + offset, before=before_date + offset).flatten()
+            messages = await channel.history(
+                limit=None,
+                after=after_date + offset,
+                before=before_date + offset
+            ).flatten()
 
         if len(messages) == 0:
             await ctx.send("There are no messages to purge in this time frame")
@@ -363,7 +392,8 @@ class Administration(commands.Cog):
         else:
             response += " between " + str(after_date) + " and " + str(before_date) + ".\n"
 
-        response += "The purge will start at <" + messages[0].jump_url + "> and end at <" + messages[-1].jump_url + ">.\n\nAre you sure you want to proceed? (Y/N)"
+        response += "The purge will start at <" + messages[0].jump_url + "> and end at <" + messages[-1].jump_url + \
+                    ">.\n\nAre you sure you want to proceed? (Y/N)"
 
         def check_author(message):
             return message.author.id == ctx.author.id
@@ -401,7 +431,11 @@ class Administration(commands.Cog):
                 await ctx.send("End message is not in the same channel as the start message")
                 return
 
-            messages = await start_message.channel.history(limit=None, after=start_message.created_at, before=end_message.created_at).flatten()
+            messages = await start_message.channel.history(
+                limit=None,
+                after=start_message.created_at,
+                before=end_message.created_at
+            ).flatten()
             messages.append(end_message)
 
         messages.insert(0, start_message)
@@ -412,7 +446,8 @@ class Administration(commands.Cog):
 
         response = "You are about to purge " + str(len(messages)) + " message(s) from " + start_message.channel.name
 
-        response += "\nThe purge will start at <" + messages[0].jump_url + "> and end at <" + messages[-1].jump_url + ">.\n\nAre you sure you want to proceed? (Y/N)"
+        response += "\nThe purge will start at <" + messages[0].jump_url + "> and end at <" + messages[-1].jump_url + \
+                    ">.\n\nAre you sure you want to proceed? (Y/N)"
 
         def check_author(message):
             return message.author.id == ctx.author.id
@@ -472,9 +507,16 @@ class Administration(commands.Cog):
 
         mute_time = time_delta_string(datetime.utcnow(), datetime.utcnow() + delta)
 
-        mute_embed = discord.Embed(title="Member muted", color=0xbe4041)
+        mute_embed = discord.Embed(
+            title="Member muted",
+            color=0xbe4041,
+            description=(
+                    "**Muted:** <@" + str(member.id) + ">\n**Time:** " + mute_time + "\n**__Reason__**\n> " + reason +
+                    "\n\n**Muter:** <@" + str(ctx.author.id) + ">"
+            )
+        )
+
         mute_embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
-        mute_embed.description = "**Muted:** <@" + str(member.id) + ">\n**Time:** " + mute_time + "\n**__Reason__**\n> " + reason + "\n\n**Muter:** <@" + str(ctx.author.id) + ">"
         mute_embed.set_footer(text="ID: " + str(member.id))
         mute_embed.timestamp = datetime.utcnow()
 
@@ -482,7 +524,10 @@ class Administration(commands.Cog):
         await ctx.send("**Muted** user **" + username + "** for **" + mute_time + "** for: **" + reason + "**")
         if Config.logging["overwrite_channels"]["mod"] is not None:
             await Config.logging["overwrite_channels"]["mod"].send(embed=mute_embed)
-        await member.send("**You were muted in the " + ctx.guild.name + " for " + mute_time + ". Reason:**\n> " + reason + "\n\nYou can respond here to contact staff.")
+        await member.send(
+            "**You were muted in the " + ctx.guild.name + " for " + mute_time + ". Reason:**\n> " +
+            reason + "\n\nYou can respond here to contact staff."
+        )
 
         await self.mute_helper(member, seconds, muted_role)
 
@@ -537,7 +582,10 @@ class Administration(commands.Cog):
 
         save_json(os.path.join("config", "warns.json"), self.warns)
 
-        await ctx.send("Warning sent to " + member.display_name + " (" + str(member.id) + "), this is their " + make_ordinal(len(self.warns[str(member.id)])) + " warning")
+        await ctx.send(
+            "Warning sent to " + member.display_name + " (" + str(member.id) + "), this is their " +
+            make_ordinal(len(self.warns[str(member.id)])) + " warning"
+        )
 
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
@@ -602,9 +650,15 @@ class Administration(commands.Cog):
         save_json(os.path.join("config", "warns.json"), self.warns)
 
         if isinstance(user, discord.Member):
-            await ctx.send("Warning added for " + user.display_name + " (" + str(user.id) + "), this is their " + make_ordinal(len(self.warns[str(user.id)])) + " warning")
+            await ctx.send(
+                "Warning added for " + user.display_name + " (" + str(user.id) + "), this is their " +
+                make_ordinal(len(self.warns[str(user.id)])) + " warning"
+            )
         else:
-            await ctx.send("Warning added for " + user.name + " (" + str(user.id) + "), this is their " + make_ordinal(len(self.warns[str(user.id)])) + " warning")
+            await ctx.send(
+                "Warning added for " + user.name + " (" + str(user.id) + "), this is their " +
+                make_ordinal(len(self.warns[str(user.id)])) + " warning"
+            )
 
     @commands.command(pass_context=True, aliases=["clearWarn"])
     @commands.check(moderator_perms)
@@ -710,9 +764,16 @@ class Administration(commands.Cog):
 
         Config.add_jail(member, datetime.now() + timedelta(seconds=seconds), roles)
 
-        jail_embed = discord.Embed(title="Member jailed", color=0xbe4041)
+        jail_embed = discord.Embed(
+            title="Member jailed",
+            color=0xbe4041,
+            description=(
+                    "**Muted:** <@" + str(member.id) + ">\n**Time:** " + jail_time + "\n**__Reason__**\n> " + reason +
+                    "\n\n**Muter:** <@" + str(ctx.author.id) + ">"
+            )
+        )
+
         jail_embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
-        jail_embed.description = "**Muted:** <@" + str(member.id) + ">\n**Time:** " + jail_time + "\n**__Reason__**\n> " + reason + "\n\n**Muter:** <@" + str(ctx.author.id) + ">"
         jail_embed.set_footer(text="ID: " + str(member.id))
         jail_embed.timestamp = datetime.utcnow()
 
@@ -721,11 +782,16 @@ class Administration(commands.Cog):
         else:
             await member.edit(roles=[Config.nitro_role])
 
-        await member.send("You have been locked out of the server for " + jail_time + ". Reason:\n> " + reason + "\n\nYou can respond here to contact staff.")
+        await member.send(
+            "You have been locked out of the server for " + jail_time + ". Reason:\n> " + reason +
+            "\n\nYou can respond here to contact staff."
+        )
 
         if Config.logging["overwrite_channels"]["mod"] is not None:
             await Config.logging["overwrite_channels"]["mod"].send(embed=jail_embed)
-        await ctx.send("**Jailed** user **" + member.display_name + "** for **" + jail_time + "** for: **" + reason + "**")
+        await ctx.send(
+            "**Jailed** user **" + member.display_name + "** for **" + jail_time + "** for: **" + reason + "**"
+        )
         await self.jail_helper(member, seconds, roles)
 
     async def jail_helper(self, member, seconds, roles):
