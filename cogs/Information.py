@@ -10,12 +10,22 @@ import typing
 class Information(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.embed = discord.Embed(color=0x8899d4)
 
     @commands.command(pass_context=True, aliases=["i"])
     @commands.check(command_channels)
     @commands.guild_only()
-    async def info(self, ctx, *, target: typing.Union[discord.TextChannel, discord.VoiceChannel, discord.Role, discord.Emoji, discord.PartialEmoji, discord.Member, discord.User, str]):
+    async def info(self, ctx, *,
+                   target: typing.Union[
+                       discord.TextChannel,
+                       discord.VoiceChannel,
+                       discord.Role,
+                       discord.Emoji,
+                       discord.PartialEmoji,
+                       discord.Member,
+                       discord.User,
+                       str
+                   ]
+                   ):
         """
         Info command that gives information for various discord items
         Usage: .info <item>
@@ -34,14 +44,12 @@ class Information(commands.Cog):
             str: self.keywords
         }
 
-        self.embed = discord.Embed()
-
         if isinstance(target, str):
-            await switcher[type(target)](ctx, target)
+            embed = await switcher[type(target)](ctx, target)
         else:
-            await switcher[type(target)](target)
+            embed = await switcher[type(target)](target)
 
-        await ctx.send(embed=self.embed)
+        await ctx.send(embed=embed)
 
     async def channel_info(self, channel: typing.Union[discord.TextChannel, discord.VoiceChannel]):
         """
@@ -49,24 +57,32 @@ class Information(commands.Cog):
 
         :param channel: Channel to gather info for
         """
-        self.embed.description = "**Name:** " + channel.name
+        f_description = "**Name:** " + channel.name
 
         # If a text channel
         if isinstance(channel, discord.TextChannel):
-            self.embed.title = "Text Channel Info"
-            self.embed.description += "\n**Mention:** " + channel.mention
+            title = "Text Channel Info"
+            f_description += "\n**Mention:** " + channel.mention
             if channel.topic is not None:
-                self.embed.description += "\n**Description:** " + channel.topic
+                f_description += "\n**Description:** " + channel.topic
         # If a voice channel
         else:
-            self.embed.title = "Voice Channel Info"
-            self.embed.description += "\n**Bitrate:** " + str(channel.bitrate)
-            self.embed.description += "\n**User Limit:** " + str(channel.user_limit)
+            title = "Voice Channel Info"
+            f_description += "\n**Bitrate:** " + str(channel.bitrate) + \
+                             "\n**User Limit:** " + str(channel.user_limit)
         if channel.category is not None:
-            self.embed.description += "\n**Category:** " + str(channel.category.name)
+            f_description += "\n**Category:** " + str(channel.category.name)
 
-        self.embed.description += "\n**Position:** " + str(channel.position)
-        self.embed.description += "\n**Created:** " + channel.created_at.strftime("%y-%m-%d %H:%M:%S") + " UTC\n(" + time_delta_string(channel.created_at, datetime.utcnow()) + " ago)" + "\n\n**__Overwrites__\n**"
+        f_description += "\n**Position:** " + str(channel.position) + \
+                         "\n**Created:** " + channel.created_at.strftime("%m-%d-%y %H:%M:%S") + \
+                         " UTC\n(" + time_delta_string(channel.created_at, datetime.utcnow()) + " ago)" + \
+                         "\n\n**__Overwrites__\n**"
+
+        embed = discord.Embed(
+            title=title,
+            colour=discord.Colour(0x43b581),
+            description=f_description
+        )
 
         for target in channel.overwrites:
             permissions = []
@@ -82,18 +98,20 @@ class Information(commands.Cog):
 
             max_length = len(max(permissions, key=len))
 
-            field_description = "```"
+            f_description = "```"
             for i in range(0, len(permissions)):
-                field_description += permissions[i] + (" " * (max_length - len(permissions[i]))) + " " + values[i] + "\n"
-            field_description += "```"
+                f_description += permissions[i] + (" " * (max_length - len(permissions[i]))) + " " + values[i] + "\n"
+            f_description += "```"
 
-            self.embed.add_field(name=target.name, value=field_description, inline=True)
+            embed.add_field(name=target.name, value=f_description, inline=True)
 
-        if len(self.embed.description) > 2048:
-            self.embed.description = self.embed.description[0:2047]
+        if len(embed.description) > 2048:
+            embed.description = embed.description[0:2047]
 
-        self.embed.set_footer(text=str(channel.id))
-        self.embed.timestamp = datetime.utcnow()
+        embed.set_footer(text=str(channel.id))
+        embed.timestamp = datetime.utcnow()
+
+        return embed
 
     async def role_info(self, role: discord.Role):
         """
@@ -101,16 +119,21 @@ class Information(commands.Cog):
 
         :param role: Role to gather info for
         """
-        self.embed.title = "Role Info"
-
-        self.embed.description = "**Name:** " + role.name
-        self.embed.description += "\n**Mention:** " + role.mention
-        self.embed.description += "\n**Members:** " + str(len(role.members))
-        self.embed.description += "\n**(R,G,B):** " + str(role.color.to_rgb())
-        self.embed.description += "\n**Hoisted:** " + str(role.hoist)
-        self.embed.description += "\n**Mentionable:** " + str(role.mentionable)
-        self.embed.description += "\n**Position:** " + str(role.position)
-        self.embed.description += "\n**Created:** " + role.created_at.strftime("%y-%m-%d %H:%M:%S") + " UTC\n(" + time_delta_string(role.created_at, datetime.utcnow()) + " ago)"
+        embed = discord.Embed(
+            title="Role Info",
+            colour=role.colour,
+            description=(
+                    "**Name:** " + role.name +
+                    "\n**Mention:** " + role.mention +
+                    "\n**Members:** " + str(len(role.members)) +
+                    "\n**(R,G,B):** " + str(role.color.to_rgb()) +
+                    "\n**Hoisted:** " + str(role.hoist) +
+                    "\n**Mentionable:** " + str(role.mentionable) +
+                    "\n**Position:** " + str(role.position) +
+                    "\n**Created:** " + role.created_at.strftime("%m-%d-%y %H:%M:%S") + " UTC" +
+                    "\n(" + time_delta_string(role.created_at, datetime.utcnow()) + " ago)"
+            )
+        )
 
         permissions = []
         values = []
@@ -121,20 +144,24 @@ class Information(commands.Cog):
                     permissions.append(permission[0].replace("_", " ").title())
                     values.append("✔")
 
-        max_length = len(max(permissions, key=len))
+        if len(permissions) > 0:
+            max_length = len(max(permissions, key=len))
 
-        permission_values = "```"
-        for i in range(0, len(permissions)):
-            permission_values += permissions[i] + (" " * (max_length - len(permissions[i]))) + " " + values[i] + "\n"
-        permission_values += "```"
+            permission_values = "```"
+            for i in range(0, len(permissions)):
+                permission_values += permissions[i] + (" " * (max_length - len(permissions[i]))) + " " + values[
+                    i] + "\n"
+            permission_values += "```"
 
-        self.embed.add_field(name="Permissions", value=permission_values, inline=True)
+            embed.add_field(name="Permissions", value=permission_values, inline=True)
 
-        if len(self.embed.description) > 2048:
-            self.embed.description = self.embed.description[0:2047]
+        if len(embed.description) > 2048:
+            embed.description = embed.description[0:2047]
 
-        self.embed.set_footer(text=str(role.id))
-        self.embed.timestamp = datetime.utcnow()
+        embed.set_footer(text=str(role.id))
+        embed.timestamp = datetime.utcnow()
+
+        return embed
 
     async def user_info(self, user: [discord.Member, discord.User]):
         """
@@ -142,13 +169,16 @@ class Information(commands.Cog):
 
         :param user: User to gather info for
         """
-        self.embed.set_author(name=user.name + "#" + user.discriminator, icon_url=user.avatar_url)
-        self.embed.description = "[Avatar](" + str(user.avatar_url) + ")"
-        self.embed.description += "\n**Mention:** <@" + str(user.id) + ">"
+        embed = discord.Embed(
+            description=(
+                    "[Avatar](" + str(user.avatar_url) + ")" +
+                    "\n**Mention:** <@" + str(user.id) + ">"
+            )
+        )
 
         if isinstance(user, discord.Member):
-            self.embed.title = "Member info"
-            self.embed.description += "\n**Display Name:** " + user.display_name
+            embed.title = "Member info"
+            embed.description += "\n**Display Name:** " + user.display_name
 
             role_value = ""
             for role in user.roles[1:]:
@@ -156,18 +186,45 @@ class Information(commands.Cog):
 
             if role_value == "":
                 role_value = "None"
-            self.embed.add_field(name="Roles", value=role_value, inline=True)
-            self.embed.add_field(name="Created at", value=user.created_at.strftime("%y-%m-%d %H:%M:%S") + " UTC\n(" + time_delta_string(user.created_at, datetime.utcnow()) + " ago)", inline=True)
-            self.embed.add_field(name="Joined at", value=user.joined_at.strftime("%y-%m-%d %H:%M:%S") + " UTC\n(" + time_delta_string(user.joined_at, datetime.utcnow()) + " ago)", inline=True)
+
+            embed.colour = user.colour
+            embed.add_field(name="Roles", value=role_value, inline=True)
+            embed.add_field(
+                name="Created at",
+                value=(
+                        user.created_at.strftime("%m-%d-%y %H:%M:%S") + " UTC" +
+                        "\n(" + time_delta_string(user.created_at, datetime.utcnow()) + " ago)"
+                ),
+                inline=True
+            )
+            embed.add_field(
+                name="Joined at",
+                value=(
+                        user.joined_at.strftime("%m-%d-%y %H:%M:%S") + " UTC" +
+                        "\n(" + time_delta_string(user.joined_at, datetime.utcnow()) + " ago)"
+                ),
+                inline=True
+            )
         else:
-            self.embed.title = "User info"
-            self.embed.add_field(name="Created at", value=user.created_at.strftime("%y-%m-%d %H:%M:%S") + " UTC\n(" + time_delta_string(user.created_at, datetime.utcnow()) + " ago)", inline=True)
+            embed.title = "User info"
+            embed.colour = discord.Colour(0x43b581)
+            embed.add_field(
+                name="Created at",
+                value=(
+                        user.created_at.strftime("%m-%d-%y %H:%M:%S") + " UTC" +
+                        "\n(" + time_delta_string(user.created_at, datetime.utcnow()) + " ago)"
+                ),
+                inline=True
+            )
 
-        if len(self.embed.description) > 2048:
-            self.embed.description = self.embed.description[0:2047]
+        if len(embed.description) > 2048:
+            embed.description = embed.description[0:2047]
 
-        self.embed.set_footer(text=str(user.id))
-        self.embed.timestamp = datetime.utcnow()
+        embed.set_author(name=user.name + "#" + user.discriminator, icon_url=user.avatar_url)
+        embed.set_footer(text=str(user.id))
+        embed.timestamp = datetime.utcnow()
+
+        return embed
 
     async def emoji_info(self, emoji: typing.Union[discord.Emoji, discord.PartialEmoji]):
         """
@@ -175,20 +232,29 @@ class Information(commands.Cog):
 
         :param emoji: Emoji to gather info for
         """
-        self.embed.title = "Emoji Info"
-        self.embed.description = "**[Image](" + str(emoji.url) + ")**"
-        self.embed.description += "\n**Name:** " + emoji.name
-        if emoji.animated:
-            self.embed.description += "\n**Format:** \<a:" + emoji.name + ":" + str(emoji.id) + ">"
-        else:
-            self.embed.description += "\n**Format:** \<:" + emoji.name + ":" + str(emoji.id) + ">"
-        self.embed.description += "\n**Animated:** " + str(emoji.animated)
-        if isinstance(emoji, discord.Emoji):
-            self.embed.description += "\n**Available:** " + str(emoji.available)
-            self.embed.description += "\n**Created at:** " + emoji.created_at.strftime("%y-%m-%d %H:%M:%S") + " UTC\n(" + time_delta_string(emoji.created_at, datetime.utcnow()) + " ago)"
+        embed = discord.Embed(
+            title="Emoji Info",
+            colour=discord.Colour(0x43b581),
+            description=(
+                    "**[Image](" + str(emoji.url) + ")**" +
+                    "\n**Name:** " + emoji.name
+            )
+        )
 
-        self.embed.set_footer(text=str(emoji.id))
-        self.embed.timestamp = datetime.utcnow()
+        if emoji.animated:
+            embed.description += "\n**Format:** \<a:" + emoji.name + ":" + str(emoji.id) + ">"
+        else:
+            embed.description += "\n**Format:** \<:" + emoji.name + ":" + str(emoji.id) + ">"
+        embed.description += "\n**Animated:** " + str(emoji.animated)
+        if isinstance(emoji, discord.Emoji):
+            embed.description += "\n**Available:** " + str(emoji.available)
+            embed.description += "\n**Created at:** " + emoji.created_at.strftime("%m-%d-%y %H:%M:%S") + " UTC" + \
+                                 "\n(" + time_delta_string(emoji.created_at, datetime.utcnow()) + " ago)"
+
+        embed.set_footer(text=str(emoji.id))
+        embed.timestamp = datetime.utcnow()
+
+        return embed
 
     async def guild_info(self, guild: discord.Guild):
         """
@@ -196,22 +262,24 @@ class Information(commands.Cog):
 
         :param guild: Guild to gather info for
         """
-        self.embed.title = guild.name
-        self.embed.set_thumbnail(url=guild.icon_url)
-
         if guild.mfa_level == 1:
-            self.embed.description = "**2FA:** Required"
+            description = "**2FA:** Required"
         else:
-            self.embed.description = "**2FA:** Not Required"
+            description = "**2FA:** Not Required"
 
-        self.embed.description += "\n**Default Notifications:** " + str(guild.default_notifications)[18:].replace("_", " ").title()
-        if guild.description is not None:
-            self.embed.description += "**Description:** " + guild.description
-
-        self.embed.description += "\n**Explicit Content Filter:** " + str(guild.explicit_content_filter).replace("_", " ").title()
-        self.embed.description += "\n**Owner:** " + "<@" + str(guild.owner_id) + ">"
-        self.embed.description += "\n**Region:** " + str(guild.region).replace("-", " ").title()
-        self.embed.description += "\n**Verification Level:** " + str(guild.verification_level).title()
+        embed = discord.Embed(
+            title=guild.name,
+            colour=discord.Colour(0x43b581),
+            description=(
+                    description +
+                    "\n**Default Notifications: ** " + str(guild.default_notifications)[18:].replace("_", " ").title() +
+                    "\n**Description: ** " + str(guild.description) +
+                    "\n**Explicit Content Filter:** " + str(guild.explicit_content_filter).replace("_", " ").title() +
+                    "\n**Owner:** " + "<@" + str(guild.owner_id) + ">" +
+                    "\n**Region:** " + str(guild.region).replace("-", " ").title() +
+                    "\n**Verification Level:** " + str(guild.verification_level).title()
+            )
+        )
 
         resource_values = "[Icon](" + str(guild.icon_url) + ")"
         if guild.banner is not None:
@@ -236,23 +304,140 @@ class Information(commands.Cog):
         else:
             boosts = "Level 0\n" + str(guild.premium_subscription_count) + "/2 boosts"
 
-        humans = 0
-        bots = 0
+        humans = bots = 0
+        online = idle = dnd = offline = 0
+        animated = static = 0
+        playing = streaming = listening = watching = competing = 0
+
         for member in guild.members:
+            # Counting humans vs. bots
             if member.bot:
                 bots += 1
             else:
                 humans += 1
 
-        self.embed.add_field(name="Resources", value=resource_values, inline=True)
-        self.embed.add_field(name="Features", value=feature_values, inline=True)
-        self.embed.add_field(name="Boosts", value=boosts, inline=True)
-        self.embed.add_field(name="Members", value="Total: " + str(guild.member_count) + "\nHumans: " + str(humans) + "\nBots: " + str(bots), inline=True)
-        self.embed.add_field(name="Channels", value="Text Channels: " + str(len(guild.text_channels)) + "\nVoice Channels: " + str(len(guild.voice_channels)) + "\nCategories: " + str(len(guild.categories)), inline=True)
-        self.embed.add_field(name="Roles", value=str(len(guild.roles)) + " roles", inline=True)
+            # Counting statuses
+            if member.status is discord.Status.online:
+                online += 1
+            elif member.status is discord.Status.idle:
+                idle += 1
+            elif member.status is discord.Status.dnd:
+                dnd += 1
+            elif member.status is discord.Status.offline:
+                offline += 1
 
-        self.embed.set_footer(text=str(guild.id))
-        self.embed.timestamp = datetime.utcnow()
+            play = stream = listen = watch = compete = False
+
+            # Counting activities
+            for activity in member.activities:
+                if isinstance(activity, discord.activity.Spotify):
+                    if not listen:
+                        listen = True
+                        listening += 1
+                elif isinstance(activity, discord.activity.Game):
+                    if not play:
+                        play = True
+                        playing += 1
+                elif isinstance(activity, discord.activity.Streaming):
+                    if not stream:
+                        stream = True
+                        streaming += 1
+                elif isinstance(activity, discord.activity.Activity):
+                    if activity.type is discord.ActivityType.playing:
+                        if not play:
+                            play = True
+                            playing += 1
+                    elif activity.type is discord.ActivityType.streaming:
+                        if not stream:
+                            stream = True
+                            streaming += 1
+                    elif activity.type is discord.ActivityType.listening:
+                        if not listen:
+                            listen = True
+                            listening += 1
+                    elif activity.type is discord.ActivityType.watching:
+                        if not watch:
+                            watch = True
+                            watching += 1
+                    elif activity.type is discord.ActivityType.competing:
+                        if not compete:
+                            compete = True
+                            competing += 1
+
+        # Counting emojis
+        for emoji in guild.emojis:
+            if emoji.animated:
+                animated += 1
+            else:
+                static += 1
+
+        embed.add_field(name="Resources", value=resource_values, inline=True)
+        embed.add_field(name="Features", value=feature_values, inline=True)
+        embed.add_field(name="Boosts", value=boosts, inline=True)
+        embed.add_field(
+            name="Members",
+            value=(
+                    "Total: " + str(guild.member_count) +
+                    "\nHumans: " + str(humans) +
+                    "\nBots: " + str(bots)
+            ),
+            inline=True
+        )
+        embed.add_field(
+            name="Statuses",
+            value=(
+                    ":green_circle: " + str(online) +
+                    "\n:yellow_circle: " + str(idle) +
+                    "\n:red_circle: " + str(dnd) +
+                    "\n:white_circle: " + str(offline)
+            ),
+            inline=True
+        )
+        embed.add_field(
+            name="Activities",
+            value=(
+                    "\nCompeting: " + str(competing) +
+                    "\nListening: " + str(listening) +
+                    "\nPlaying: " + str(playing) +
+                    "\nStreaming: " + str(streaming) +
+                    "\nWatching: " + str(watching)
+            ),
+            inline=True
+        )
+        embed.add_field(
+            name="Channels",
+            value=(
+                    "Text Channels: " + str(len(guild.text_channels)) +
+                    "\nVoice Channels: " + str(len(guild.voice_channels)) +
+                    "\nCategories: " + str(len(guild.categories))
+            ),
+            inline=True
+        )
+        embed.add_field(
+            name="Emojis",
+            value=(
+                    "Total: " + str(len(guild.emojis)) +
+                    "\nAnimated: " + str(animated) + " / " + str(guild.emoji_limit) +
+                    "\nStatic: " + str(static) + " / " + str(guild.emoji_limit)
+            ),
+            inline=True
+        )
+        embed.add_field(name="Roles", value=str(len(guild.roles)) + " roles", inline=True)
+        embed.add_field(
+            name="Created",
+            value=(
+                    guild.created_at.strftime("%m-%d-%y %H:%M:%S") + " UTC" +
+                    "\n(" + time_delta_string(guild.created_at, datetime.utcnow()) + " ago)"
+            ),
+            inline=True
+        )
+        # Playing, Listening, Watching, Streaming ACTIVITIES
+
+        embed.set_thumbnail(url=guild.icon_url)
+        embed.set_footer(text=str(guild.id))
+        embed.timestamp = datetime.utcnow()
+
+        return embed
 
     async def guild_role_info(self, guild: discord.Guild):
         """
@@ -260,13 +445,20 @@ class Information(commands.Cog):
 
         :param guild: Guild to gather role info from
         """
-        self.embed.title = guild.name + " Roles"
-        self.embed.description = ""
+        description = ""
         for role in guild.roles[1:]:
-            self.embed.description = "\n" + role.mention + self.embed.description
+            description = "\n" + role.mention + description
 
-        self.embed.set_footer(text=str(guild.id))
-        self.embed.timestamp = datetime.utcnow()
+        embed = discord.Embed(
+            title=guild.name + " Roles",
+            colour=discord.Colour(0x43b581),
+            description=description
+        )
+
+        embed.set_footer(text=str(guild.id))
+        embed.timestamp = datetime.utcnow()
+
+        return embed
 
     async def keywords(self, ctx, keyword: str):
         """
@@ -278,26 +470,36 @@ class Information(commands.Cog):
         keyword = keyword.lower()
 
         if keyword == "server" or keyword == ctx.guild.name.lower():
-            await self.guild_info(ctx.guild)
+            embed = await self.guild_info(ctx.guild)
         elif keyword == "roles" or keyword == "role" or keyword == "r":
-            await self.guild_role_info(ctx.guild)
+            embed = await self.guild_role_info(ctx.guild)
         elif len(keyword) == 18 or len(keyword) == 17:
             try:
                 user_id = int(keyword)
-                await self.user_info(await self.bot.fetch_user(user_id))
+                embed = self.user_info(await self.bot.fetch_user(user_id))
             except ValueError:
-                self.embed.title = "Unrecognized keyword"
-                self.embed.description = "Make sure you have the correct name/ID"
-                self.embed.timestamp = datetime.utcnow()
+                embed = discord.Embed(
+                    title="Unrecognized keyword",
+                    colour=discord.Colour(0xbe4041),
+                    descrpition="Make sure you have the correct name/ID"
+                )
             except discord.NotFound:
-                self.embed.title = "User not found"
-                self.embed.description = "Make sure you have the correct ID"
-                self.embed.timestamp = datetime.utcnow()
+                embed = discord.Embed(
+                    title="User not found",
+                    colour=discord.Colour(0xbe4041),
+                    descrpition="Make sure you have the correct ID"
+                )
             except discord.HTTPException:
-                self.embed.title = "HTTP Error"
-                self.embed.description = "Bot could not connect with the gateway"
-                self.embed.timestamp = datetime.utcnow()
+                embed = discord.Embed(
+                    title="HTTP Error",
+                    colour=discord.Colour(0xbe4041),
+                    descrpition="Bot could not connect with the gateway"
+                )
         else:
-            self.embed.title = "Unrecognized keyword"
-            self.embed.description = "Make sure you have the correct name/ID"
-            self.embed.timestamp = datetime.utcnow()
+            embed = discord.Embed(
+                title="Unrecognized keyword",
+                colour=discord.Colour(0xbe4041),
+                descrpition="Make sure you have the correct name/ID"
+            )
+
+        return embed
