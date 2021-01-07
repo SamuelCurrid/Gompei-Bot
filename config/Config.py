@@ -146,7 +146,10 @@ async def update_guild_settings():
             del user_id
             continue
 
-        administration["mutes"][member] = datetime.strptime(raw_settings["administration"]["mutes"][user_id]["date"], "%Y-%m-%d %H:%M:%S")
+        administration["mutes"][member] = datetime.strptime(
+            raw_settings["administration"]["mutes"][user_id]["date"],
+            "%Y-%m-%d %H:%M:%S"
+        )
 
     for user_id in raw_settings["administration"]["jails"]:
         member = guild.get_member(user_id)
@@ -474,7 +477,10 @@ def add_jail(member: discord.Member, date: datetime, roles):
         role_ids.append(role.id)
 
     administration["jails"][member] = {"date": date, "roles": roles}
-    raw_settings["administration"]["jails"][str(member.id)] = {"date": date.strftime("%Y-%m-%d %H:%M:%S"), "roles": role_ids}
+    raw_settings["administration"]["jails"][str(member.id)] = {
+        "date": date.strftime("%Y-%m-%d %H:%M:%S"),
+        "roles": role_ids
+    }
     save_json(os.path.join("config", "settings.json"), raw_settings)
 
 
