@@ -872,3 +872,59 @@ class Administration(commands.Cog):
             return
 
         await ctx.send("Successfully updated the guild verification level to: **" + key.title() + "**")
+
+    @commands.command(pass_context=True, name="rolePM", aliases=["pmRole"])
+    @commands.check(administrator_perms)
+    @commands.guild_only()
+    async def role_pm(self, ctx, role: discord.Role, *, msg):
+        """
+        Sends a private message to all users with given role
+        Usage: .pmRole <role> <message>
+
+        :param ctx: Context object
+        :param role: Role to
+        :param msg: Message to send
+        """
+        # Read attachments and message
+        attachments = []
+        if len(ctx.message.attachments) > 0:
+            for i in ctx.message.attachments:
+                attachments.append(await i.to_file())
+
+        members = role.members
+
+        def check_author(message):
+            return message.author.id == ctx.author.id
+
+        # Send message to user via DM
+        if len(msg) > 0:
+            await ctx.send(
+                "You are about to send this message to " +
+                str(len(role.members)) + "users. Are you sure you want to do this? (Y/N)"
+            )
+
+            response = await self.bot.wait_for('message', check=check_author)
+
+            if response.content.lower() == "y" or response.content.lower() == "yes":
+                for member in members:
+                    await member.send(msg, files=attachments)
+                await ctx.send("Message(s) sent to " + str(len(role.members)) + " members")
+            else:
+                await ctx.send("Cancelled role PM")
+
+        elif len(attachments) > 0:
+            await ctx.send(
+                "You are about to send this message to " +
+                str(len(role.members)) + "users. Are you sure you want to do this? (Y/N)"
+            )
+
+            response = await self.bot.wait_for('message', check=check_author)
+
+            if response.content.lower() == "y" or response.content.lower() == "yes":
+                for member in members:
+                    await member.send(files=attachments)
+                await ctx.send("Message(s) sent to " + str(len(role.members)) + " members")
+            else:
+                await ctx.send("Cancelled role PM")
+        else:
+            await ctx.send("No content to send")
