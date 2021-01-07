@@ -160,8 +160,6 @@ class Logging(commands.Cog):
 
                 previous_message = await message.channel.history(limit=1, before=message.created_at).flatten()
 
-
-
                 embed = discord.Embed(
                     title="Message deleted in " + "#" + channel.name,
                     url=previous_message[0].jump_url,
@@ -178,8 +176,8 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 entries = await message.guild.audit_logs(limit=1).flatten()
-                if entries[0].action == discord.AuditLogAction.message_delete and entries[0] != Config.logging["last_audit"]:
-                    content = message.content + "\n\n**Deleted by <@" + str(entries[0].user.id) + ">**"
+                if entries[0].action == discord.AuditLogAction.message_delete and entries[0].id != Config.logging["last_audit"]:
+                    embed.description += "\n\n**Deleted by <@" + str(entries[0].user.id) + ">**"
                     Config.set_last_audit(entries[0])
                     if Config.logging["overwrite_channels"]["mod"] != Config.logging["overwrite_channels"]["message"]:
                         await Config.logging["overwrite_channels"]["mod"].send(embed=embed)
@@ -210,7 +208,7 @@ class Logging(commands.Cog):
                 embed.set_footer(text="Uncached message: " + str(payload.message_id))
                 embed.timestamp = datetime.utcnow()
 
-                if entries[0].action == discord.AuditLogAction.message_delete and entries[0] != Config.logging["last_audit"].id:
+                if entries[0].action == discord.AuditLogAction.message_delete and entries[0].id != Config.logging["last_audit"].id:
                     embed.description = "**Deleted by <@" + str(entries[0].user.id) + ">**"
                     Config.set_last_audit(entries[0])
                     if Config.logging["overwrite_channels"]["mod"] != Config.logging["overwrite_channels"]["message"]:
@@ -414,7 +412,7 @@ class Logging(commands.Cog):
 
             # Log who the editor is
             entries = await channel.guild.audit_logs(limit=1).flatten()
-            if entries[0].action == discord.AuditLogAction.channel_create and entries[0] != Config.logging["last_audit"]:
+            if entries[0].action == discord.AuditLogAction.channel_create and entries[0].id != Config.logging["last_audit"]:
                 Config.set_last_audit(entries[0])
                 embed.description += "\n\nCreated by <@" + str(entries[0].user.id) + ">"
             else:
@@ -432,7 +430,7 @@ class Logging(commands.Cog):
 
             if channel.type is discord.ChannelType.category:
                 title = "Category deleted"
-                description = "**Name:** " + channel.name + "**Position:** " + channel.position
+                description = "**Name:** " + channel.name + "**Position:** " + str(channel.position)
 
             else:
                 if channel.type is discord.ChannelType.text:
@@ -440,7 +438,7 @@ class Logging(commands.Cog):
                 else:
                     title = "Voice channel deleted"
 
-                description = "**Name:** " + channel.name + "**Position:** " + channel.position + "\n**Category:** "
+                description = "**Name:** " + channel.name + "**Position:** " + str(channel.position) + "\n**Category:** "
 
                 if channel.category is not None:
                     description += channel.category.name
@@ -458,7 +456,7 @@ class Logging(commands.Cog):
 
             # Log who the editor is
             entries = await channel.guild.audit_logs(limit=1).flatten()
-            if entries[0].action == discord.AuditLogAction.channel_create and entries[0] != Config.logging["last_audit"]:
+            if entries[0].action == discord.AuditLogAction.channel_create and entries[0].id != Config.logging["last_audit"]:
                 Config.set_last_audit(entries[0])
                 embed.description += "\n\nDeleted by <@" + str(entries[0].user.id) + ">"
             else:
@@ -598,7 +596,7 @@ class Logging(commands.Cog):
             embed.colour = discord.Colour(0x8899d4)
 
             # Log who the editor is
-            if entries[0].action == discord.AuditLogAction.channel_update and entries[0] != Config.logging["last_audit"]:
+            if entries[0].action == discord.AuditLogAction.channel_update and entries[0].id != Config.logging["last_audit"]:
                 Config.set_last_audit(entries[0])
                 embed.description += "\n\nUpdated by <@" + str(entries[0].user.id) + ">"
 
@@ -654,7 +652,7 @@ class Logging(commands.Cog):
             embed.timestamp = datetime.utcnow()
 
             entries = await member.guild.audit_logs(limit=1).flatten()
-            if entries[0].action == discord.AuditLogAction.kick and entries[0] != Config.logging["last_audit"].id:
+            if entries[0].action == discord.AuditLogAction.kick and entries[0].id != Config.logging["last_audit"].id:
                 Config.set_last_audit(entries[0])
                 embed.title = "Member kicked"
                 embed.description = "<@" + str(member.id) + "> joined " + join_delta + " ago\n**Roles: **" + roles + "\n\n**Kicked by <@" + str(entries[0].user.id) + ">**"
@@ -750,7 +748,7 @@ class Logging(commands.Cog):
 
             # Log who the editor is
             entries = await before.guild.audit_logs(limit=1).flatten()
-            if entries[0].action == discord.AuditLogAction.member_role_update and entries[0] != Config.logging["last_audit"]:
+            if entries[0].action == discord.AuditLogAction.member_role_update and entries[0].id != Config.logging["last_audit"]:
                 Config.set_last_audit(entries[0])
                 embed.description += "\n\nEdited by <@" + str(entries[0].user.id) + ">"
                 if not entries[0].user.bot and Config.logging["overwrite_channels"]["mod"] != Config.logging["overwrite_channels"]["member"]:
@@ -786,7 +784,7 @@ class Logging(commands.Cog):
 
             # Log who the editor is
             entries = await before.guild.audit_logs(limit=1).flatten()
-            if entries[0].action == discord.AuditLogAction.member_update and entries[0] != Config.logging["last_audit"]:
+            if entries[0].action == discord.AuditLogAction.member_update and entries[0].id != Config.logging["last_audit"]:
                 Config.set_last_audit(entries[0])
                 if before != entries[0].user:
                     embed.description += "\n\nEdited by <@" + str(entries[0].user.id) + ">"
@@ -863,7 +861,7 @@ class Logging(commands.Cog):
                 self.statuses[str(after.id)] = status_before
                 status_before = ""
 
-            if status_before != "" or status_after != "":
+            if status_after != "":
                 Config.save_statuses(self.statuses)
                 embed.description = "**Before:** " + status_before + "\n**+After:** " + status_after
                 embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
@@ -903,18 +901,19 @@ class Logging(commands.Cog):
                 await Config.logging["overwrite_channels"]["member"].send(embed=embed)
 
             # Check for avatar update
-            if before.avatar != after.avatar:
-                embed = discord.Embed()
-                embed.colour = discord.Colour(0x8899d4)
-                embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
-                embed.title = "Avatar update"
-                embed.set_image(url=after.avatar_url)
-                embed.description = "<@" + str(after.id) + ">"
+            if Config.logging["overwrite_channels"]["avatar"] is not None:
+                if before.avatar != after.avatar:
+                    embed = discord.Embed()
+                    embed.colour = discord.Colour(0x8899d4)
+                    embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+                    embed.title = "Avatar update"
+                    embed.set_image(url=after.avatar_url)
+                    embed.description = "<@" + str(after.id) + ">"
 
-                embed.set_footer(text="ID: " + str(after.id))
-                embed.timestamp = datetime.utcnow()
+                    embed.set_footer(text="ID: " + str(after.id))
+                    embed.timestamp = datetime.utcnow()
 
-                await Config.logging["overwrite_channels"]["avatar"].send(embed=embed)
+                    await Config.logging["overwrite_channels"]["avatar"].send(embed=embed)
 
     @commands.Cog.listener()
     async def on_guild_update(self, before, after):
@@ -1258,12 +1257,12 @@ class Logging(commands.Cog):
                 embed.set_footer(text="ID: " + str(after.id))
                 embed.timestamp = datetime.utcnow()
 
-                await self.guild_update_helper(after)
+                await self.guild_update_helper(embed, after)
                 await Config.logging["overwrite_channels"]["server"].send(embed=embed)
 
-    async def guild_update_helper(self, guild: discord.Guild):
+    async def guild_update_helper(self, embed, guild: discord.Guild):
         entries = await guild.audit_logs(limit=1).flatten()
-        if entries[0].action == discord.AuditLogAction.guild_update and entries[0] != Config.logging["last_audit"]:
+        if entries[0].action == discord.AuditLogAction.guild_update and entries[0].id != Config.logging["last_audit"]:
             Config.set_last_audit(entries[0])
             embed.description += "\n\nEdited by <@" + str(entries[0].user.id) + ">"
         else:
@@ -1309,7 +1308,7 @@ class Logging(commands.Cog):
 
         # Log who the editor is
         entries = await role.guild.audit_logs(limit=1).flatten()
-        if entries[0].action == discord.AuditLogAction.role_create and entries[0] != Config.logging["last_audit"]:
+        if entries[0].action == discord.AuditLogAction.role_create and entries[0].id != Config.logging["last_audit"]:
             Config.set_last_audit(entries[0])
             embed.description += "\n\nCreated by <@" + str(entries[0].user.id) + ">"
         else:
@@ -1357,7 +1356,7 @@ class Logging(commands.Cog):
 
         # Log who the editor is
         entries = await role.guild.audit_logs(limit=1).flatten()
-        if entries[0].action == discord.AuditLogAction.role_delete and entries[0] != Config.logging["last_audit"]:
+        if entries[0].action == discord.AuditLogAction.role_delete and entries[0].id != Config.logging["last_audit"]:
             Config.set_last_audit(entries[0])
             embed.description += "\n\nCreated by <@" + str(entries[0].user.id) + ">"
         else:
@@ -1454,7 +1453,7 @@ class Logging(commands.Cog):
         embed.timestamp = datetime.utcnow()
 
         entries = await role.guild.audit_logs(limit=1).flatten()
-        if entries[0].action == discord.AuditLogAction.role_update and entries[0] != Config.logging["last_audit"]:
+        if entries[0].action == discord.AuditLogAction.role_update and entries[0].id != Config.logging["last_audit"]:
             Config.set_last_audit(entries[0])
             embed.description += "\n\nEdited by <@" + str(entries[0].user.id) + ">"
         else:
@@ -1470,7 +1469,7 @@ class Logging(commands.Cog):
 
         # Log who the editor is
         entries = await guild.audit_logs(limit=1).flatten()
-        if (entries[0].action == discord.AuditLogAction.emoji_create or entries[0].action == discord.AuditLogAction.emoji_delete) and entries[0] != Config.logging["last_audit"]:
+        if (entries[0].action == discord.AuditLogAction.emoji_create or entries[0].action == discord.AuditLogAction.emoji_delete) and entries[0].id != Config.logging["last_audit"]:
             Config.set_last_audit(entries[0])
             editor = "\n\nCreated by <@" + str(entries[0].user.id) + ">"
         else:
@@ -1526,7 +1525,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 entries = await member.guild.audit_logs(limit=1).flatten()
-                if entries[0].action == discord.AuditLogAction.member_disconnect and entries[0] != Config.logging["last_audit"] and entries[0].user != member:
+                if entries[0].action == discord.AuditLogAction.member_disconnect and entries[0].id != Config.logging["last_audit"] and entries[0].user != member:
                     Config.set_last_audit(entries[0])
                     embed.description += "\n\nDisconnected by <@" + str(entries[0].user.id) + ">"
                     if Config.logging["overwrite_channels"]["mod"] != Config.logging["overwrite_channels"]["voice"]:
@@ -1542,7 +1541,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 entries = await member.guild.audit_logs(limit=1).flatten()
-                if entries[0].action == discord.AuditLogAction.member_move and entries[0] != Config.logging["last_audit"]:
+                if entries[0].action == discord.AuditLogAction.member_move and entries[0].id != Config.logging["last_audit"]:
                     Config.set_last_audit(entries[0])
                     embed.description += "\n\nMoved by <@" + str(entries[0].user.id) + ">"
                     if Config.logging["overwrite_channels"]["mod"] != Config.logging["overwrite_channels"]["voice"]:

@@ -2,7 +2,7 @@ from GompeiFunctions import parse_id
 from discord.ext import commands
 from config import Config
 
-import datetime
+from datetime import datetime
 import discord
 
 

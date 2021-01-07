@@ -124,7 +124,7 @@ async def update_guild_settings():
         else:
             command_channels.append(channel)
 
-    logging["last_audit"] = (await guild.audit_logs(limit=1).flatten())[0]
+    logging["last_audit"] = (await guild.audit_logs(limit=1).flatten())[0].id
     logging["staff"] = guild.get_channel(raw_settings["logging"]["staff"])
     for invite in await guild.invites():
         logging["invites"][invite] = {
@@ -385,7 +385,7 @@ def set_last_audit(audit: discord.AuditLogEntry):
     """
     global logging, raw_settings
 
-    logging["last_audit"] = audit
+    logging["last_audit"] = audit.id
 
 
 def add_invite(invite: discord.Invite):
