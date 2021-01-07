@@ -1505,49 +1505,124 @@ class Logging(commands.Cog):
         the id, name, and updated voice properties of the member
         """
         if Config.logging["overwrite_channels"]["voice"] is not None:
+            # If voice channel was updated
+            if before.channel != after.channel:
+                if before.channel is None:
+                    title = "Member joined voice channel"
+                    colour = discord.Colour(0x43b581)
+                    description = "**" + member.display_name + "** joined " + after.channel.mention
+                elif after.channel is None:
+                    title = "Member left voice channel"
+                    colour = discord.Colour(0xbe4041)
+                    description = "**" + member.display_name + "** left " + before.channel.mention
+                else:
+                    title = "Member changed voice channel"
+                    description = "**Before: **#" + before.channel.name + "\n**+After: **" + after.channel.mention
+                    colour = discord.Colour(0x8899d4)
 
-            if before.channel is None:
-                embed = discord.Embed()
-                embed.title = "Member joined voice channel"
-                embed.description = "**" + member.display_name + "** joined #" + after.channel.name
-                embed.colour = discord.Colour(0x43b581)
-                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
-                embed.set_footer(text="ID: " + str(member.id))
-                embed.timestamp = datetime.utcnow()
+                embed = discord.Embed(
+                    title=title,
+                    colour=colour,
+                    description=description
+                )
 
-            elif after.channel is None:
-                embed = discord.Embed()
-                embed.title = "Member left voice channel"
-                embed.description = "**" + member.display_name + "** left #" + before.channel.name
-                embed.colour = discord.Colour(0xbe4041)
-                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
-                embed.set_footer(text="ID: " + str(member.id))
-                embed.timestamp = datetime.utcnow()
-
-                entries = await member.guild.audit_logs(limit=1).flatten()
-                if entries[0].action == discord.AuditLogAction.member_disconnect and entries[0].id != Config.logging["last_audit"] and entries[0].user != member:
-                    Config.set_last_audit(entries[0])
-                    embed.description += "\n\nDisconnected by <@" + str(entries[0].user.id) + ">"
-                    if Config.logging["overwrite_channels"]["mod"] != Config.logging["overwrite_channels"]["voice"]:
-                        await Config.logging["overwrite_channels"]["mod"].send(embed=embed)
-
-            elif before.channel.id != after.channel.id:
-                embed = discord.Embed()
-                embed.title = "Member changed voice channel"
-                embed.description = "**Before: **#" + before.channel.name + "\n**+After: **#" + after.channel.name
-                embed.colour = discord.Colour(0x8899d4)
                 embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
                 embed.set_footer(text="ID: " + str(member.id))
                 embed.timestamp = datetime.utcnow()
 
                 entries = await member.guild.audit_logs(limit=1).flatten()
-                if entries[0].action == discord.AuditLogAction.member_move and entries[0].id != Config.logging["last_audit"]:
+                if entries[0].action == discord.AuditLogAction.member_move and entries[0].id != Config.logging[
+                    "last_audit"]:
                     Config.set_last_audit(entries[0])
                     embed.description += "\n\nMoved by <@" + str(entries[0].user.id) + ">"
                     if Config.logging["overwrite_channels"]["mod"] != Config.logging["overwrite_channels"]["voice"]:
                         await Config.logging["overwrite_channels"]["mod"].send(embed=embed)
 
-            await Config.logging["overwrite_channels"]["voice"].send(embed=embed)
+                await Config.logging["overwrite_channels"]["voice"].send(embed=embed)
+
+            if before.self_stream != after.self_stream:
+                if after.self_stream:
+                    title = "Stream started"
+                    colour = discord.Colour(0x43b581)
+                else:
+                    title = "Stream ended"
+                    colour = discord.Colour(0xbe4041)
+
+                embed = discord.Embed(
+                    title=title,
+                    colour=colour,
+                    description="**" + member.display_name + "** streaming in " + after.channel.mention
+                )
+
+                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
+                embed.set_footer(text="ID: " + str(member.id))
+                embed.timestamp = datetime.utcnow()
+
+                await Config.logging["overwrite_channels"]["voice"].send(embed=embed)
+
+            if before.self_video != after.self_video:
+                if after.self_video:
+                    title = "Video started"
+                    colour = discord.Colour(0x43b581)
+                else:
+                    title = "Video ended"
+                    colour = discord.Colour(0xbe4041)
+
+                embed = discord.Embed(
+                    title=title,
+                    colour=colour,
+                    description="**" + member.display_name + "** video in " + after.channel.mention
+                )
+
+                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
+                embed.set_footer(text="ID: " + str(member.id))
+                embed.timestamp = datetime.utcnow()
+
+                await Config.logging["overwrite_channels"]["voice"].send(embed=embed)
+
+            if before.deaf != after.deaf:
+                if after.deaf:
+                    title = "Member server deafened"
+                    colour = discord.Colour(0xbe4041)
+                    description = "**" + member.display_name + "** deafened"
+                else:
+                    title = "Member server undeafened"
+                    colour = discord.Colour(0x43b581)
+                    description = "**" + member.display_name + "** undeafened"
+
+                embed = discord.Embed(
+                    title=title,
+                    colour=colour,
+                    description=description
+                )
+
+                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
+                embed.set_footer(text="ID: " + str(member.id))
+                embed.timestamp = datetime.utcnow()
+
+                await Config.logging["overwrite_channels"]["voice"].send(embed=embed)
+
+            if before.mute != after.mute:
+                if after.mute:
+                    title = "Member server muted"
+                    colour = discord.Colour(0xbe4041)
+                    description = "**" + member.display_name + "** muted"
+                else:
+                    title = "Member server unmuted"
+                    colour = discord.Colour(0x43b581)
+                    description = "**" + member.display_name + "** unmuted"
+
+                embed = discord.Embed(
+                    title=title,
+                    colour=colour,
+                    description=description
+                )
+
+                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
+                embed.set_footer(text="ID: " + str(member.id))
+                embed.timestamp = datetime.utcnow()
+
+                await Config.logging["overwrite_channels"]["voice"].send(embed=embed)
 
     @commands.Cog.listener()
     async def on_member_ban(self, guild, user):
