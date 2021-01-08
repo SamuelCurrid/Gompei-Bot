@@ -994,3 +994,28 @@ class Administration(commands.Cog):
                 await ctx.send("Cancelled role PM")
         else:
             await ctx.send("No content to send")
+
+    @commands.command(pass_context=True, name="echoReply", aliases=["reply"])
+    @commands.check(moderator_perms)
+    @commands.guild_only()
+    async def echo_reply(self, ctx, message: discord.Message, mention: typing.Optional[bool] = False, *, msg):
+        # Check for attachments to forward
+        attachments = []
+        if len(ctx.message.attachments) > 0:
+            for i in ctx.message.attachments:
+                attachments.append(await i.to_file())
+
+        if len(msg) is not None:
+            msg = await message.channel.send(msg, files=attachments, reference=message, mention_author=mention)
+            await ctx.send(
+                "Message sent (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(msg.channel.id) +
+                "/" + str(msg.id) + ">)",
+            )
+        elif len(attachments) > 0:
+            msg = await message.channel.send(files=attachments, reference=message, mention_author=mention)
+            await ctx.send(
+                "Message sent (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(msg.channel.id) +
+                "/" + str(msg.id) + ">)",
+            )
+        else:
+            await ctx.send("No content to send.")

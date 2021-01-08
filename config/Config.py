@@ -97,7 +97,7 @@ async def update_guild_settings():
 
     logging["channel"] = guild.get_channel(raw_settings["logging"]["channel"])
 
-    for user_id in raw_settings["lockouts"]:
+    for user_id in list(raw_settings["lockouts"]):
         member = guild.get_member(user_id)
 
         if member is None:
