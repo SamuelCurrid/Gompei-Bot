@@ -82,7 +82,7 @@ class DirectMessages(commands.Cog):
         if Config.dm_channel is not None:
             # If the message is not cached
             if payload.cached_message is None:
-                guild = Config.guild
+                guild = Config.main_guild
                 dm_channel = Config.dm_channel
                 channel = guild.get_channel(payload.channel_id)
 
@@ -171,7 +171,7 @@ class DirectMessages(commands.Cog):
         :param ctx: context object
         :param channel: channel to set to
         """
-        if ctx.guild != Config.guild:
+        if ctx.guild != Config.main_guild:
             await ctx.send(
                 "This bot isn't configured to work in this server! Read instructions on how to set it up here: "
                 "<INSERT LINK>"

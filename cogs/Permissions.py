@@ -15,7 +15,7 @@ def moderator_perms(ctx):
 
 def command_channels(ctx):
     return ctx.message.author.guild_permissions.administrator or ctx.message.author.top_role.id == moderator_id \
-           or ctx.channel in Config.command_channels
+           or ctx.channel in Config.guilds[ctx.message.guild]["command_channels"]
 
 
 def dm_commands(ctx):

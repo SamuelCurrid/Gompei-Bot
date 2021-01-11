@@ -23,7 +23,12 @@ import sys
 
 
 def get_prefix(client, message):
-    return Config.prefix
+    guild_prefix = Config.guilds[message.guild]["prefix"]
+
+    if guild_prefix is None:
+        return Config.prefix
+    else:
+        return guild_prefix
 
 
 # Initialize Bot
@@ -88,15 +93,27 @@ async def on_command_error(ctx, error):
     :param ctx: context object
     :param error: error
     """
-    if isinstance(error, commands.CheckFailure):
+    if isinstance(error, commands.CheckFailure) or isinstance(error, commands.MissingPermissions):
         print("!ERROR! " + str(ctx.author.id) + " did not have permissions for " + ctx.command.name + " command")
     elif isinstance(error, commands.BadArgument):
         argument = list(ctx.command.clean_params)[len(ctx.args[2:] if ctx.command.cog else ctx.args[1:])]
         await ctx.send("Could not find the " + argument)
     elif isinstance(error, commands.MissingRequiredArgument):
         await ctx.send(ctx.command.name + " is missing arguments")
+    elif isinstance(error, commands.BotMissingPermissions):
+        await ctx.send("Bot is missing permissions.")
     else:
         print(error)
+
+
+@gompei.event
+async def on_guild_join(guild):
+    Config.add_guild(guild)
+
+
+@gompei.event
+async def on_remove_join(guild):
+    Config.add_guild(guild)
 
 
 # Commands
@@ -176,7 +193,7 @@ async def change_prefix(ctx, prefix):
     if " " in prefix:
         await ctx.send("Not a valid prefix")
     else:
-        Config.set_prefix(prefix)
+        Config.set_guild_prefix(ctx.guild, prefix)
         await ctx.send("Update prefix to `" + str(prefix) + "`")
 
 
@@ -193,8 +210,7 @@ async def ping(ctx):
 
 
 @gompei.command(pass_context=True, aliases=["status"])
-@commands.check(administrator_perms)
-@commands.guild_only()
+@commands.is_owner()
 async def set_status(ctx, *, status: str):
     """
     Set the bots status ("Now playing <insert>")
@@ -219,7 +235,7 @@ async def set_guild(ctx):
 
     :param ctx: Context object
     """
-    await Config.set_guild(ctx.guild)
+    await Config.set_main_guild(ctx.guild)
     await ctx.send("Successfully set guild")
 
 
@@ -227,7 +243,7 @@ async def set_guild(ctx):
 @commands.check(administrator_perms)
 @commands.guild_only()
 async def add_command_channel(ctx, channel: discord.TextChannel):
-    if channel not in Config.command_channels:
+    if channel not in Config.guilds[channel.guild]["command_channels"]:
         Config.add_command_channel(channel)
         await ctx.send("Successfully added " + channel.mention + " as a command channel")
     else:
@@ -238,7 +254,7 @@ async def add_command_channel(ctx, channel: discord.TextChannel):
 @commands.check(administrator_perms)
 @commands.guild_only()
 async def remove_command_channel(ctx, channel: discord.TextChannel):
-    if channel in Config.command_channels:
+    if channel in Config.guilds[channel.guild]["command_channels"]:
         Config.remove_command_channel(channel)
         await ctx.send("Successfully removed " + channel.mention + " as a command channel")
     else:

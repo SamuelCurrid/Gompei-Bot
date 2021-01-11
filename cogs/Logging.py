@@ -23,10 +23,9 @@ class Logging(commands.Cog):
         :param ctx: context object
         :param channel: channel ID or mention
         """
-        if Config.logging["channel"] != channel:
-
+        if Config.guilds[channel.guild]["logging"]["channel"] != channel:
             # If logging has been disabled set all overwrites
-            if Config.logging["channel"] is None:
+            if Config.guilds[channel.guild]["logging"]["channel"] is None:
                 Config.set_logging_channels(channel)
             else:
                 Config.set_logging_channel(channel)
@@ -40,8 +39,8 @@ class Logging(commands.Cog):
     @commands.command(pass_context=True, name="loggingOverwrite")
     @commands.check(administrator_perms)
     async def change_overwrite_logging(self, ctx, overwrite: str, channel: discord.TextChannel):
-        if overwrite.lower() in Config.logging["overwrite_channels"]:
-            if Config.logging["overwrite_channels"][overwrite] != channel:
+        if overwrite.lower() in Config.guilds[channel.guild]["logging"]["overwrite_channels"]:
+            if Config.guilds[channel.guild]["logging"]["overwrite_channels"][overwrite] != channel:
                 Config.set_overwrite_logging_channel(overwrite.lower(), channel)
                 await ctx.send("Successfully set " + overwrite.replace("_", " ").title() + " logging to " +
                                channel.mention)
@@ -49,7 +48,7 @@ class Logging(commands.Cog):
                 await ctx.send(overwrite.replace("_", " ").title() + " logging is already using " + channel.mention)
         else:
             overwrites = ""
-            for overwrite in Config.logging["overwrite_channels"].keys():
+            for overwrite in Config.guilds[channel.guild]["logging"]["overwrite_channels"].keys():
                 overwrites = "`" + overwrite + "`\n"
 
             await ctx.send("The logging overwrite" + overwrite + " does not exist. The supported overwrites are:\n" +
@@ -65,7 +64,7 @@ class Logging(commands.Cog):
         :param ctx: context object
         :param channel: channel ID or mention
         """
-        if Config.logging["overwrite_channels"]["member"] != channel:
+        if Config.guilds[channel.guild]["logging"]["overwrite_channels"]["member"] != channel:
             Config.set_overwrite_logging_channel("member", channel)
             await ctx.send("Successfully updated member logging channel to <#" + str(channel.id) + ">")
         else:
@@ -81,7 +80,7 @@ class Logging(commands.Cog):
         :param ctx: context object
         :param channel: channel ID or mention
         """
-        if Config.logging["overwrite_channels"]["message"] != channel.id:
+        if Config.guilds[channel.guild]["logging"]["overwrite_channels"]["message"] != channel.id:
             Config.set_overwrite_logging_channel("message", channel)
             await ctx.send("Successfully updated message logging channel to <#" + str(channel.id) + ">")
         else:
@@ -97,7 +96,7 @@ class Logging(commands.Cog):
         :param ctx: context object
         :param channel: channel ID or mention
         """
-        if Config.logging["overwrite_channels"]["member_tracking"] != channel.id:
+        if Config.guilds[channel.guild]["logging"]["overwrite_channels"]["member_tracking"] != channel.id:
             Config.set_overwrite_logging_channel("member_tracking", channel)
             await ctx.send("Successfully updated member tracking channel to <#" + str(channel.id) + ">")
         else:
@@ -113,7 +112,7 @@ class Logging(commands.Cog):
         :param ctx: context object
         :param channel: channel ID or mention
         """
-        if Config.logging["overwrite_channels"]["server"] != channel.id:
+        if Config.guilds[channel.guild]["logging"]["overwrite_channels"]["server"] != channel.id:
             Config.set_overwrite_logging_channel("server", channel)
             await ctx.send("Successfully updated server logging channel to <#" + str(channel.id) + ">")
         else:
@@ -129,7 +128,7 @@ class Logging(commands.Cog):
         :param ctx: context object
         :param channel: channel ID or mention
         """
-        if Config.logging["overwrite_channels"]["status"] != channel.id:
+        if Config.guilds[channel.guild]["logging"]["overwrite_channels"]["status"] != channel.id:
             Config.set_overwrite_logging_channel("status", channel)
             await ctx.send("Successfully updated status logging channel to <#" + str(channel.id) + ">")
         else:
@@ -145,7 +144,7 @@ class Logging(commands.Cog):
         :param ctx: context object
         :param channel: channel ID or mention
         """
-        if Config.logging["overwrite_channels"]["voice"] != channel.id:
+        if Config.guilds[channel.guild]["logging"]["overwrite_channels"]["voice"] != channel.id:
             Config.set_overwrite_logging_channel("voice", channel)
             await ctx.send("Successfully updated voice logging channel to <#" + str(channel.id) + ">")
         else:
@@ -159,7 +158,7 @@ class Logging(commands.Cog):
         :param message: message object deleted
         """
         if not message.author.bot:
-            if Config.logging["overwrite_channels"]["message"] is not None:
+            if Config.guilds[message.guild]["logging"]["overwrite_channels"]["message"] is not None:
                 channel = message.channel
 
                 previous_message = await message.channel.history(limit=1, before=message.created_at).flatten()
@@ -184,13 +183,14 @@ class Logging(commands.Cog):
 
                 entries = await message.guild.audit_logs(limit=1).flatten()
                 if entries[0].action == discord.AuditLogAction.message_delete \
-                        and entries[0].id != Config.logging["last_audit"]:
+                        and entries[0].id != Config.guilds[message.guild]["logging"]["last_audit"]:
                     embed.description += "\n\n**Deleted by <@" + str(entries[0].user.id) + ">**"
                     Config.set_last_audit(entries[0])
-                    if Config.logging["overwrite_channels"]["mod"] != Config.logging["overwrite_channels"]["message"]:
-                        await Config.logging["overwrite_channels"]["mod"].send(embed=embed)
+                    if Config.guilds[message.guild]["logging"]["overwrite_channels"]["mod"] != \
+                            Config.guilds[message.guild]["logging"]["overwrite_channels"]["message"]:
+                        await Config.guilds[message.guild]["logging"]["overwrite_channels"]["mod"].send(embed=embed)
 
-                await Config.logging["overwrite_channels"]["message"].send(embed=embed)
+                await Config.guilds[message.guild]["logging"]["overwrite_channels"]["message"].send(embed=embed)
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload):
@@ -204,7 +204,8 @@ class Logging(commands.Cog):
         if hasattr(payload, "guild_id"):
             guild = self.bot.get_guild(payload.guild_id)
 
-            if Config.logging["overwrite_channels"]["message"] is not None and payload.cached_message is None:
+            if Config.guilds[guild]["logging"]["overwrite_channels"]["message"] is not None and \
+                    payload.cached_message is None:
                 entries = await guild.audit_logs(limit=1).flatten()
                 channel = guild.get_channel(payload.channel_id)
 
@@ -217,13 +218,14 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 if entries[0].action == discord.AuditLogAction.message_delete \
-                        and entries[0].id != Config.logging["last_audit"].id:
+                        and entries[0].id != Config.guilds[guild]["logging"]["last_audit"].id:
                     embed.description = "**Deleted by <@" + str(entries[0].user.id) + ">**"
                     Config.set_last_audit(entries[0])
-                    if Config.logging["overwrite_channels"]["mod"] != Config.logging["overwrite_channels"]["message"]:
-                        await Config.logging["overwrite_channels"]["mod"].send(embed=embed)
+                    if Config.guilds[guild]["logging"]["overwrite_channels"]["mod"] != \
+                            Config.guilds[guild]["logging"]["overwrite_channels"]["message"]:
+                        await Config.guilds[guild]["logging"]["overwrite_channels"]["mod"].send(embed=embed)
 
-                await Config.logging["overwrite_channels"]["message"].send(embed=embed)
+                await Config.guilds[guild]["logging"]["overwrite_channels"]["message"].send(embed=embed)
 
     @commands.Cog.listener()
     async def on_raw_bulk_message_delete(self, payload):
@@ -237,7 +239,7 @@ class Logging(commands.Cog):
         if hasattr(payload, "guild_id"):
             guild = self.bot.get_guild(payload.guild_id)
 
-            if Config.logging["overwrite_channels"]["message"] is not None:
+            if Config.guilds[guild]["logging"]["overwrite_channels"]["message"] is not None:
                 channel = guild.get_channel(payload.channel_id)
                 content = ""
                 count = 0
@@ -255,10 +257,11 @@ class Logging(commands.Cog):
 
                 embed.timestamp = datetime.utcnow()
 
-                if Config.logging["overwrite_channels"]["mod"] != Config.logging["overwrite_channels"]["message"]:
-                    await Config.logging["overwrite_channels"]["mod"].send(embed=embed)
+                if Config.guilds[guild]["logging"]["overwrite_channels"]["mod"] != \
+                        Config.guilds[guild]["logging"]["overwrite_channels"]["message"]:
+                    await Config.guilds[guild]["logging"]["overwrite_channels"]["mod"].send(embed=embed)
 
-                await Config.logging["overwrite_channels"]["message"].send(embed=embed)
+                await Config.guilds[guild]["logging"]["overwrite_channels"]["message"].send(embed=embed)
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
@@ -269,7 +272,7 @@ class Logging(commands.Cog):
         :param after: message object after
         """
         if not before.author.bot:
-            if Config.logging["overwrite_channels"]["message"] is not None:
+            if Config.guilds[after.guild]["logging"]["overwrite_channels"]["message"] is not None:
                 if before.pinned != after.pinned:
                     channel = after.channel
 
@@ -294,7 +297,7 @@ class Logging(commands.Cog):
                     embed.set_footer(text="ID: " + str(before.author.id))
                     embed.timestamp = datetime.utcnow()
 
-                    await Config.logging["overwrite_channels"]["message"].send(embed=embed)
+                    await Config.guilds[after.guild]["logging"]["overwrite_channels"]["message"].send(embed=embed)
 
                 else:
                     if before.content is after.content:
@@ -316,7 +319,7 @@ class Logging(commands.Cog):
                     embed.set_footer(text="ID: " + str(before.author.id))
                     embed.timestamp = datetime.utcnow()
 
-                    await Config.logging["overwrite_channels"]["message"].send(embed=embed)
+                    await Config.guilds[after.guild]["logging"]["overwrite_channels"]["message"].send(embed=embed)
 
     @commands.Cog.listener()
     async def on_raw_message_edit(self, payload):
@@ -327,10 +330,12 @@ class Logging(commands.Cog):
         :param payload:
         :return:
         """
-        # If a guild has been set
-        if Config.guild is not None:
-            # If not a DM message
-            if Config.logging["overwrite_channels"]["message"] is not None and payload.cached_message is None:
+        # If not DM messages
+        if hasattr(payload, "guild_id"):
+            guild = self.bot.get_guild(payload.guild_id)
+
+            if Config.guilds[guild]["logging"]["overwrite_channels"]["message"] is not None and \
+                    payload.cached_message is None:
                 channel = Config.guild.get_channel(payload.channel_id)
                 # If a dm message
                 if channel is None:
@@ -352,7 +357,7 @@ class Logging(commands.Cog):
                     embed.set_footer(text="ID: " + str(message.author.id))
                     embed.timestamp = datetime.utcnow()
 
-                    await Config.logging["overwrite_channels"]["message"].send(embed=embed)
+                    await Config.guilds[guild]["logging"]["overwrite_channels"]["message"].send(embed=embed)
 
     @commands.Cog.listener()
     async def on_guild_channel_create(self, channel):
@@ -361,7 +366,7 @@ class Logging(commands.Cog):
         the name, category, and permissions of the channel
         :param channel:
         """
-        if Config.logging["overwrite_channels"]["server"]is not None:
+        if Config.guilds[channel.guild]["logging"]["overwrite_channels"]["server"]is not None:
             permissions = ""
 
             # If a Category
@@ -425,8 +430,8 @@ class Logging(commands.Cog):
 
                 field_description = "```"
                 for i in range(0, len(permissions)):
-                    field_description += permissions[i] + (" " * (max_length - len(permissions[i]))) + " " + values[i] + \
-                                         "\n"
+                    field_description += permissions[i] + \
+                                         (" " * (max_length - len(permissions[i]))) + " " + values[i] + "\n"
                 field_description += "```"
 
                 embed.add_field(name=target.name, value=field_description, inline=True)
@@ -434,13 +439,13 @@ class Logging(commands.Cog):
             # Log who the editor is
             entries = await channel.guild.audit_logs(limit=1).flatten()
             if entries[0].action == discord.AuditLogAction.channel_create \
-                    and entries[0].id != Config.logging["last_audit"]:
+                    and entries[0].id != Config.guilds[channel.guild]["logging"]["last_audit"]:
                 Config.set_last_audit(entries[0])
                 embed.description += "\n\nCreated by <@" + str(entries[0].user.id) + ">"
             else:
                 embed.description += "\n\nCreated by Discord"
 
-            await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+            await Config.guilds[channel.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel):
@@ -448,7 +453,7 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the name, category, and permissions of the channel
         """
-        if Config.logging["overwrite_channels"]["server"] is not None:
+        if Config.guilds[channel.guild]["logging"]["overwrite_channels"]["server"] is not None:
 
             if channel.type is discord.ChannelType.category:
                 title = "Category deleted"
@@ -480,13 +485,13 @@ class Logging(commands.Cog):
             # Log who the editor is
             entries = await channel.guild.audit_logs(limit=1).flatten()
             if entries[0].action == discord.AuditLogAction.channel_create \
-                    and entries[0].id != Config.logging["last_audit"]:
+                    and entries[0].id != Config.guilds[channel.guild]["logging"]["last_audit"]:
                 Config.set_last_audit(entries[0])
                 embed.description += "\n\nDeleted by <@" + str(entries[0].user.id) + ">"
             else:
                 embed.description += "\n\nDeleted by Discord"
 
-            await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+            await Config.guilds[channel.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
     @commands.Cog.listener()
     async def on_guild_channel_update(self, before, after):
@@ -494,7 +499,7 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the updated properties of the channel
         """
-        if Config.logging["overwrite_channels"]["server"] is not None:
+        if Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"] is not None:
             embed = discord.Embed()
             embed.description = ""
             before_value = ""
@@ -627,13 +632,13 @@ class Logging(commands.Cog):
 
             # Log who the editor is
             if entries[0].action == discord.AuditLogAction.channel_update \
-                    and entries[0].id != Config.logging["last_audit"]:
+                    and entries[0].id != Config.guilds[after.guild]["logging"]["last_audit"]:
                 Config.set_last_audit(entries[0])
                 embed.description += "\n\nUpdated by <@" + str(entries[0].user.id) + ">"
 
             if len(embed.description) > 0 or len(embed.fields) > 0:
                 embed.description = after.mention + "\n" + embed.description
-                await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -641,11 +646,11 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the name, avatar, id, join position, account age
         """
-        if Config.logging["overwrite_channels"]["member_tracking"] is not None:
+        if Config.guilds[member.guild]["logging"]["overwrite_channels"]["member_tracking"] is not None:
             invites = await member.guild.invites()
 
             for invite in invites:
-                if Config.logging["invites"][invite]["uses"] != invite.uses:
+                if Config.guilds[member.guild]["logging"]["invites"][invite]["uses"] != invite.uses:
                     Config.update_invite_uses(invite)
 
                     creation_delta = time_delta_string(member.created_at, datetime.utcnow())
@@ -664,7 +669,9 @@ class Logging(commands.Cog):
                     embed.set_footer(text="ID: " + str(member.id))
                     embed.timestamp = datetime.utcnow()
 
-                    await Config.logging["overwrite_channels"]["member_tracking"].send(embed=embed)
+                    await Config.guilds[member.guild]["logging"]["overwrite_channels"]["member_tracking"].send(
+                        embed=embed
+                    )
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
@@ -672,7 +679,7 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the name, avatar, id, time spent on the server
         """
-        if Config.logging["overwrite_channels"]["member_tracking"] is not None:
+        if Config.guilds[member.guild]["logging"]["overwrite_channels"]["member_tracking"] is not None:
             embed = discord.Embed(colour=discord.Colour(0xbe4041))
             embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
 
@@ -686,7 +693,8 @@ class Logging(commands.Cog):
             embed.timestamp = datetime.utcnow()
 
             entries = await member.guild.audit_logs(limit=1).flatten()
-            if entries[0].action == discord.AuditLogAction.kick and entries[0].id != Config.logging["last_audit"].id:
+            if entries[0].action == discord.AuditLogAction.kick and entries[0].id != \
+                    Config.guilds[member.guild]["logging"]["last_audit"].id:
                 Config.set_last_audit(entries[0])
                 embed.title = "Member kicked"
                 embed.description = "<@" + str(member.id) + "> joined " + join_delta + " ago\n**Roles: **" + roles + \
@@ -694,14 +702,14 @@ class Logging(commands.Cog):
                 if entries[0].reason is not None:
                     embed.description += "\n**Reason:** " + entries[0].reason
 
-                if Config.logging["overwrite_channels"]["mod"] \
-                        != Config.logging["overwrite_channels"]["member_tracking"]:
-                    await Config.logging["overwrite_channels"]["mod"].send(embed=embed)
+                if Config.guilds[member.guild]["logging"]["overwrite_channels"]["mod"] \
+                        != Config.guilds[member.guild]["logging"]["overwrite_channels"]["member_tracking"]:
+                    await Config.guilds[member.guild]["logging"]["overwrite_channels"]["mod"].send(embed=embed)
             else:
                 embed.title = "Member left"
                 embed.description = "<@" + str(member.id) + "> joined " + join_delta + " ago\n**Roles: **" + roles
 
-            await Config.logging["overwrite_channels"]["member_tracking"].send(embed=embed)
+            await Config.guilds[member.guild]["logging"]["overwrite_channels"]["member_tracking"].send(embed=embed)
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
@@ -732,7 +740,8 @@ class Logging(commands.Cog):
 
         # If roles edited and logging channel exists
         if len(added_roles) + len(removed_roles) > 0 \
-                and (Config.logging["channel"] is not None or Config.logging["overwrite_channels"]["mod"] is not None):
+                and (Config.guilds[after.guild]["logging"]["channel"] is not None or
+                     Config.guilds[after.guild]["logging"]["overwrite_channels"]["mod"] is not None):
 
             # Reset embed
             embed = discord.Embed()
@@ -786,16 +795,16 @@ class Logging(commands.Cog):
             # Log who the editor is
             entries = await before.guild.audit_logs(limit=1).flatten()
             if entries[0].action == discord.AuditLogAction.member_role_update \
-                    and entries[0].id != Config.logging["last_audit"]:
+                    and entries[0].id != Config.guilds[after.guild]["logging"]["last_audit"]:
                 Config.set_last_audit(entries[0])
                 embed.description += "\n\nEdited by <@" + str(entries[0].user.id) + ">"
-                if not entries[0].user.bot and Config.logging["overwrite_channels"]["mod"] \
-                        != Config.logging["overwrite_channels"]["member"]:
-                    await Config.logging["overwrite_channels"]["mod"].send(embed=embed)
+                if not entries[0].user.bot and Config.guilds[after.guild]["logging"]["overwrite_channels"]["mod"] \
+                        != Config.guilds[after.guild]["logging"]["overwrite_channels"]["member"]:
+                    await Config.guilds[after.guild]["logging"]["overwrite_channels"]["mod"].send(embed=embed)
             else:
                 embed.description = "\n\nEdited by Discord"
 
-            await Config.logging["overwrite_channels"]["member"].send(embed=embed)
+            await Config.guilds[after.guild]["logging"]["overwrite_channels"]["member"].send(embed=embed)
 
     async def nickname_update_checks(self, before, after):
         """
@@ -824,7 +833,7 @@ class Logging(commands.Cog):
             # Log who the editor is
             entries = await before.guild.audit_logs(limit=1).flatten()
             if entries[0].action == discord.AuditLogAction.member_update \
-                    and entries[0].id != Config.logging["last_audit"]:
+                    and entries[0].id != Config.guilds[after.guild]["logging"]["last_audit"]:
                 Config.set_last_audit(entries[0])
                 if before != entries[0].user:
                     embed.description += "\n\nEdited by <@" + str(entries[0].user.id) + ">"
@@ -833,7 +842,7 @@ class Logging(commands.Cog):
             embed.set_footer(text="ID: " + str(after.id))
             embed.timestamp = datetime.utcnow()
 
-            await Config.logging["overwrite_channels"]["member"].send(embed=embed)
+            await Config.guilds[after.guild]["logging"]["overwrite_channels"]["member"].send(embed=embed)
 
     async def status_update_checks(self, before, after):
         """
@@ -842,7 +851,7 @@ class Logging(commands.Cog):
         :param before: Member object before
         :param after: Member object after
         """
-        if Config.logging["overwrite_channels"]["status"] is not None:
+        if Config.guilds[after.guild]["logging"]["overwrite_channels"]["status"] is not None:
 
             status_before = ""
             status_after = ""
@@ -908,7 +917,7 @@ class Logging(commands.Cog):
                 embed.set_footer(text="ID: " + str(after.id))
                 embed.timestamp = datetime.utcnow()
 
-                await Config.logging["overwrite_channels"]["status"].send(embed=embed)
+                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["status"].send(embed=embed)
 
     @commands.Cog.listener()
     async def on_user_update(self, before, after):
@@ -916,44 +925,47 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the property of the user updated before and after
         """
-        if Config.logging["overwrite_channels"]["member"] is not None:
+        for guild in Config.guilds:
+            if after in guild.members:
+                if Config.guilds[guild]["logging"]["overwrite_channels"]["member"] is not None:
 
-            # Check for name update
-            if before.name != after.name:
-                embed = discord.Embed()
-                embed.colour = discord.Colour(0x8899d4)
-                embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
-                embed.title = "Name change"
-                embed.description = "**Before:** " + before.name + "\n**+After:** " + after.name
-                embed.set_footer(text="ID: " + str(after.id))
-                embed.timestamp = datetime.utcnow()
-                await Config.logging["overwrite_channels"]["member"].send(embed=embed)
+                    # Check for name update
+                    if before.name != after.name:
+                        embed = discord.Embed()
+                        embed.colour = discord.Colour(0x8899d4)
+                        embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+                        embed.title = "Name change"
+                        embed.description = "**Before:** " + before.name + "\n**+After:** " + after.name
+                        embed.set_footer(text="ID: " + str(after.id))
+                        embed.timestamp = datetime.utcnow()
+                        await Config.guilds[guild]["logging"]["overwrite_channels"]["member"].send(embed=embed)
 
-            # Check for discriminator update
-            if before.discriminator != after.discriminator:
-                embed = discord.Embed()
-                embed.colour = discord.Colour(0x8899d4)
-                embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
-                embed.title = "Discriminator update"
-                embed.description = "**Before:** " + before.discriminator + "\n**+After:** " + after.discriminator
-                embed.set_footer(text="ID: " + str(after.id))
-                embed.timestamp = datetime.utcnow()
-                await Config.logging["overwrite_channels"]["member"].send(embed=embed)
+                    # Check for discriminator update
+                    if before.discriminator != after.discriminator:
+                        embed = discord.Embed()
+                        embed.colour = discord.Colour(0x8899d4)
+                        embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+                        embed.title = "Discriminator update"
+                        embed.description = "**Before:** " + before.discriminator + \
+                                            "\n**+After:** " + after.discriminator
+                        embed.set_footer(text="ID: " + str(after.id))
+                        embed.timestamp = datetime.utcnow()
+                        await Config.guilds[guild]["logging"]["overwrite_channels"]["member"].send(embed=embed)
 
-            # Check for avatar update
-            if Config.logging["overwrite_channels"]["avatar"] is not None:
-                if before.avatar != after.avatar:
-                    embed = discord.Embed()
-                    embed.colour = discord.Colour(0x8899d4)
-                    embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
-                    embed.title = "Avatar update"
-                    embed.set_image(url=after.avatar_url)
-                    embed.description = "<@" + str(after.id) + ">"
+                    # Check for avatar update
+                    if Config.guilds[guild]["logging"]["overwrite_channels"]["avatar"] is not None:
+                        if before.avatar != after.avatar:
+                            embed = discord.Embed()
+                            embed.colour = discord.Colour(0x8899d4)
+                            embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+                            embed.title = "Avatar update"
+                            embed.set_image(url=after.avatar_url)
+                            embed.description = "<@" + str(after.id) + ">"
 
-                    embed.set_footer(text="ID: " + str(after.id))
-                    embed.timestamp = datetime.utcnow()
+                            embed.set_footer(text="ID: " + str(after.id))
+                            embed.timestamp = datetime.utcnow()
 
-                    await Config.logging["overwrite_channels"]["avatar"].send(embed=embed)
+                            await Config.guilds[guild]["logging"]["overwrite_channels"]["avatar"].send(embed=embed)
 
     @commands.Cog.listener()
     async def on_guild_update(self, before, after):
@@ -961,7 +973,7 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the property of the guild updated before and after
         """
-        if Config.logging["overwrite_channels"]["server"] is not None:
+        if Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"] is not None:
 
             # AFK Channel / Timeout
             if before.afk_channel != after.afk_channel:
@@ -989,7 +1001,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # Notification Setting
             if before.default_notifications != after.default_notifications:
@@ -1004,7 +1016,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # Description
             if before.description != after.description:
@@ -1027,7 +1039,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # Features
             if before.features != after.features:
@@ -1060,7 +1072,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # File Size Limit
             if before.filesize_limit != after.filesize_limit:
@@ -1079,7 +1091,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # Emoji Limit
             if before.emoji_limit != after.emoji_limit:
@@ -1098,7 +1110,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # 2FA moderation
             if before.mfa_level != after.mfa_level:
@@ -1115,7 +1127,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # Owner
             if before.owner != after.owner:
@@ -1128,7 +1140,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # Name
             if before.name != after.name:
@@ -1141,7 +1153,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # Public updates channel
             if before.public_updates_channel != after.public_updates_channel:
@@ -1169,12 +1181,10 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # Rules channel
             if before.rules_channel != after.rules_channel:
-
-
                 if before.rules_channel is None:
                     title = "Rules Channel Added"
                     colour = discord.Colour(0x43b581)
@@ -1199,7 +1209,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # Region
             if before.region != after.region:
@@ -1212,7 +1222,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # System Channel
             if before.system_channel != after.system_channel:
@@ -1240,7 +1250,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # Verification Level
             if before.verification_level != after.verification_level:
@@ -1252,7 +1262,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # Banner
             if before.banner != after.banner:
@@ -1275,7 +1285,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after.guilds]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # Discovery Splash
             if before.discovery_splash != after.discovery_splash:
@@ -1285,7 +1295,7 @@ class Logging(commands.Cog):
                 embed.set_image(url=after.discovery_splash_url)
 
                 await self.guild_update_helper(after)
-                await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after.guilds]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # Icon
             if before.icon != after.icon:
@@ -1297,7 +1307,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after.guilds]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # Splash
             if before.splash != after.splash:
@@ -1320,11 +1330,12 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(embed, after)
-                await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after.guilds]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
     async def guild_update_helper(self, embed, guild: discord.Guild):
         entries = await guild.audit_logs(limit=1).flatten()
-        if entries[0].action == discord.AuditLogAction.guild_update and entries[0].id != Config.logging["last_audit"]:
+        if entries[0].action == discord.AuditLogAction.guild_update and \
+                entries[0].id != Config.guilds[guild]["logging"]["last_audit"]:
             Config.set_last_audit(entries[0])
             embed.description += "\n\nEdited by <@" + str(entries[0].user.id) + ">"
         else:
@@ -1373,13 +1384,14 @@ class Logging(commands.Cog):
 
         # Log who the editor is
         entries = await role.guild.audit_logs(limit=1).flatten()
-        if entries[0].action == discord.AuditLogAction.role_create and entries[0].id != Config.logging["last_audit"]:
+        if entries[0].action == discord.AuditLogAction.role_create and \
+                entries[0].id != Config.guilds[role.guild]["logging"]["last_audit"]:
             Config.set_last_audit(entries[0])
             embed.description += "\n\nCreated by <@" + str(entries[0].user.id) + ">"
         else:
             embed.description += "\n\nCreated by Discord"
 
-        await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+        await Config.guilds[role.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
     @commands.Cog.listener()
     async def on_guild_role_delete(self, role):
@@ -1424,13 +1436,14 @@ class Logging(commands.Cog):
 
         # Log who the editor is
         entries = await role.guild.audit_logs(limit=1).flatten()
-        if entries[0].action == discord.AuditLogAction.role_delete and entries[0].id != Config.logging["last_audit"]:
+        if entries[0].action == discord.AuditLogAction.role_delete and \
+                entries[0].id != Config.guilds[role.guild]["logging"]["last_audit"]:
             Config.set_last_audit(entries[0])
             embed.description += "\n\nCreated by <@" + str(entries[0].user.id) + ">"
         else:
             embed.description += "\n\nCreated by Discord"
 
-        await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+        await Config.guilds[role.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
     @commands.Cog.listener()
     async def on_guild_role_update(self, before, after):
@@ -1446,7 +1459,7 @@ class Logging(commands.Cog):
             embed.description = after.mention + "\n\n**Before:** " + before.name + "\n**+After:** " + after.name
 
             await self.role_update_helper(after)
-            await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+            await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
         # Colour
         if before.colour != after.colour:
@@ -1461,7 +1474,7 @@ class Logging(commands.Cog):
             )
 
             await self.role_update_helper(after)
-            await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+            await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
         
         # Hoisted
         if before.hoist != after.hoist:
@@ -1476,7 +1489,7 @@ class Logging(commands.Cog):
                 embed.title = "Role Unhoisted"
 
             await self.role_update_helper(after)
-            await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+            await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
         # Mentionable
         if before.mentionable != after.mentionable:
@@ -1491,7 +1504,7 @@ class Logging(commands.Cog):
                 embed.title = "Role Made Unmentionable"
 
             await self.role_update_helper(after)
-            await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+            await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
         # Permissions
         if before.permissions != after.permissions:
@@ -1517,19 +1530,21 @@ class Logging(commands.Cog):
 
             field_description = "```"
             for i in range(0, len(permissions)):
-                field_description += permissions[i] + (" " * (max_length - len(permissions[i]))) + " " + values[i] + "\n"
+                field_description += permissions[i] + \
+                                     (" " * (max_length - len(permissions[i]))) + " " + values[i] + "\n"
             field_description += "```"
 
             embed.add_field(name="​", value=field_description, inline=True)
             await self.role_update_helper(after, embed)
-            await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+            await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
     async def role_update_helper(self, role, embed):
         embed.set_footer(text=str(role.id))
         embed.timestamp = datetime.utcnow()
 
         entries = await role.guild.audit_logs(limit=1).flatten()
-        if entries[0].action == discord.AuditLogAction.role_update and entries[0].id != Config.logging["last_audit"]:
+        if entries[0].action == discord.AuditLogAction.role_update and entries[0].id != \
+                Config.guilds[role.guild]["logging"]["last_audit"]:
             Config.set_last_audit(entries[0])
             embed.description += "\n\nEdited by <@" + str(entries[0].user.id) + ">"
         else:
@@ -1545,7 +1560,7 @@ class Logging(commands.Cog):
         entries = await guild.audit_logs(limit=1).flatten()
         if (entries[0].action == discord.AuditLogAction.emoji_create
             or entries[0].action == discord.AuditLogAction.emoji_delete) \
-                and entries[0].id != Config.logging["last_audit"]:
+                and entries[0].id != Config.guilds[guild]["logging"]["last_audit"]:
             Config.set_last_audit(entries[0])
             editor = "\n\nCreated by <@" + str(entries[0].user.id) + ">"
         else:
@@ -1565,7 +1580,7 @@ class Logging(commands.Cog):
             embed.set_footer(text="ID: " + str(emoji.id))
             embed.timestamp = datetime.utcnow()
 
-            await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+            await Config.guilds[guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
         for emoji in removed_emojis:
             embed = discord.Embed(
@@ -1578,7 +1593,7 @@ class Logging(commands.Cog):
             embed.set_footer(text="ID: " + str(emoji.id))
             embed.timestamp = datetime.utcnow()
 
-            await Config.logging["overwrite_channels"]["server"].send(embed=embed)
+            await Config.guilds[guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
@@ -1586,7 +1601,7 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the id, name, and updated voice properties of the member
         """
-        if Config.logging["overwrite_channels"]["voice"] is not None:
+        if Config.guilds[member.guild]["logging"]["overwrite_channels"]["voice"] is not None:
             # If voice channel was updated
             if before.channel != after.channel:
                 if before.channel is None:
@@ -1613,14 +1628,14 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 entries = await member.guild.audit_logs(limit=1).flatten()
-                if entries[0].action == discord.AuditLogAction.member_move and entries[0].id != Config.logging[
-                    "last_audit"]:
+                if entries[0].action == discord.AuditLogAction.member_move and \
+                        entries[0].id != Config.guilds[member.guild]["logging"]["last_audit"]:
                     Config.set_last_audit(entries[0])
                     embed.description += "\n\nMoved by <@" + str(entries[0].user.id) + ">"
-                    if Config.logging["overwrite_channels"]["mod"] != Config.logging["overwrite_channels"]["voice"]:
-                        await Config.logging["overwrite_channels"]["mod"].send(embed=embed)
+                    if Config.guilds[member.guild]["logging"]["overwrite_channels"]["mod"] != Config.guilds[member.guild]["logging"]["overwrite_channels"]["voice"]:
+                        await Config.guilds[member.guild]["logging"]["overwrite_channels"]["mod"].send(embed=embed)
 
-                await Config.logging["overwrite_channels"]["voice"].send(embed=embed)
+                await Config.guilds[member.guild]["logging"]["overwrite_channels"]["voice"].send(embed=embed)
 
             if before.self_stream != after.self_stream:
                 if after.self_stream:
@@ -1640,7 +1655,7 @@ class Logging(commands.Cog):
                 embed.set_footer(text="ID: " + str(member.id))
                 embed.timestamp = datetime.utcnow()
 
-                await Config.logging["overwrite_channels"]["voice"].send(embed=embed)
+                await Config.guilds[member.guild]["logging"]["overwrite_channels"]["voice"].send(embed=embed)
 
             if before.self_video != after.self_video:
                 if after.self_video:
@@ -1660,7 +1675,7 @@ class Logging(commands.Cog):
                 embed.set_footer(text="ID: " + str(member.id))
                 embed.timestamp = datetime.utcnow()
 
-                await Config.logging["overwrite_channels"]["voice"].send(embed=embed)
+                await Config.guilds[member.guild]["logging"]["overwrite_channels"]["voice"].send(embed=embed)
 
             if before.deaf != after.deaf:
                 if after.deaf:
@@ -1682,7 +1697,7 @@ class Logging(commands.Cog):
                 embed.set_footer(text="ID: " + str(member.id))
                 embed.timestamp = datetime.utcnow()
 
-                await Config.logging["overwrite_channels"]["voice"].send(embed=embed)
+                await Config.guilds[member.guild]["logging"]["overwrite_channels"]["voice"].send(embed=embed)
 
             if before.mute != after.mute:
                 if after.mute:
@@ -1704,7 +1719,7 @@ class Logging(commands.Cog):
                 embed.set_footer(text="ID: " + str(member.id))
                 embed.timestamp = datetime.utcnow()
 
-                await Config.logging["overwrite_channels"]["voice"].send(embed=embed)
+                await Config.guilds[member.guild]["logging"]["overwrite_channels"]["voice"].send(embed=embed)
 
     @commands.Cog.listener()
     async def on_member_ban(self, guild, user):
@@ -1712,7 +1727,7 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the id, name, and join date of the member
         """
-        if Config.logging["overwrite_channels"]["mod"] is not None:
+        if Config.guilds[guild]["logging"]["overwrite_channels"]["mod"] is not None:
             entries = await guild.audit_logs(limit=1).flatten()
             Config.set_last_audit(entries[0])
 
@@ -1729,7 +1744,7 @@ class Logging(commands.Cog):
             embed.set_footer(text="ID: " + str(user.id))
             embed.timestamp = datetime.utcnow()
 
-            await Config.logging["overwrite_channels"]["mod"].send(embed=embed)
+            await Config.guilds[guild]["logging"]["overwrite_channels"]["mod"].send(embed=embed)
 
     @commands.Cog.listener()
     async def on_member_unban(self, guild, user):
@@ -1737,7 +1752,7 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the id and name of the member
         """
-        if Config.logging["overwrite_channels"]["mod"] is not None:
+        if Config.guilds[guild]["logging"]["overwrite_channels"]["mod"] is not None:
 
             embed = discord.Embed(
                 title="Member unbanned",
@@ -1749,7 +1764,7 @@ class Logging(commands.Cog):
             embed.set_footer(text="ID: " + str(user.id))
             embed.timestamp = datetime.utcnow()
 
-            await Config.logging["overwrite_channels"]["mod"].send(embed=embed)
+            await Config.guilds[guild]["logging"]["overwrite_channels"]["mod"].send(embed=embed)
 
     @commands.Cog.listener()
     async def on_invite_create(self, invite):
@@ -1757,7 +1772,7 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the invite code, inviter name, inviter id, expiration time, invite max uses
         """
-        if Config.logging["overwrite_channels"]["member_tracking"] is not None:
+        if Config.guilds[invite.guild]["logging"]["overwrite_channels"]["member_tracking"] is not None:
             if invite.max_age == 0:
                 expires = "Never"
             elif invite.max_age == 1800:
@@ -1787,7 +1802,7 @@ class Logging(commands.Cog):
             embed.set_footer(text="ID: " + str(invite.inviter.id))
             embed.timestamp = datetime.utcnow()
 
-            await Config.logging["overwrite_channels"]["member_tracking"].send(embed=embed)
+            await Config.guilds[invite.guild]["logging"]["overwrite_channels"]["member_tracking"].send(embed=embed)
 
     @commands.Cog.listener()
     async def on_invite_delete(self, invite):
@@ -1795,7 +1810,7 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the invite code and moderator responsible for deleting it
         """
-        if Config.logging["overwrite_channels"]["member_tracking"] is not None:
+        if Config.guilds[invite.guild]["logging"]["overwrite_channels"]["member_tracking"] is not None:
             entries = await invite.guild.audit_logs(limit=1).flatten()
             Config.set_last_audit(entries[0])
 
@@ -1806,8 +1821,9 @@ class Logging(commands.Cog):
                 description="Code: " + invite.code + "\n\n**Deleted by <@" + str(entries[0].id) + ">**"
             )
 
-            if Config.logging["overwrite_channels"]["mod"] != Config.logging["overwrite_channels"]["member_tracking"]:
-                await Config.logging["overwrite_channels"]["mod"].send(embed=embed)
+            if Config.guilds[invite.guild]["logging"]["overwrite_channels"]["mod"] != \
+                    Config.guilds[invite.guild]["logging"]["overwrite_channels"]["member_tracking"]:
+                await Config.guilds[invite.guild]["logging"]["overwrite_channels"]["mod"].send(embed=embed)
 
-            await Config.logging["overwrite_channels"]["member_tracking"].send(embed=embed)
+            await Config.guilds[invite.guild]["logging"]["overwrite_channels"]["member_tracking"].send(embed=embed)
 

@@ -23,29 +23,31 @@ class Administration(commands.Cog):
         self.bot = bot
 
     async def on_ready(self):
-        for member in Config.administration["jails"]:
-            seconds = (member["date"] - datetime.now()).total_seconds()
+        for guild in Config.guilds:
+            muted_role = Config.guilds[guild]["muted_role"]
 
-            if seconds < 0:
-                seconds = 0
+            for member in Config.guilds[guild]["administration"]["jails"]:
+                seconds = (member["date"] - datetime.now()).total_seconds()
 
-            # Reset roles if some have been picked up since last run
-            if member.roles > 1 and seconds > 0:
-                if member.premium_since is None:
-                    await member.edit(roles=[])
-                else:
-                    await member.edit(roles=[Config.nitro_role])
+                if seconds < 0:
+                    seconds = 0
 
-            await self.jail_helper(member, seconds, member["roles"])
+                # Reset roles if some have been picked up since last run
+                if member.roles > 1 and seconds > 0:
+                    if member.premium_since is None:
+                        await member.edit(roles=[])
+                    else:
+                        await member.edit(roles=[Config.guilds[guild]["nitro_role"]])
 
-        muted_role = Config.guild.get_role(615956736616038432)
-        for member in Config.administration["mutes"]:
-            seconds = (member["date"] - datetime.now()).total_seconds()
+                await self.jail_helper(member, seconds, member["roles"])
 
-            if seconds < 0:
-                seconds = 0
+            for member in Config.guilds[guild]["administration"]["mutes"]:
+                seconds = (member["date"] - datetime.now()).total_seconds()
 
-            await self.mute_helper(member, seconds, muted_role)
+                if seconds < 0:
+                    seconds = 0
+
+                await self.mute_helper(member, seconds, muted_role)
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
@@ -56,7 +58,7 @@ class Administration(commands.Cog):
         :param after: Member after
         """
         # Prevent jailed users from picking up roles
-        if after in Config.administration["jails"]:
+        if after in Config.guilds[after.guild]["administration"]["jails"]:
             added_roles = [x for x in after.roles if x not in before.roles]
             if len(added_roles) > 0:
                 jail_embed = discord.Embed(title="Member jailed", color=0xbe4041)
@@ -69,8 +71,8 @@ class Administration(commands.Cog):
                 jail_embed.set_footer(text="ID: " + str(after.id))
                 jail_embed.timestamp = datetime.utcnow()
 
-                if Config.logging["overwrite_channels"]["mod"] is not None:
-                    await Config.logging["overwrite_channels"]["mod"].send(embed=jail_embed)
+                if Config.guilds[after.guild]["logging"]["overwrite_channels"]["mod"] is not None:
+                    await Config.guilds[after.guild]["logging"]["overwrite_channels"]["mod"].send(embed=jail_embed)
 
                 if after.premium_since is None:
                     await after.edit(roles=[])
@@ -84,22 +86,23 @@ class Administration(commands.Cog):
 
         :param payload: Emoji payload
         """
-        # If a staff channel exists
-        if Config.logging["staff"] is not None:
-            if Config.guild.id == payload.guild_id:
-                channel = Config.guild.get_channel(payload.channel_id)
+        guild = self.bot.get_guild(payload.guild_id)
 
-                # If the channel is a logging channel
-                if channel == Config.logging["channel"] \
-                        or channel == Config.dm_channel \
-                        or channel in Config.logging["overwrite_channels"].values():
-                    if str(payload.emoji) in ["❗", "‼️", "⁉️", "❕"]:
-                        message = await channel.fetch_message(payload.message_id)
-                        if len(message.embeds) > 0:
-                            await Config.logging["staff"].send(
-                                "Message forwarded by <@" + str(payload.user_id) + "> from <#" + str(channel.id) + ">",
-                                embed=message.embeds[0]
-                            )
+        # If a staff channel exists
+        if Config.guilds[guild]["logging"]["staff"] is not None:
+            channel = guild.get_channel(payload.channel_id)
+
+            # If the channel is a logging channel
+            if channel == Config.guilds[guild]["logging"]["channel"] \
+                    or channel in Config.guilds[guild]["logging"]["overwrite_channels"].values() \
+                    or channel == Config.dm_channel:
+                if str(payload.emoji) in ["❗", "‼️", "⁉️", "❕"]:
+                    message = await channel.fetch_message(payload.message_id)
+                    if len(message.embeds) > 0:
+                        await Config.guilds[guild]["logging"]["staff"].send(
+                            "Message forwarded by <@" + str(payload.user_id) + "> from <#" + str(channel.id) + ">",
+                            embed=message.embeds[0]
+                        )
 
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
@@ -129,7 +132,6 @@ class Administration(commands.Cog):
         embed.set_footer(text="ID: " + str(user.id))
         embed.timestamp = datetime.utcnow()
 
-        avatar_channel = Config.guild.get_channel(738536336016801793)
         await ctx.send(embed=embed)
 
     @commands.command(pass_context=True)
@@ -150,7 +152,7 @@ class Administration(commands.Cog):
             for i in ctx.message.attachments:
                 attachments.append(await i.to_file())
 
-        if len(msg) is not None:
+        if msg is not None:
             message = await channel.send(msg, files=attachments)
             await ctx.send(
                 "Message sent (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(message.channel.id) +
@@ -503,7 +505,7 @@ class Administration(commands.Cog):
             await ctx.send("You must include a reason for the mute")
             return
 
-        Config.add_mute(member, datetime.now() + timedelta(seconds=seconds))
+        Config.add_mute(ctx.guild, member, datetime.now() + timedelta(seconds=seconds))
 
         mute_time = time_delta_string(datetime.utcnow(), datetime.utcnow() + delta)
 
@@ -522,8 +524,8 @@ class Administration(commands.Cog):
 
         await member.add_roles(muted_role)
         await ctx.send("**Muted** user **" + username + "** for **" + mute_time + "** for: **" + reason + "**")
-        if Config.logging["overwrite_channels"]["mod"] is not None:
-            await Config.logging["overwrite_channels"]["mod"].send(embed=mute_embed)
+        if Config.guilds[ctx.guild]["logging"]["overwrite_channels"]["mod"] is not None:
+            await Config.guilds[ctx.guild]["logging"]["overwrite_channels"]["mod"].send(embed=mute_embed)
         await member.send(
             "**You were muted in the " + ctx.guild.name + " for " + mute_time + ". Reason:**\n> " +
             reason + "\n\nYou can respond here to contact staff."
@@ -549,8 +551,8 @@ class Administration(commands.Cog):
         mute_embed.set_footer(text="ID: " + str(member.id))
         mute_embed.timestamp = datetime.utcnow()
 
-        if Config.logging["overwrite_channels"]["mod"] is not None:
-            await Config.logging["overwrite_channels"]["mod"].send(embed=mute_embed)
+        if Config.guilds[member.guild]["logging"]["overwrite_channels"]["mod"] is not None:
+            await Config.guilds[member.guild]["logging"]["overwrite_channels"]["mod"].send(embed=mute_embed)
 
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
@@ -740,7 +742,7 @@ class Administration(commands.Cog):
         :param reason: Reason for the jail
         """
         # Is user already jailed
-        if member in Config.administration["jails"]:
+        if member in Config.guilds[ctx.guild]["administration"]["jails"]:
             await ctx.send("This member is already jailed")
             return
 
@@ -780,15 +782,15 @@ class Administration(commands.Cog):
         if member.premium_since is None:
             await member.edit(roles=[])
         else:
-            await member.edit(roles=[Config.nitro_role])
+            await member.edit(roles=[Config[ctx.guild]["nitro_role"]])
 
         await member.send(
             "You have been locked out of the server for " + jail_time + ". Reason:\n> " + reason +
             "\n\nYou can respond here to contact staff."
         )
 
-        if Config.logging["overwrite_channels"]["mod"] is not None:
-            await Config.logging["overwrite_channels"]["mod"].send(embed=jail_embed)
+        if Config.guilds[ctx.guild]["logging"]["overwrite_channels"]["mod"] is not None:
+            await Config.guilds[ctx.guild]["logging"]["overwrite_channels"]["mod"].send(embed=jail_embed)
         await ctx.send(
             "**Jailed** user **" + member.display_name + "** for **" + jail_time + "** for: **" + reason + "**"
         )
@@ -812,8 +814,8 @@ class Administration(commands.Cog):
         jail_embed.set_footer(text="ID: " + str(member.id))
         jail_embed.timestamp = datetime.utcnow()
 
-        if Config.logging["overwrite_channels"]["mod"] is not None:
-            await Config.logging["overwrite_channels"]["mod"].send(embed=jail_embed)
+        if Config.guilds[member.guild]["logging"]["overwrite_channels"]["mod"] is not None:
+            await Config.guilds[member.guild]["logging"]["overwrite_channels"]["mod"].send(embed=jail_embed)
 
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
@@ -906,7 +908,7 @@ class Administration(commands.Cog):
         :param ctx: Context object
         :param channel: Channel to be the staff channel
         """
-        if Config.logging["staff"] != channel:
+        if Config.guilds[ctx.guild]["logging"]["staff"] != channel:
             Config.set_staff_channel(channel)
             await ctx.send("Successfully updated staff channel")
         else:

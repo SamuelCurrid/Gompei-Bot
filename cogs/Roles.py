@@ -48,7 +48,7 @@ class Roles(commands.Cog):
 
         :param ctx: context object
         """
-        member = await Config.guild.fetch_member(ctx.message.author.id)
+        member = await Config.main_guild.fetch_member(ctx.message.author.id)
 
         # Get lockout info
         if member in Config.lockouts:
@@ -74,7 +74,7 @@ class Roles(commands.Cog):
 
         :param ctx: context object
         """
-        member = await Config.guild.fetch_member(ctx.message.author.id)
+        member = await Config.main_guild.fetch_member(ctx.message.author.id)
 
         if member is None:
             # Member is not in guild
@@ -99,10 +99,7 @@ class Roles(commands.Cog):
         :param ctx: context object
         :param roles: role(s) to add
         """
-        if ctx.guild != Config.guild:
-            await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up "
-                           "here: <INSERT LINK>")
-        elif len(roles) == 0:
+        if len(roles) == 0:
             await ctx.send("You must include a role to add")
         else:
             Config.add_access_roles(roles)
@@ -119,10 +116,7 @@ class Roles(commands.Cog):
         :param ctx: context object
         :param roles: role(s) to remove
         """
-        if ctx.guild != Config.guild:
-            await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up "
-                           "here: <INSERT LINK>")
-        elif len(roles) == 0:
+        if len(roles) == 0:
             await ctx.send("You must include a role to remove")
         else:
             Config.remove_access_roles(roles)
@@ -138,10 +132,7 @@ class Roles(commands.Cog):
         :param ctx: context object
         :param roles: role(s) to add
         """
-        if ctx.guild != Config.guild:
-            await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up "
-                           "here: <INSERT LINK>")
-        elif len(roles) == 0:
+        if len(roles) == 0:
             await ctx.send("You must include a role to add")
         else:
             Config.add_opt_in_roles(roles)
@@ -158,10 +149,7 @@ class Roles(commands.Cog):
         :param ctx: context object
         :param roles: role(s) to remove
         """
-        if ctx.guild != Config.guild:
-            await ctx.send("This bot isn't configured to work in this server! Read instructions on how to set it up "
-                           "here: <INSERT LINK>")
-        elif len(roles) == 0:
+        if len(roles) == 0:
             await ctx.send("You must include a role to remove")
         else:
             Config.remove_opt_in_roles(roles)
