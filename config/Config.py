@@ -104,6 +104,7 @@ async def update_guild_settings(guild: discord.Guild):
         "prefix": None,
         "access_roles": [],
         "opt_in_roles": [],
+        "announcement_channels": [],
         "command_channels": [],
         "muted_role": None,
         "logging": {
@@ -114,6 +115,7 @@ async def update_guild_settings(guild: discord.Guild):
                 "message": None,
                 "member_tracking": None,
                 "mod": None,
+                "reaction": None,
                 "server": None,
                 "status": None,
                 "voice": None
@@ -196,7 +198,7 @@ async def update_guild_settings(guild: discord.Guild):
 def add_guild(guild: discord.Guild):
     global guilds, raw_settings
 
-    guilds[guild] = raw_settings["guilds"][str(guild.id)] = {
+    guilds[guild] = {
         "nitro_role": None,
         "prefix": None,
         "access_roles": [],
@@ -211,12 +213,42 @@ def add_guild(guild: discord.Guild):
                 "message": None,
                 "member_tracking": None,
                 "mod": None,
+                "reaction": None,
                 "server": None,
                 "status": None,
                 "voice": None
             },
             "staff": None,
             "last_audit": None,
+            "invites": {}
+        },
+        "administration": {
+            "mutes": {},
+            "jails": {}
+        }
+    }
+
+    raw_settings["guilds"][str(guild.id)] = {
+        "nitro_role": None,
+        "prefix": None,
+        "access_roles": [],
+        "opt_in_roles": [],
+        "command_channels": [],
+        "muted_role": None,
+        "logging": {
+            "channel": None,
+            "overwrite_channels": {
+                "avatar": None,
+                "member": None,
+                "message": None,
+                "member_tracking": None,
+                "mod": None,
+                "reaction": None,
+                "server": None,
+                "status": None,
+                "voice": None
+            },
+            "staff": None,
             "invites": {}
         },
         "administration": {
@@ -621,6 +653,32 @@ def clear_close_time():
     global close_time, raw_settings
 
     close_time = raw_settings["close_time"] = None
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def add_announcement_channel(channel: discord.TextChannel):
+    """
+    Adds an announcement channel for a guild
+
+    :param channel: Channel to add
+    """
+    global guilds, raw_settings
+
+    raw_settings["guilds"][str(channel.guild.id)]["announcement_channels"].append(channel.id)
+    guilds[channel.guild]["announcement_channels"].append(channel)
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def remove_announcement_channel(channel: discord.TextChannel):
+    """
+    Adds an announcement channel for a guild
+
+    :param channel: Channel to add
+    """
+    global guilds, raw_settings
+
+    raw_settings["guilds"][str(channel.guild.id)]["announcement_channels"].remove(channel.id)
+    guilds[channel.guild]["announcement_channels"].remove(channel)
     save_json(os.path.join("config", "settings.json"), raw_settings)
 
 

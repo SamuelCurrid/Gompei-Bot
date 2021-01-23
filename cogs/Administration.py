@@ -189,74 +189,6 @@ class Administration(commands.Cog):
                 str(bot_msg.channel.id) + "/" + str(bot_msg.id) + ">)"
             )
 
-    @commands.command(pass_context=True, aliases=["echoPM", "pmEcho"])
-    @commands.check(moderator_perms)
-    @commands.guild_only()
-    async def echo_pm(self, ctx, user: typing.Union[discord.User, discord.Member], *, msg):
-        """
-        Forwards given message / attachments to give user
-        Usage: .echoPM <user> <message>
-
-        :param ctx: context object
-        :param user: user to send message to
-        :param msg: message to send
-        """
-        # Read attachments and message
-        attachments = []
-        if len(ctx.message.attachments) > 0:
-            for i in ctx.message.attachments:
-                attachments.append(await i.to_file())
-
-        # Send message to user via DM
-        if len(msg) > 0:
-            message = await user.send(msg, files=attachments)
-            await ctx.send(
-                "Message sent (<https://discordapp.com/channels/@me/" + str(message.channel.id) + "/" +
-                str(message.id) + ">)"
-            )
-        elif len(attachments) > 0:
-            message = await user.send(files=attachments)
-            await ctx.send(
-                "Message sent (<https://discordapp.com/channels/@me/" + str(message.channel.id) + "/" +
-                str(message.id) + ">)"
-            )
-        else:
-            await ctx.send("No content to send")
-
-        await ctx.message.add_reaction("👍")
-
-    @commands.guild_only()
-    @commands.command(pass_context=True, aliases=["pmEdit", "editPM"])
-    @commands.check(moderator_perms)
-    async def pm_edit(self, ctx, user: typing.Union[discord.Member, discord.User], message_link, *, msg):
-        """
-        Edits a PM message sent to a user
-        Usage: .pmEdit <user> <messageLink>
-
-        :param ctx: context object
-        :param user: user that the message was sent to
-        :param message_link: link to the message
-        :param msg: message to edit to
-        """
-        # Get message ID from message_link
-        message_id = int(message_link[message_link.rfind("/") + 1:])
-
-        channel = user.dm_channel
-        if channel is None:
-            channel = await user.create_dm()
-
-        message = await channel.fetch_message(message_id)
-        if message is None:
-            await ctx.send("Not a valid link to message")
-        else:
-            if message.author.id != self.bot.user.id:
-                await ctx.send("Cannot edit a message that is not my own")
-            else:
-                await message.edit(content=msg)
-                await ctx.send(
-                    "Message edited (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(channel.id) +
-                    "/" + str(message_id) + ">)"
-                )
 
     @commands.command(pass_context=True, aliases=["echoReact", "react"])
     @commands.check(moderator_perms)
@@ -940,62 +872,6 @@ class Administration(commands.Cog):
             return
 
         await ctx.send("Successfully updated the guild verification level to: **" + key.title() + "**")
-
-    @commands.command(pass_context=True, name="rolePM", aliases=["pmRole"])
-    @commands.check(administrator_perms)
-    @commands.guild_only()
-    async def role_pm(self, ctx, role: discord.Role, *, msg):
-        """
-        Sends a private message to all users with given role
-        Usage: .pmRole <role> <message>
-
-        :param ctx: Context object
-        :param role: Role to
-        :param msg: Message to send
-        """
-        # Read attachments and message
-        attachments = []
-        if len(ctx.message.attachments) > 0:
-            for i in ctx.message.attachments:
-                attachments.append(await i.to_file())
-
-        members = role.members
-
-        def check_author(message):
-            return message.author.id == ctx.author.id
-
-        # Send message to user via DM
-        if len(msg) > 0:
-            await ctx.send(
-                "You are about to send this message to " +
-                str(len(role.members)) + "users. Are you sure you want to do this? (Y/N)"
-            )
-
-            response = await self.bot.wait_for('message', check=check_author)
-
-            if response.content.lower() == "y" or response.content.lower() == "yes":
-                for member in members:
-                    await member.send(msg, files=attachments)
-                await ctx.send("Message(s) sent to " + str(len(role.members)) + " members")
-            else:
-                await ctx.send("Cancelled role PM")
-
-        elif len(attachments) > 0:
-            await ctx.send(
-                "You are about to send this message to " +
-                str(len(role.members)) + "users. Are you sure you want to do this? (Y/N)"
-            )
-
-            response = await self.bot.wait_for('message', check=check_author)
-
-            if response.content.lower() == "y" or response.content.lower() == "yes":
-                for member in members:
-                    await member.send(files=attachments)
-                await ctx.send("Message(s) sent to " + str(len(role.members)) + " members")
-            else:
-                await ctx.send("Cancelled role PM")
-        else:
-            await ctx.send("No content to send")
 
     @commands.command(pass_context=True, name="echoReply", aliases=["reply"])
     @commands.check(moderator_perms)

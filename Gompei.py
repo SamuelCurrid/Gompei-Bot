@@ -7,6 +7,7 @@ from config import Config
 from cogs.Administration import Administration
 from cogs.DirectMessages import DirectMessages
 from cogs.ReactionRoles import ReactionRoles
+from cogs.EmbedBuilder import EmbedBuilder
 from cogs.Leaderboards import Leaderboards
 from cogs.Information import Information
 from cogs.Triggers import Triggers
@@ -14,6 +15,7 @@ from cogs.Logging import Logging
 from cogs.Voting import Voting
 from cogs.Games import Games
 from cogs.Roles import Roles
+from cogs.Memes import Memes
 
 # Libraries
 from discord.ext import commands
@@ -23,6 +25,9 @@ import sys
 
 
 def get_prefix(client, message):
+    if message.guild is None:
+        return Config.prefix
+
     guild_prefix = Config.guilds[message.guild]["prefix"]
 
     if guild_prefix is None:
@@ -38,11 +43,14 @@ intents.presences = True
 intents.guilds = True
 gompei = commands.Bot(command_prefix=get_prefix, case_insensitive=True, intents=intents)
 
+
 # Load Extensions
 print("Loading cogs...")
+gompei.add_cog(Memes(gompei))
 gompei.add_cog(Leaderboards(gompei))
 gompei.add_cog(Administration(gompei))
 gompei.add_cog(DirectMessages(gompei))
+gompei.add_cog(EmbedBuilder(gompei))
 gompei.add_cog(Games(gompei))
 gompei.add_cog(Information(gompei))
 gompei.add_cog(Triggers(gompei))
@@ -237,6 +245,28 @@ async def set_guild(ctx):
     """
     await Config.set_main_guild(ctx.guild)
     await ctx.send("Successfully set guild")
+
+
+@gompei.command(pass_context=True, name="addAnnouncementChannel")
+@commands.check(administrator_perms)
+@commands.guild_only()
+async def add_announcement_channel(ctx, channel: discord.TextChannel):
+    if channel not in Config.guilds[channel.guild]["announcement_channels"]:
+        Config.add_announcement_channel(channel)
+        await ctx.send("Successfully added " + channel.mention + " as an announcement channel")
+    else:
+        await ctx.send("This is already an announcement channel")
+
+
+@gompei.command(pass_context=True, name="removeAnnouncementChannel")
+@commands.check(administrator_perms)
+@commands.guild_only()
+async def remove_announcement_channel(ctx, channel: discord.TextChannel):
+    if channel in Config.guilds[channel.guild]["announcement_channels"]:
+        Config.remove_announcement_channel(channel)
+        await ctx.send("Successfully removed " + channel.mention + " as an announcement channel")
+    else:
+        await ctx.send("Cannot remove a channel that is not already an announcement channel")
 
 
 @gompei.command(pass_context=True, name="addCommandChannel")
