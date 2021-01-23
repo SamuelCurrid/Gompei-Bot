@@ -197,8 +197,8 @@ class Logging(commands.Cog):
         """
         Sends a logging message containing
         location (channel), and ID of the message deleted
+
         :param payload:
-        :return:
         """
         # If not a DM message
         if hasattr(payload, "guild_id"):
@@ -973,7 +973,7 @@ class Logging(commands.Cog):
         Sends a logging message containing
         the property of the guild updated before and after
         """
-        if Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"] is not None:
+        if Config.guilds[after]["logging"]["overwrite_channels"]["server"] is not None:
 
             # AFK Channel / Timeout
             if before.afk_channel != after.afk_channel:
@@ -1001,7 +1001,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # Notification Setting
             if before.default_notifications != after.default_notifications:
@@ -1016,7 +1016,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # Description
             if before.description != after.description:
@@ -1039,7 +1039,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # Features
             if before.features != after.features:
@@ -1072,7 +1072,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # File Size Limit
             if before.filesize_limit != after.filesize_limit:
@@ -1091,7 +1091,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # Emoji Limit
             if before.emoji_limit != after.emoji_limit:
@@ -1110,7 +1110,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # 2FA moderation
             if before.mfa_level != after.mfa_level:
@@ -1127,7 +1127,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # Owner
             if before.owner != after.owner:
@@ -1140,7 +1140,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # Name
             if before.name != after.name:
@@ -1153,7 +1153,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # Public updates channel
             if before.public_updates_channel != after.public_updates_channel:
@@ -1181,7 +1181,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # Rules channel
             if before.rules_channel != after.rules_channel:
@@ -1209,7 +1209,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # Region
             if before.region != after.region:
@@ -1222,7 +1222,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # System Channel
             if before.system_channel != after.system_channel:
@@ -1250,7 +1250,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # Verification Level
             if before.verification_level != after.verification_level:
@@ -1262,7 +1262,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # Banner
             if before.banner != after.banner:
@@ -1285,7 +1285,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.guilds[after.guilds]["logging"]["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # Discovery Splash
             if before.discovery_splash != after.discovery_splash:
@@ -1295,7 +1295,7 @@ class Logging(commands.Cog):
                 embed.set_image(url=after.discovery_splash_url)
 
                 await self.guild_update_helper(after)
-                await Config.guilds[after.guilds]["logging"]["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # Icon
             if before.icon != after.icon:
@@ -1307,7 +1307,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(after)
-                await Config.guilds[after.guilds]["logging"]["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
             # Splash
             if before.splash != after.splash:
@@ -1330,7 +1330,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 await self.guild_update_helper(embed, after)
-                await Config.guilds[after.guilds]["logging"]["overwrite_channels"]["server"].send(embed=embed)
+                await Config.guilds[after]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
     async def guild_update_helper(self, embed, guild: discord.Guild):
         entries = await guild.audit_logs(limit=1).flatten()

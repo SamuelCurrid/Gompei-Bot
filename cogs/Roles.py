@@ -32,9 +32,9 @@ class Roles(commands.Cog):
         if len(added_roles) + len(removed_roles) > 0:
             role_list = []
             for role in after.roles:
-                if role in Config.access_roles:
+                if role in Config.guilds[after.guild]["access_roles"]:
                     return
-                if role not in Config.opt_in_roles:
+                if role not in Config.guilds[after.guild]["opt_in_roles"]:
                     role_list.append(role)
 
             await after.edit(roles=role_list)
@@ -60,7 +60,7 @@ class Roles(commands.Cog):
             if member.premium_since is None:
                 await member.edit(roles=[])
             else:
-                await member.edit(roles=[Config.nitro_role])
+                await member.edit(roles=[Config.guilds[Config.main_guild]["nitro_role"]])
 
             # DM User
             await member.send("Locked you out of the server. To get access back just type \".letmein\" here")
