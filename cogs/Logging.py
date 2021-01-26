@@ -1486,7 +1486,7 @@ class Logging(commands.Cog):
             embed.colour = discord.Colour(0x8899d4)
             embed.description = after.mention + "\n\n**Before:** " + before.name + "\n**+After:** " + after.name
 
-            await self.role_update_helper(after)
+            await self.role_update_helper(after, embed)
             await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
         # Colour
@@ -1501,7 +1501,7 @@ class Logging(commands.Cog):
                 )
             )
 
-            await self.role_update_helper(after)
+            await self.role_update_helper(after, embed)
             await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
         
         # Hoisted
@@ -1516,7 +1516,7 @@ class Logging(commands.Cog):
             else:
                 embed.title = "Role Unhoisted"
 
-            await self.role_update_helper(after)
+            await self.role_update_helper(after, embed)
             await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
         # Mentionable
@@ -1531,7 +1531,7 @@ class Logging(commands.Cog):
             else:
                 embed.title = "Role Made Unmentionable"
 
-            await self.role_update_helper(after)
+            await self.role_update_helper(after, embed)
             await Config.guilds[after.guild]["logging"]["overwrite_channels"]["server"].send(embed=embed)
 
         # Permissions
