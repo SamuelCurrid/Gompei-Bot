@@ -165,10 +165,34 @@ class Logging(commands.Cog):
 
                 embed = discord.Embed(
                     title="Message deleted in " + "#" + channel.name,
-                    url=previous_message[0].jump_url,
                     colour=discord.Colour(0xbe4041),
                     description=message.content
                 )
+
+                if previous_message[0] is not None:
+                    embed.description += "\n[Previous Message](" + previous_message[0].jump_url + ")"
+
+                if message.reference is not None: # Check for message reply
+                    if message.reference.cached_message is None:
+                        try:
+                            message_reference = await message.guild.get_channel(message.reference.channel_id).fetch_message(message.reference.message_id)
+                        except discord.NotFound:
+                            if message.reference.message_id is None:  # Check if reply has been deleted
+                                embed.description += "\nReplied to deleted message"
+                    else:
+                        message_reference = message.reference.cached_message
+
+                    if message_reference.author in message.mentions \
+                            and message_reference.author.mention not in message_reference.content:
+                        name = "Reply mention to"
+                    else:
+                        name = "Reply to"
+
+                    embed.add_field(
+                        name=name,
+                        value="https://discord.com/channels/" + str(message.reference.guild_id) + "/"
+                              + str(message.reference.channel_id) + "/" + str(message.reference.message_id)
+                    )
 
                 if len(message.attachments) > 0:  # Check for attachments
                     for attachment in message.attachments:
@@ -285,10 +309,11 @@ class Logging(commands.Cog):
 
                     embed = discord.Embed(
                         title=title,
-                        url=after.jump_url,
                         colour=colour,
                         description=after.content
                     )
+
+                    embed.description += "\n[Go To](" + after.jump_url + ")"
 
                     embed.set_author(
                         name=before.author.name + "#" + before.author.discriminator,
@@ -307,10 +332,11 @@ class Logging(commands.Cog):
 
                     embed = discord.Embed(
                         title="Message edited in #" + channel.name,
-                        url=before.jump_url,
                         colour=discord.Colour(0x8899d4),
                         description="**Before:** " + before.content + "\n**+After:** " + after.content
                     )
+
+                    embed.description += "\n[Go To](" + after.jump_url + ")"
 
                     embed.set_author(
                         name=before.author.name + "#" + before.author.discriminator,
@@ -349,6 +375,8 @@ class Logging(commands.Cog):
                         colour=discord.Colour(0x8899d4),
                         description="**Uncached Message**\n**+After:** " + message.content
                     )
+
+                    embed.description += "\n[Go To](" + message.jump_url + ")"
 
                     embed.set_author(
                         name=message.author.name + "#" + message.author.discriminator,
