@@ -1,93 +1,9 @@
 {
     "dm_channel_id": 746002454180528219,
     "close_time": null,
-    "lockouts": {
-        "493937438767448065": [
-            567169726250352640,
-            708870422346858517,
-            725887796312801340,
-            606543786721411133,
-            567196586799529994,
-            605826080187744447,
-            567179738683015188
-        ]
-    },
-    "status": "Underwater Hockey",
+    "lockouts": {},
+    "status": null,
     "prefix": ".",
     "main_guild": 567169726250352640,
-    "guilds": {
-        "567169726250352640": {
-            "nitro_role": 620478981946212363,
-            "prefix": null,
-            "access_roles": [
-                664719508404961293,
-                567179738683015188,
-                578350297978634240,
-                578350427209203712,
-                578350479688466455,
-                692461531983511662,
-                599319106478669844,
-                638748298152509461,
-                634223378773049365,
-                630589807084699653,
-                748941410639806554
-            ],
-            "opt_in_roles": [
-                725887796312801340,
-                772614814484135976
-            ],
-            "command_channels": [
-                567179438047887381
-            ],
-            "muted_role": null,
-            "logging": {
-                "channel": 733403372136431656,
-                "overwrite_channels": {
-                    "avatar": 738536336016801793,
-                    "member": 733403372136431656,
-                    "message": 778754096089268264,
-                    "member_tracking": 778754300289220608,
-                    "mod": 778778286980464670,
-                    "reaction": null,
-                    "server": 778775511178149909,
-                    "status": 778753943856480277,
-                    "voice": 778754028938199063
-                },
-                "staff": 742118493968662619,
-                "invites": {}
-            },
-            "administration": {
-                "mutes": {},
-                "jails": {}
-            }
-        },
-        "409490420209549319": {
-            "nitro_role": null,
-            "prefix": null,
-            "access_roles": [],
-            "opt_in_roles": [],
-            "command_channels": [],
-            "muted_role": null,
-            "logging": {
-                "channel": null,
-                "overwrite_channels": {
-                    "avatar": null,
-                    "member": null,
-                    "message": null,
-                    "member_tracking": null,
-                    "mod": null,
-                    "reaction": null,
-                    "server": null,
-                    "status": null,
-                    "voice": null
-                },
-                "staff": null,
-                "invites": {}
-            },
-            "administration": {
-                "mutes": {},
-                "jails": {}
-            }
-        }
-    }
+    "guilds": {}
 }
