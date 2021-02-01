@@ -86,6 +86,9 @@ class Administration(commands.Cog):
 
         :param payload: Emoji payload
         """
+        if payload.guild_id is None:
+            return
+
         guild = self.bot.get_guild(payload.guild_id)
 
         # If a staff channel exists

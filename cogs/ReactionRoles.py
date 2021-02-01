@@ -85,7 +85,7 @@ class ReactionRoles(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
-        if not payload.member.bot:
+        if payload.guild_id is not None and not payload.member.bot:
             key = str(payload.channel_id) + str(payload.message_id)
             if key in self.reaction_messages:
                 if str(payload.emoji) in self.reaction_messages[key]:
@@ -103,6 +103,9 @@ class ReactionRoles(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload):
+        if payload.guild_id is None:
+            return
+        
         key = str(payload.channel_id) + str(payload.message_id)
         if key in self.reaction_messages:
             if str(payload.emoji) in self.reaction_messages[key]:
