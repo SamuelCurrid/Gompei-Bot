@@ -43,9 +43,12 @@ class Voting(commands.Cog):
                 await self.poll_timer(closes)
 
     async def load_poll_message(self):
-        guild = self.bot.get_guild(self.settings["guild_id"])
+        guild = self.bot.get_guild(self.settings["main_guild"])
+        print(guild)
         channel = guild.get_channel(self.votes["channel_id"])
+        print(channel)
         self.poll_message = await channel.fetch_message(self.votes["message_id"])
+        print(self.poll_message)
 
     async def update_poll_message(self):
         self.votes["votes"] = sorted(self.votes["votes"], key=lambda i: len(i["voters"]), reverse=True)
@@ -262,7 +265,7 @@ class Voting(commands.Cog):
                 if option["creator"] == ctx.author.id:
                     await ctx.send("You already added an option to this poll")
                     return
-                if user_option in option["name"]:
+                if user_option == option["name"]:
                     await ctx.send("This option already exists")
                     return
 

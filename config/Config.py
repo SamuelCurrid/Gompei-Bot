@@ -13,6 +13,7 @@ main_guild = None
 prefix = "."
 raw_settings = None
 status = None
+verifications = {"role": None, "users": {}}
 guilds = {}
 
 
@@ -770,4 +771,29 @@ def set_muted_role(role: discord.Role):
 
     guilds[role.guild]["muted_role"] = role
     raw_settings["guilds"][str(role.guild.id)]["muted_role"] = role.id
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def set_verification_role(role: discord.Role):
+    """
+    Sets the verification role
+
+    :param role: Role to set to
+    """
+    global verifications, raw_settings
+
+    verifications["role"] = role
+    raw_settings["verifications"]["role"] = role.id
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def add_verified_user(member: discord.Member):
+    """
+    Adds a verified member
+
+    :param member: Member to add
+    """
+    global verifications, raw_settings
+
+    raw_settings["verifications"]["users"] = verifications["users"] = member.id
     save_json(os.path.join("config", "settings.json"), raw_settings)

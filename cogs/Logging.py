@@ -883,18 +883,40 @@ class Logging(commands.Cog):
 
             status_before = ""
             status_after = ""
+            links = ""
 
             # If they have a custom status
             if isinstance(after.activity, discord.CustomActivity):
                 if after.activity.emoji is not None:
-                    status_after += str(after.activity.emoji) + " "
+                    if after.activity.emoji.is_custom_emoji():
+                        if after.activity.emoji.animated:
+                            status_after += "\<a\:"
+                        else:
+                            status_after += "\<\:"
+
+                        status_after += after.activity.emoji.name + ":" + str(after.activity.emoji.id) + "> "
+                        links += "[Emoji After](" + str(after.activity.emoji.url) + ")\n"
+                    else:
+                        status_after += after.activity.emoji.name + " "
                 if after.activity.name is not None:
                     status_after += after.activity.name
 
                 # If the user had a custom status before
                 if isinstance(before.activity, discord.CustomActivity):
                     if before.activity.emoji is not None:
-                        status_before += str(before.activity.emoji) + " "
+                        if before.activity.emoji.is_custom_emoji():
+                            if before.activity.emoji.animated:
+                                status_before += "\<a\:"
+                            else:
+                                status_before += "\<\:"
+
+                            status_before += before.activity.emoji.name + ":" + str(before.activity.emoji.id) + "> "
+                            if before.activity.emoji.url == after.activity.emoji.url:
+                                links = "[Emoji](" + str(before.activity.emoji.url) + ")"
+                            else:
+                                links = "[Emoji Before](" + str(before.activity.emoji.url) + ")\n" + links
+                        else:
+                            status_before += before.activity.emoji.name + " "
                     if before.activity.name is not None:
                         status_before += before.activity.name
 
@@ -930,7 +952,17 @@ class Logging(commands.Cog):
             # If they had a custom status before and it is now gone
             elif isinstance(before.activity, discord.CustomActivity):
                 if before.activity.emoji is not None:
-                    status_before += str(before.activity.emoji) + " "
+                    if before.activity.emoji is not None:
+                        if before.activity.emoji.is_custom_emoji():
+                            if before.activity.emoji.animated:
+                                status_before += "\<a\:"
+                            else:
+                                status_before += "\<\:"
+
+                            status_before += before.activity.emoji.name + ":" + str(before.activity.emoji.id) + "> "
+                            links = "[Emoji Before](" + str(before.activity.emoji.url) + ")\n" + links
+                        else:
+                            status_before += before.activity.emoji.name + " "
                 if before.activity.name is not None:
                     status_before += before.activity.name
 
@@ -940,7 +972,7 @@ class Logging(commands.Cog):
 
             if status_after != "":
                 Config.save_statuses(self.statuses)
-                embed.description = "**Before:** " + status_before + "\n**+After:** " + status_after
+                embed.description = "**Before:** " + status_before + "\n**+After:** " + status_after + "\n\n" + links
                 embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
                 embed.set_footer(text="ID: " + str(after.id))
                 embed.timestamp = datetime.utcnow()
