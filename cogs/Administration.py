@@ -280,6 +280,33 @@ class Administration(commands.Cog):
 
         await channel.delete_messages(messages)
 
+    @commands.command(pass_context=True, aliases=["userPurge", "uPurge"])
+    @commands.is_owner()
+    @commands.guild_only()
+    async def user_purge(self, ctx, user: typing.Union[discord.User, discord.Member]):
+        """
+        Purges all messages from a user
+
+        :param ctx: Context object
+        :param user: User to purge messages from
+        """
+
+        def is_user(m):
+            return m.author.id == user.id
+
+        channels = ctx.guild.text_channels
+        channel_messages = []
+        for i in range(len(channels)):
+            channel_messages.append(None)
+
+        count = 0
+        while True:
+            for i in range(len(channels)):
+                count += len(await channels[i].purge(limit=25, check=is_user, before=channel_messages[i]))
+                channel_messages[i] = [-1]
+
+        await ctx.send(f"Deleted {count} message(s)")
+
     @commands.command(pass_context=True, aliases=["tPurge", "timePurge"])
     @commands.check(moderator_perms)
     @commands.guild_only()
