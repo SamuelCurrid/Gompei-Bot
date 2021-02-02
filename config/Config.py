@@ -249,8 +249,7 @@ def add_guild(guild: discord.Guild):
                 "status": None,
                 "voice": None
             },
-            "staff": None,
-            "invites": {}
+            "staff": None
         },
         "administration": {
             "mutes": {},
@@ -519,9 +518,9 @@ def add_invite(invite: discord.Invite):
     """
     global guilds, raw_settings
 
-    guilds[invite.guild]["logging"]["invites"][invite.code] = {
+    guilds[invite.guild]["logging"]["invites"][invite] = {
         "inviter_id": invite.inviter.id,
-        "uses": invite.inviter.id
+        "uses": invite.uses
     }
 
 
@@ -533,7 +532,7 @@ def remove_invite(invite: discord.Invite):
     """
     global guilds, raw_settings
 
-    del guilds[invite.guild]["logging"]["invites"][invite.code]
+    del guilds[invite.guild]["logging"]["invites"][invite]
 
 
 def update_invite_uses(invite: discord.Invite):
@@ -544,7 +543,7 @@ def update_invite_uses(invite: discord.Invite):
     """
     global guilds, raw_settings
 
-    guilds[invite.guild]["logging"]["invites"][invite]["uses"] = discord.Invite.uses
+    guilds[invite.guild]["logging"]["invites"][invite]["uses"] = invite.uses
 
 
 def add_mute(member: discord.Member, date: datetime):
