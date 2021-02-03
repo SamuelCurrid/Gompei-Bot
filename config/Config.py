@@ -1,8 +1,11 @@
 from GompeiFunctions import load_json, save_json
+from discord.ext import commands
 from datetime import datetime
 
+import collections
 import discord
 import pickle
+import typing
 import os
 
 client = None
@@ -62,9 +65,6 @@ async def set_main_guild(new_guild: discord.Guild):
     main_guild = new_guild
     raw_settings["main_guild"] = main_guild.id
 
-    print(main_guild)
-    print(raw_settings)
-
     await update_main_guild_settings()
 
     save_json(os.path.join("config", "settings.json"), raw_settings)
@@ -104,10 +104,12 @@ async def update_guild_settings(guild: discord.Guild):
         "nitro_role": None,
         "prefix": None,
         "access_roles": [],
+        "closed": False,
         "opt_in_roles": [],
         "announcement_channels": [],
         "command_channels": [],
         "muted_role": None,
+        "reaction_roles": {},
         "logging": {
             "channel": None,
             "overwrite_channels": {
@@ -131,12 +133,10 @@ async def update_guild_settings(guild: discord.Guild):
         }
     }
 
+    # Nitro role
     update_nitro_role(guild)
 
-    for key in guilds[guild]["logging"]["overwrite_channels"]:
-        guilds[guild]["logging"]["overwrite_channels"][key] = \
-            guild.get_channel(raw_settings["guilds"][str(guild.id)]["logging"]["overwrite_channels"][key])
-
+    # Command Channels
     for channel_id in raw_settings["guilds"][str(guild.id)]["command_channels"]:
         channel = guild.get_channel(channel_id)
 
@@ -144,6 +144,53 @@ async def update_guild_settings(guild: discord.Guild):
             raw_settings["guilds"][str(guild.id)]["command_channels"].remove(channel_id)
         else:
             guilds[guild]["command_channels"].append(channel)
+
+    # Access Roles
+    for role_id in raw_settings["guilds"][str(guild.id)]["access_roles"]:
+        guilds[guild]["access_roles"].append(guild.get_role(role_id))
+
+    # Closed
+    guilds[guild]["closed"] = raw_settings["guilds"][str(guild.id)]["closed"]
+
+    # Opt-in Roles
+    for role_id in raw_settings["guilds"][str(guild.id)]["opt_in_roles"]:
+        guilds[guild]["opt_in_roles"].append(guild.get_role(role_id))
+
+    # Reaction Roles
+    for combo_id in raw_settings["guilds"][str(guild.id)]["reaction_roles"]:
+        message = await guild.get_channel(int(combo_id[0:18])).fetch_message(int(combo_id[18:]))
+
+        guilds[guild]["reaction_roles"][message] = {
+            "emojis": {},
+            "exclusive": raw_settings["guilds"][str(guild.id)]["reaction_roles"][combo_id]["exclusive"]
+        }
+
+        for emote in raw_settings["guilds"][str(guild.id)]["reaction_roles"][combo_id]["emojis"]:
+            # Fake ctx for EmojiConverter
+            ctx = collections.namedtuple('Context', 'bot guild', module=commands.context)
+            ctx.bot = client
+            ctx.guild = guild
+
+            try:
+                emoji = await commands.EmojiConverter().convert(ctx, emote)
+            except commands.BadArgument:
+                emoji = emote
+
+            if isinstance(emoji, str):
+                role_id = raw_settings["guilds"][str(guild.id)]["reaction_roles"][combo_id]["emojis"][emoji]
+            else:
+                role_id = raw_settings["guilds"][str(guild.id)]["reaction_roles"][combo_id]["emojis"][str(emoji.id)]
+
+            guilds[guild]["reaction_roles"][message]["emojis"][emoji] = guild.get_role(role_id)
+
+            # If role deleted
+            if guilds[guild]["reaction_roles"][message]["emojis"][emoji] is None:
+                remove_reaction_role(message, emoji)
+
+    # Logging Channels / Info
+    for key in guilds[guild]["logging"]["overwrite_channels"]:
+        guilds[guild]["logging"]["overwrite_channels"][key] = \
+            guild.get_channel(raw_settings["guilds"][str(guild.id)]["logging"]["overwrite_channels"][key])
 
     guilds[guild]["logging"]["last_audit"] = (await guild.audit_logs(limit=1).flatten())[0].id
     guilds[guild]["logging"]["staff"] = guild.get_channel(raw_settings["guilds"][str(guild.id)]["logging"]["staff"])
@@ -153,12 +200,7 @@ async def update_guild_settings(guild: discord.Guild):
             "uses": invite.uses
         }
 
-    for role_id in raw_settings["guilds"][str(guild.id)]["access_roles"]:
-        guilds[guild]["access_roles"].append(guild.get_role(role_id))
-
-    for role_id in raw_settings["guilds"][str(guild.id)]["opt_in_roles"]:
-        guilds[guild]["opt_in_roles"].append(guild.get_role(role_id))
-
+    # Administration
     for user_id in raw_settings["guilds"][str(guild.id)]["administration"]["mutes"]:
         member = guild.get_member(user_id)
 
@@ -203,9 +245,11 @@ def add_guild(guild: discord.Guild):
         "nitro_role": None,
         "prefix": None,
         "access_roles": [],
+        "closed": False,
         "opt_in_roles": [],
         "command_channels": [],
         "muted_role": None,
+        "reaction_roles": {},
         "logging": {
             "channel": None,
             "overwrite_channels": {
@@ -233,9 +277,11 @@ def add_guild(guild: discord.Guild):
         "nitro_role": None,
         "prefix": None,
         "access_roles": [],
+        "closed": False,
         "opt_in_roles": [],
         "command_channels": [],
         "muted_role": None,
+        "reaction_roles": {},
         "logging": {
             "channel": None,
             "overwrite_channels": {
@@ -795,4 +841,107 @@ def add_verified_user(member: discord.Member):
     global verifications, raw_settings
 
     raw_settings["verifications"]["users"] = verifications["users"] = member.id
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def add_reaction_role(message: discord.Message, emoji: typing.Union[discord.Emoji, str], role: discord.Role):
+    """
+    Adds a reaction role to a message
+
+    :param message: Message to add reaction role to
+    :param emoji: Emoji to react with
+    :param role: Role to give on react
+    """
+    global guilds, raw_settings
+
+    combo_id = str(message.channel.id) + str(message.id)
+
+    # If reacts already exist on the message
+    if message in guilds[message.guild]["reaction_roles"]:
+        guilds[message.guild]["reaction_roles"][message]["emojis"][emoji] = role
+
+        if isinstance(emoji, str):
+            raw_settings["guilds"][str(message.guild.id)]["reaction_roles"][combo_id]["emojis"][emoji] = role.id
+        else:
+            raw_settings["guilds"][str(message.guild.id)]["reaction_roles"][combo_id]["emojis"][str(emoji.id)] = role.id
+
+    else:
+        guilds[message.guild]["reaction_roles"][message] = {
+            "emojis": {
+                emoji: role.id
+            },
+            "exclusive": False
+        }
+
+        if isinstance(emoji, str):
+            raw_settings["guilds"][str(message.guild.id)]["reaction_roles"][combo_id] = {
+                "emojis": {
+                    emoji: role.id
+                },
+                "exclusive": False
+            }
+        else:
+            raw_settings["guilds"][str(message.guild.id)]["reaction_roles"][str(emoji.id)] = {
+                "emojis": {
+                    emoji.name: role.id
+                },
+                "exclusive": False
+            }
+
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def remove_reaction_role(message: discord.Message, emoji: typing.Union[discord.Emoji, str]):
+    """
+    Removes a reaction role from a messge
+    
+    :param message: Message to remove reaction role from 
+    :param emoji: Emoji to remove
+    """
+    global guilds, raw_settings
+
+    combo_id = str(message.channel.id) + str(message.id)
+
+    del guilds[message.guild]["reaction_roles"][message]["emojis"][emoji]
+
+    if isinstance(emoji, str):
+        del raw_settings["guilds"][str(message.guild.id)]["reaction_roles"][combo_id]["emojis"][str(emoji.id)]
+    else:
+        del raw_settings["guilds"][str(message.guild.id)]["reaction_roles"][combo_id]["emojis"][emoji]
+
+    if len(guilds)[message.guild]["reaction_roles"][message]["emojis"] == 0:
+        del len(guilds)[message.guild]["reaction_roles"][message]
+        del raw_settings["guilds"][str(message.guild.id)]["reaction_roles"][combo_id]
+
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def set_reaction_message_exclusivity(message: discord.Message, exclusive: bool):
+    """
+    Makes reaction roles on a message exclusive/inclusive
+
+    :param message: Message to set exclusive/inclusive
+    :param exclusive: bool for whether the reaction role is exclusive
+    """
+    global guilds, raw_settings
+
+    combo_id = str(message.channel.id) + str(message.id)
+    guilds[message.guild]["reaction_roles"][message]["exclusive"] = True
+    raw_settings["guilds"][str(message.guild.id)]["reaction_roles"][combo_id]["exclusive"] = exclusive
+
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def set_guild_closed(guild: discord.Guild, closed: bool):
+    """
+    Sets a guild to be closed or not
+
+    :param guild: Guild to set
+    :param closed: Whether the guild is closed
+    """
+    global guilds, raw_settings
+
+    guilds[guild]["closed"] = closed
+    raw_settings["guilds"][str(guild.id)]["closed"] = closed
+
     save_json(os.path.join("config", "settings.json"), raw_settings)
