@@ -137,7 +137,7 @@ class DirectMessages(commands.Cog):
         else:
             await ctx.send("No content to send")
 
-    @commands.command(pass_context=True, name="pmHistory", )
+    @commands.command(pass_context=True, name="pmHistory")
     @commands.check(moderator_perms)
     @commands.guild_only()
     async def pm_history(self, ctx, user: typing.Union[discord.Member, discord.User, str]):
@@ -184,9 +184,12 @@ class DirectMessages(commands.Cog):
                     m = chunk.count("\r")
 
                 index = chunk.rfind("\r")
-                chunks.append(chunk[: index])
-                content = content[index + 1:]
-
+                if index == -1:
+                    chunks.append(chunk)
+                    content = content[2048:]
+                else:
+                    chunks.append(chunk[: index])
+                    content = content[index + 1:]
 
             for i in range(0, len(chunks)):
                 embed = discord.Embed(
@@ -221,30 +224,28 @@ class DirectMessages(commands.Cog):
         if Config.dm_channel is not None:
             if not message.author.bot:
                 if isinstance(message.channel, discord.channel.DMChannel) and Config.dm_channel is not None:
+                    files = []
+                    urls = " "
+                    if len(message.attachments) > 0:
+                        for attachment in message.attachments:
+                            if attachment.size > 8388608:
+                                urls += attachment.url + " "
+                            else:
+                                files.append(await attachment.to_file())
 
-                    message_embed = discord.Embed(description=message.content, timestamp=datetime.utcnow())
-                    message_embed.set_author(
+                    if len(message.content) > 0:
+                        description = message.content + "\n\n"
+                    if len(files) > 0 or len(urls) > 1:
+                       description += "**<File(s) Attached>** "
+
+                    embed = discord.Embed(description=description, timestamp=datetime.utcnow())
+                    embed.set_author(
                         name="DM from " + message.author.name + "#" + message.author.discriminator,
                         icon_url=message.author.avatar_url
                     )
-                    message_embed.set_footer(text=message.author.id)
-
-                    attachments = []
-                    if len(message.attachments) > 0:
-                        for i in message.attachments:
-                            attachments.append(await i.to_file())
-
-                    if len(attachments) > 0:
-                        if len(message.content) > 0:
-                            message_embed.description = message.content + "\n\n**<File(s) Attached>**"
-                        else:
-                            message_embed.description = message.content + "**<File(s) Attached>**"
-
-                        message_embed.timestamp = datetime.utcnow()
-                        await Config.dm_channel.send(embed=message_embed)
-                        await Config.dm_channel.send(files=attachments)
-                    else:
-                        await Config.dm_channel.send(embed=message_embed)
+                    embed.set_footer(text=message.author.id)
+                    embed.timestamp = datetime.utcnow()
+                    await Config.dm_channel.send(urls, embed=embed, files=files)
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
