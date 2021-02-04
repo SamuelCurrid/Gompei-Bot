@@ -473,6 +473,8 @@ class Information(commands.Cog):
             embed = await self.guild_info(ctx.guild)
         elif keyword == "roles" or keyword == "role" or keyword == "r":
             embed = await self.guild_role_info(ctx.guild)
+        elif keyword == "everyone" or keyword == "e":
+            embed = await self.role_info(ctx.guild.default_role)
         elif len(keyword) == 18 or len(keyword) == 17:
             try:
                 user_id = int(keyword)
