@@ -927,3 +927,22 @@ class Administration(commands.Cog):
             )
         else:
             await ctx.send("No content to send.")
+
+    @commands.command(pass_context=True, name="createInvite")
+    @commands.check(moderator_perms)
+    @commands.guild_only()
+    async def create_invite(self, ctx, channel: discord.TextChannel):
+        """
+        Creates an invite to a text channel that does not expire
+
+        :param ctx: Context object
+        :param channel: TextChannel to invite to
+        :return:
+        """
+        invite = await channel.create_invite()
+
+        await ctx.send("Created invite " + invite.url + " to " + channel.mention)
+
+def setup(bot):
+    bot.add_cog(Administration(bot))
+
