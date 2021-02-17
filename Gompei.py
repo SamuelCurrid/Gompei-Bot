@@ -4,14 +4,15 @@ from GompeiFunctions import time_delta_string
 from config import Config
 
 # Cogs
+import cogs.sql
 from cogs.Administration import Administration
 from cogs.DirectMessages import DirectMessages
 from cogs.ReactionRoles import ReactionRoles
 from cogs.EmbedBuilder import EmbedBuilder
 from cogs.Leaderboards import Leaderboards
-from cogs.Verification import Verification
+#from cogs.Verification import Verification
 from cogs.Information import Information
-from cogs.JoinHandler import JoinHandler
+#from cogs.JoinHandler import JoinHandler
 from cogs.Triggers import Triggers
 from cogs.Logging import Logging
 from cogs.Voting import Voting
@@ -44,23 +45,25 @@ intents.members = True
 intents.presences = True
 intents.guilds = True
 gompei = commands.Bot(command_prefix=get_prefix, case_insensitive=True, intents=intents)
-
+gompei.pg_url = "postgres://gompei:gompei@localhost/gompei"
 
 # Load Extensions
+print ("Loading extensions")
+gompei.load_extension("cogs.sql")
 print("Loading cogs...")
 gompei.add_cog(Administration(gompei))
 gompei.add_cog(DirectMessages(gompei))
 gompei.add_cog(EmbedBuilder(gompei))
 gompei.add_cog(Games(gompei))
 gompei.add_cog(Information(gompei))
-gompei.add_cog(JoinHandler(gompei))
+#gompei.add_cog(JoinHandler(gompei))
 gompei.add_cog(Leaderboards(gompei))
 gompei.add_cog(Logging(gompei))
 gompei.add_cog(Memes(gompei))
 gompei.add_cog(ReactionRoles(gompei))
 gompei.add_cog(Roles(gompei))
 gompei.add_cog(Triggers(gompei))
-gompei.add_cog(Verification(gompei))
+#gompei.add_cog(Verification(gompei))
 gompei.add_cog(Voting(gompei))
 print("Cogs loaded")
 
