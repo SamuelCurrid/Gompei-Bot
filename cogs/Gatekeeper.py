@@ -70,7 +70,15 @@ class Gatekeeper(commands.Cog):
         """
         Lists Gatekeeper bans with their reason.
         """
-        pass
+        ses = self.bot.Sql()
+        bans = (ses.query(sql.GatekeeperBans).all())
+
+        banlist = "**Gatekeeper Bans**\n"
+
+        for ban in bans:
+            banlist += f"{ban.user_id} - {reason}\n"
+
+        await ctx.send(banlist)
 
     @commands.group()
     @commands.is_owner()
