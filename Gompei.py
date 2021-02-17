@@ -3,22 +3,6 @@ from cogs.Permissions import dm_commands, administrator_perms
 from GompeiFunctions import time_delta_string
 from config import Config
 
-# Cogs
-from cogs.Administration import Administration
-from cogs.DirectMessages import DirectMessages
-from cogs.ReactionRoles import ReactionRoles
-from cogs.EmbedBuilder import EmbedBuilder
-from cogs.Leaderboards import Leaderboards
-from cogs.Verification import Verification
-from cogs.Information import Information
-from cogs.JoinHandler import JoinHandler
-from cogs.Triggers import Triggers
-from cogs.Logging import Logging
-from cogs.Voting import Voting
-from cogs.Games import Games
-from cogs.Roles import Roles
-from cogs.Memes import Memes
-
 # Libraries
 from discord.ext import commands
 from datetime import datetime
@@ -57,33 +41,14 @@ startup_cogs = [
         "ReactionRoles",
         "Roles",
         "Triggers",
-        "Verfication",
+        "Verification",
         "Voting",
-        "Gatekeeper",
-        "sql",
+        "botTools",
         ]
 
 for cog in startup_cogs:
     gompei.load_extension(f"cogs.{cog}")
     print(f"Loaded cog {cog}")
-
-# Load Extensions
-print("Loading cogs...")
-gompei.add_cog(Administration(gompei))
-gompei.add_cog(DirectMessages(gompei))
-gompei.add_cog(EmbedBuilder(gompei))
-gompei.add_cog(Games(gompei))
-gompei.add_cog(Information(gompei))
-gompei.add_cog(JoinHandler(gompei))
-gompei.add_cog(Leaderboards(gompei))
-gompei.add_cog(Logging(gompei))
-gompei.add_cog(Memes(gompei))
-gompei.add_cog(ReactionRoles(gompei))
-gompei.add_cog(Roles(gompei))
-gompei.add_cog(Triggers(gompei))
-gompei.add_cog(Verification(gompei))
-gompei.add_cog(Voting(gompei))
-print("Cogs loaded")
 
 # Overwrite help command
 gompei.remove_command("help")

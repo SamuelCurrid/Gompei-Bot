@@ -18,6 +18,7 @@ class Information(commands.Cog):
                    target: typing.Union[
                        discord.TextChannel,
                        discord.VoiceChannel,
+                       discord.CategoryChannel,
                        discord.Role,
                        discord.Emoji,
                        discord.PartialEmoji,
@@ -36,6 +37,7 @@ class Information(commands.Cog):
         switcher = {
             discord.TextChannel: self.channel_info,
             discord.VoiceChannel: self.channel_info,
+            discord.CategoryChannel: self.channel_info,
             discord.Role: self.role_info,
             discord.Emoji: self.emoji_info,
             discord.PartialEmoji: self.emoji_info,
@@ -51,7 +53,7 @@ class Information(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    async def channel_info(self, channel: typing.Union[discord.TextChannel, discord.VoiceChannel]):
+    async def channel_info(self, channel: typing.Union[discord.TextChannel, discord.VoiceChannel, discord.CategoryChannel]):
         """
         Dumps channel info into the embed
 
@@ -66,10 +68,21 @@ class Information(commands.Cog):
             if channel.topic is not None:
                 f_description += "\n**Description:** " + channel.topic
         # If a voice channel
-        else:
+        elif isinstance(channel, discord.VoiceChannel):
             title = "Voice Channel Info"
             f_description += "\n**Bitrate:** " + str(channel.bitrate) + \
                              "\n**User Limit:** " + str(channel.user_limit)
+        else:
+            title = "Category Info"
+            if len(channel.text_channels) > 0:
+                f_description += "\n**__Text Channels__**"
+                for text_channel in channel.text_channels:
+                    f_description += "\n" + text_channel.mention
+            if len(channel.voice_channels) > 0:
+                f_description += "\n**__Voice Channels__**"
+                for voice_channel in channel.voice_channels:
+                    f_description += "\n" + voice_channel.mention
+
         if channel.category is not None:
             f_description += "\n**Category:** " + str(channel.category.name)
 
@@ -84,7 +97,17 @@ class Information(commands.Cog):
             description=f_description
         )
 
+        roles = []
+        members = []
         for target in channel.overwrites:
+            if isinstance(target, discord.Role):
+                roles.append(target)
+            else:
+                members.append(target)
+
+        targets = members + sorted(roles, key=lambda a: a.position, reverse=True)
+
+        for target in targets:
             permissions = []
             values = []
 
@@ -96,14 +119,15 @@ class Information(commands.Cog):
                     else:
                         values.append("✘")
 
-            max_length = len(max(permissions, key=len))
+            if len(permissions) > 0:
+                max_length = len(max(permissions, key=len))
 
-            f_description = "```"
-            for i in range(0, len(permissions)):
-                f_description += permissions[i] + (" " * (max_length - len(permissions[i]))) + " " + values[i] + "\n"
-            f_description += "```"
+                f_description = "```"
+                for i in range(0, len(permissions)):
+                    f_description += permissions[i] + (" " * (max_length - len(permissions[i]))) + " " + values[i] + "\n"
+                f_description += "```"
 
-            embed.add_field(name=target.name, value=f_description, inline=True)
+                embed.add_field(name=target.name, value=f_description, inline=True)
 
         if len(embed.description) > 2048:
             embed.description = embed.description[0:2047]
@@ -505,3 +529,6 @@ class Information(commands.Cog):
             )
 
         return embed
+
+def setup(bot):
+    bot.add_cog(Information(bot))

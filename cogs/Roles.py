@@ -23,7 +23,7 @@ class Roles(commands.Cog):
 
         for role in added_roles:
             if role.id == 630589807084699653:
-                await after.send("Welcome to the " + after.guild.name + "!\n\nIf you have any prospective student "
+                await after.send("Welcome to the " + after.guild.name + "!\n\nIf you have any "
                                                                         "questions, feel free to shoot them in "
                                                                         "#help-me. Hopefully we, or someone else in "
                                                                         "the community, can answer them :smile:.")
@@ -60,7 +60,7 @@ class Roles(commands.Cog):
             if member.premium_since is None:
                 await member.edit(roles=[])
             else:
-                await member.edit(roles=[Config.guilds[Config.main_guild]["nitro_role"]])
+                await member.edit(roles=[Config.guilds[Config.main_guild]["nitro_role"]], reason="Used lockout command")
 
             # DM User
             await member.send("Locked you out of the server. To get access back just type \".letmein\" here")
@@ -83,7 +83,7 @@ class Roles(commands.Cog):
             if member not in Config.lockouts:
                 await ctx.send("You haven't locked yourself out")
             else:
-                await member.edit(roles=Config.lockouts[member])
+                await member.edit(roles=Config.lockouts[member], reason="Used letmein command")
                 Config.remove_lockout(member)
 
                 await member.send("Welcome back to the server :)")
@@ -154,3 +154,6 @@ class Roles(commands.Cog):
         else:
             Config.remove_opt_in_roles(roles)
             await ctx.send("Successfully removed roles")
+
+def setup(bot):
+    bot.add_cog(Roles(bot))

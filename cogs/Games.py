@@ -287,3 +287,5 @@ class Games(commands.Cog):
             else:
                 await ctx.send(ctx.author.name.replace("@", "") + " rolled a " + str(random.randint(1, sides)) + "!")
 
+def setup(bot):
+    bot.add_cog(Games(bot))

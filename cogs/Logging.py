@@ -1,11 +1,11 @@
+from cogs.Permissions import administrator_perms, moderator_perms
 from GompeiFunctions import make_ordinal, time_delta_string
-from cogs.Permissions import administrator_perms
 from discord.ext import commands
 from datetime import timedelta
 from datetime import datetime
+from config import Config
 
 import discord
-from config import Config
 
 
 class Logging(commands.Cog):
@@ -150,11 +150,45 @@ class Logging(commands.Cog):
         else:
             await ctx.send("This channel is already being used for voice logging")
 
+    @commands.command(pass_context=True, name="inviteNote")
+    @commands.check(moderator_perms)
+    async def invite_note(self, ctx, invite: discord.Invite, *, note: str):
+        """
+        Adds a note to an invite to be displayed on user join
+
+        :param ctx: Context object
+        :param invite: Invite to add note to
+        :param note: Note to add
+        """
+        if invite in Config.guilds[ctx.guild]["logging"]["invites"]:
+            Config.set_invite_note(invite, note)
+            await ctx.send("Updated note for invite " + invite.code + " to:\n> " + note)
+        else:
+            Config.set_invite_note(invite, note)
+            await ctx.send("Set note for invite " + invite.code + " to:\n> " + note)
+
+    @commands.command(pass_context=True, name="removeInviteNote")
+    @commands.check(moderator_perms)
+    async def remove_invite_note(self, ctx, invite: discord.Invite):
+        """
+        Removes an invite note
+
+        :param ctx: Context object
+        :param invite: Invite to remove note from
+        :param note: Note
+        """
+        if invite in Config.guilds[ctx.guild]["logging"]["invites"]:
+            Config.remove_invite_note(invite)
+            await ctx.send("Removed note for the invite")
+        else:
+            await ctx.send("This invite does not have a note")
+
     @commands.Cog.listener()
     async def on_message_delete(self, message):
         """
         Sends a logging message containing
         author, channel, content, and time of the deleted message
+
         :param message: message object deleted
         """
         if not message.author.bot:
@@ -686,13 +720,17 @@ class Logging(commands.Cog):
 
                     creation_delta = time_delta_string(member.created_at, datetime.utcnow())
 
+                    note = ""
+                    if Config.guilds[member.guild]["logging"]["invites"][invite]["note"] is not None:
+                        note = "\n**Note: **" + Config.guilds[member.guild]["logging"]["invites"][invite]["note"]
+
                     embed = discord.Embed(
                         title="Member joined",
                         colour=discord.Colour(0x43b581),
                         description=(
                             "<@" + str(member.id) + "> " + make_ordinal(member.guild.member_count) +
                             " to join\ncreated " + creation_delta + " ago\n\nInvite link created by <@" +
-                            str(invite.inviter.id) + "> (" + invite.code + ")"
+                            str(invite.inviter.id) + "> (" + invite.code + ")" + note
                         )
                     )
 
@@ -1936,3 +1974,5 @@ class Logging(commands.Cog):
         else:
             await channel.send(embed=embed)
 
+def setup(bot):
+    bot.add_cog(Logging(bot))

@@ -432,3 +432,6 @@ class Voting(commands.Cog):
         embed = discord.Embed(title=self.votes["title"], color=0x43b581)
         embed.description = leaderboard
         await ctx.send("This poll does not update live", embed=embed)
+
+def setup(bot):
+    bot.add_cog(Voting(bot))
