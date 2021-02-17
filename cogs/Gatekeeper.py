@@ -26,7 +26,15 @@ class Gatekeeper(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        pass
+        ses = self.bot.Sql()
+        ban = (ses.query(sql.GatekeeperBans).filter(sql.GatekeeperBans.user_id
+            == str(member.id)).first())
+        if ban is not None:
+            await member.ban(reason=f"Found in Gatekeeper blacklist. Reason:
+                    {ban.reason}")
+            return
+        else:
+            return
 
     @commands.group()
     @is_gk_mod()
@@ -57,6 +65,7 @@ class Gatekeeper(commands.Cog):
             ses.commit()
             await ctx.send(f"Added to banlist. If they're in the server, ban them
             with this: <@{target}>")
+            return
 
     @gkban.command(name="list")
     async def list_bans(self, ctx):
