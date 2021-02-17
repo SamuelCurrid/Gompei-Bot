@@ -3,8 +3,8 @@ from cogs.Permissions import moderator_perms, administrator_perms
 from discord.ext import commands
 from datetime import timedelta
 from datetime import datetime
-
 from config import Config
+
 import pytimeparse
 import dateparser
 import asyncio
@@ -101,10 +101,21 @@ class Administration(commands.Cog):
                     or channel == Config.dm_channel:
                 if str(payload.emoji) in ["❗", "‼️", "⁉️", "❕"]:
                     message = await channel.fetch_message(payload.message_id)
+
+                    files = []
+                    urls = " "
+                    for attachment in message.attachments:
+                        if attachment.size > 8388608:
+                            urls += attachment.url + " "
+                        else:
+                            files.append(await attachment.to_file())
+
                     if len(message.embeds) > 0:
                         await Config.guilds[guild]["logging"]["staff"].send(
-                            "Message forwarded by <@" + str(payload.user_id) + "> from <#" + str(channel.id) + ">",
-                            embed=message.embeds[0]
+                            "Message forwarded by <@" + str(payload.user_id) + "> from <#" + str(channel.id) + ">\n\n"
+                            + message.content + urls,
+                            embed=message.embeds[0],
+                            files=files
                         )
 
     @commands.command(pass_context=True)
@@ -191,7 +202,6 @@ class Administration(commands.Cog):
                 "Message edited (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" +
                 str(bot_msg.channel.id) + "/" + str(bot_msg.id) + ">)"
             )
-
 
     @commands.command(pass_context=True, aliases=["echoReact", "react"])
     @commands.check(moderator_perms)
@@ -467,7 +477,7 @@ class Administration(commands.Cog):
             await ctx.send("You must include a reason for the mute")
             return
 
-        Config.add_mute(ctx.guild, member, datetime.now() + timedelta(seconds=seconds))
+        Config.add_mute(member, datetime.now() + timedelta(seconds=seconds))
 
         mute_time = time_delta_string(datetime.utcnow(), datetime.utcnow() + delta)
 
@@ -674,7 +684,7 @@ class Administration(commands.Cog):
         Unlocks a channel that is locked
         Usage: .unlock (channel)
 
-        :param ctx: context object
+        :param ctx: Context object
         :param channel: (optional) channel to unlock
         """
         if channel is None:
@@ -689,6 +699,25 @@ class Administration(commands.Cog):
             await lock_channel.send(":unlock: **Unlocked the channel**")
         else:
             await ctx.send("Channel is not locked")
+
+    @commands.command(pass_context=True, name="serverLockdown")
+    @commands.check(administrator_perms)
+    @commands.guild_only()
+    async def server_lockdown(self, ctx):
+        """
+        Locks down the server
+
+        :param ctx: Context object
+        """
+        perms = ctx.guild.default_role.permissions
+        if perms.send_messages:
+            perms.send_messages = False
+            ctx.guild.default_role.edit(permissions=perms, reason="Server lockdown")
+            await ctx.send("Server is now locked down. Send serverLockdown again to open the server")
+        else:
+            perms.send_messages = True
+            ctx.guild.default_role.edit(permissions=perms, reason="Server lockdown")
+            await ctx.send("Server is now open! Send `.serverLockdown` again to open the server")
 
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
@@ -927,3 +956,18 @@ class Administration(commands.Cog):
             )
         else:
             await ctx.send("No content to send.")
+
+    @commands.command(pass_context=True, name="createInvite")
+    @commands.check(moderator_perms)
+    @commands.guild_only()
+    async def create_invite(self, ctx, channel: discord.TextChannel):
+        """
+        Creates an invite to a text channel that does not expire
+
+        :param ctx: Context object
+        :param channel: TextChannel to invite to
+        :return:
+        """
+        invite = await channel.create_invite()
+
+        await ctx.send("Created invite " + invite.url + " to " + channel.mention)

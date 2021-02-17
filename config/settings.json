@@ -5,6 +5,97 @@
     "status": null,
     "prefix": ".",
     "main_guild": 567169726250352640,
-    "verifications": {"role": null, "users": {}},
-    "guilds": {}
+    "verifications": {
+        "role": null,
+        "users": {}
+    },
+    "guilds": {
+        "409490420209549319": {
+            "nitro_role": null,
+            "prefix": null,
+            "access_roles": [],
+            "closed": false,
+            "opt_in_roles": [],
+            "command_channels": [],
+            "muted_role": null,
+            "reaction_roles": {},
+            "logging": {
+                "channel": null,
+                "overwrite_channels": {
+                    "avatar": null,
+                    "member": null,
+                    "message": null,
+                    "member_tracking": null,
+                    "mod": null,
+                    "reaction": null,
+                    "server": null,
+                    "status": null,
+                    "voice": null
+                },
+                "staff": null,
+                "invites": {}
+            },
+            "administration": {
+                "mutes": {},
+                "jails": {}
+            },
+            "verifications": {
+                "wpi": {},
+                "wpi_role": null,
+                "member_role": null,
+                "message_req": null,
+                "time_req": null,
+                "member": {}
+            }
+        },
+        "806606243871326229": {
+            "nitro_role": null,
+            "prefix": null,
+            "access_roles": [],
+            "closed": false,
+            "opt_in_roles": [],
+            "command_channels": [],
+            "muted_role": null,
+            "reaction_roles": {},
+            "logging": {
+                "channel": null,
+                "overwrite_channels": {
+                    "avatar": null,
+                    "member": null,
+                    "message": null,
+                    "member_tracking": null,
+                    "mod": null,
+                    "reaction": null,
+                    "server": null,
+                    "status": null,
+                    "voice": null
+                },
+                "staff": null,
+                "invites": {}
+            },
+            "administration": {
+                "mutes": {},
+                "jails": {}
+            },
+            "verifications": {
+                "wpi": {},
+                "wpi_role": null,
+                "member_role": 808039643248721981,
+                "message_req": 5,
+                "time_req": 1,
+                "member": {
+                    "87585011070414848": {
+                        "datetime": null,
+                        "message_count": 9,
+                        "verified": null
+                    },
+                    "290530531874177025": {
+                        "datetime": "2021-02-07 15:38:17",
+                        "message_count": 1,
+                        "verified": false
+                    }
+                }
+            }
+        }
+    }
 }

@@ -9,5 +9,19 @@
         "emoji_leaderboard": {},
         "quote_leaderboard": {},
         "lastUpdate": "2021-01-20T18:26:13.704000"
+    },
+    "806606243871326229": {
+        "last_update": null,
+        "quotes_channel": null,
+        "message_leaderboard": {
+            "87585011070414848": 70,
+            "204705074239242240": 2,
+            "306189324259688450": 2,
+            "290530531874177025": 10
+        },
+        "reaction_leaderboard": {},
+        "emoji_leaderboard": {},
+        "quote_leaderboard": {},
+        "lastUpdate": "2021-02-07T20:38:18.958000"
     }
 }

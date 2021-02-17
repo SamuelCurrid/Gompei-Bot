@@ -1,5 +1,6 @@
 from GompeiFunctions import load_json, save_json
 from discord.ext import commands
+from datetime import timedelta
 from datetime import datetime
 
 import collections
@@ -16,7 +17,6 @@ main_guild = None
 prefix = "."
 raw_settings = None
 status = None
-verifications = {"role": None, "users": {}}
 guilds = {}
 
 
@@ -130,6 +130,14 @@ async def update_guild_settings(guild: discord.Guild):
         "administration": {
             "mutes": {},
             "jails": {}
+        },
+        "verifications": {
+            "wpi_role": None,
+            "wpi": {},
+            "member_role": None,
+            "message_req": None,
+            "time_req": None,
+            "member": {}
         }
     }
 
@@ -198,7 +206,14 @@ async def update_guild_settings(guild: discord.Guild):
         guilds[guild]["logging"]["invites"][invite] = {
             "inviter_id": invite.inviter.id,
             "uses": invite.uses
+
         }
+
+        if invite.code in raw_settings["guilds"][str(guild.id)]["logging"]["invites"]:
+            guilds[guild]["logging"]["invites"][invite]["note"] = \
+                raw_settings["guilds"][str(guild.id)]["logging"]["invites"][invite.code]
+        else:
+            guilds[guild]["logging"]["invites"][invite]["note"] = None
 
     # Administration
     for user_id in raw_settings["guilds"][str(guild.id)]["administration"]["mutes"]:
@@ -237,6 +252,48 @@ async def update_guild_settings(guild: discord.Guild):
 
     save_json(os.path.join("config", "settings.json"), raw_settings)
 
+    # Verifications
+    guilds[guild]["verifications"]["member_role"] = \
+        guild.get_role(raw_settings["guilds"][str(guild.id)]["verifications"]["member_role"])
+    guilds[guild]["verifications"]["message_req"] = \
+        raw_settings["guilds"][str(guild.id)]["verifications"]["message_req"]
+
+    if raw_settings["guilds"][str(guild.id)]["verifications"]["time_req"] is None:
+        guilds[guild]["verifications"]["time_req"] = None
+    else:
+        guilds[guild]["verifications"]["time_req"] = timedelta(
+            seconds=raw_settings["guilds"][str(guild.id)]["verifications"]["time_req"]
+        )
+
+    for user_id in raw_settings["guilds"][str(guild.id)]["verifications"]["member"]:
+        member = guild.get_member(int(user_id))
+        if member is None:
+            continue
+
+        if raw_settings["guilds"][str(guild.id)]["verifications"]["member"][str(member.id)]["verified"] is None:
+            guilds[guild]["verifications"]["member"][member] = {
+                "datetime": None,
+                "message_count": None,
+                "verified": None
+            }
+        else:
+            guilds[guild]["verifications"]["member"][member] = {
+                "datetime": datetime.strptime(
+                    raw_settings["guilds"][str(guild.id)]["verifications"]["member"][user_id]["datetime"],
+                    "%Y-%m-%d %H:%M:%S"
+                ),
+                "message_count":
+                    raw_settings["guilds"][str(guild.id)]["verifications"]["member"][user_id]["message_count"],
+                "verified": raw_settings["guilds"][str(guild.id)]["verifications"]["member"][user_id]["verified"]
+            }
+
+    guilds[guild]["verifications"]["wpi_role"] = \
+        guild.get_role(raw_settings["guilds"][str(guild.id)]["verifications"]["wpi_role"])
+
+    for token in raw_settings["guilds"][str(guild.id)]["verifications"]["wpi"]:
+        guilds[guild]["verifications"]["wpi"][token] = \
+            raw_settings["guilds"][str(guild.id)]["verifications"]["wpi"][token]
+
 
 def add_guild(guild: discord.Guild):
     global guilds, raw_settings
@@ -270,6 +327,14 @@ def add_guild(guild: discord.Guild):
         "administration": {
             "mutes": {},
             "jails": {}
+        },
+        "verifications": {
+            "wpi": {},
+            "wpi_role": None,
+            "member_role": None,
+            "message_req": None,
+            "time_req": None,
+            "member": {}
         }
     }
 
@@ -295,11 +360,20 @@ def add_guild(guild: discord.Guild):
                 "status": None,
                 "voice": None
             },
-            "staff": None
+            "staff": None,
+            "invites": {}
         },
         "administration": {
             "mutes": {},
             "jails": {}
+        },
+        "verifications": {
+            "wpi": {},
+            "wpi_role": None,
+            "member_role": None,
+            "message_req": None,
+            "time_req": None,
+            "member": {}
         }
     }
 
@@ -499,7 +573,7 @@ def clear_opt_in_roles(guild: discord.Guild):
     save_json(os.path.join("config", "settings.json"), raw_settings)
 
 
-def set_logging_channel(channel: discord.TextChannel):
+def         set_logging_channel(channel: discord.TextChannel):
     """
     Sets the logging channel
 
@@ -819,31 +893,6 @@ def set_muted_role(role: discord.Role):
     save_json(os.path.join("config", "settings.json"), raw_settings)
 
 
-def set_verification_role(role: discord.Role):
-    """
-    Sets the verification role
-
-    :param role: Role to set to
-    """
-    global verifications, raw_settings
-
-    verifications["role"] = role
-    raw_settings["verifications"]["role"] = role.id
-    save_json(os.path.join("config", "settings.json"), raw_settings)
-
-
-def add_verified_user(member: discord.Member):
-    """
-    Adds a verified member
-
-    :param member: Member to add
-    """
-    global verifications, raw_settings
-
-    raw_settings["verifications"]["users"] = verifications["users"] = member.id
-    save_json(os.path.join("config", "settings.json"), raw_settings)
-
-
 def add_reaction_role(message: discord.Message, emoji: typing.Union[discord.Emoji, str], role: discord.Role):
     """
     Adds a reaction role to a message
@@ -945,3 +994,227 @@ def set_guild_closed(guild: discord.Guild, closed: bool):
     raw_settings["guilds"][str(guild.id)]["closed"] = closed
 
     save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def set_invite_note(invite: discord.Invite, note: str):
+    """
+    Adds a note to an invite
+
+    :param invite: Invite to add note to
+    :param note: Note for the invite
+    """
+    global guilds, raw_settings
+
+    guilds[invite.guild]["logging"]["invites"][invite]["note"] = note
+    raw_settings["guilds"][str(invite.guild.id)]["logging"]["invites"][invite.code] = note
+
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def remove_invite_note(invite: discord.Invite):
+    """
+    Removes an note for an invite
+
+    :param invite: Invite to remove note for
+    """
+    global guilds, raw_settings
+
+    del guilds[invite.guild]["logging"]["invites"][invite]["note"]
+    del raw_settings["guilds"][str(invite.guild.id)]["logging"]["invites"][invite.code]
+
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def set_member_role(role: discord.Role):
+    """
+    Sets the verification role for members
+
+    :param role: Role to set to
+    """
+    global guilds, raw_settings
+
+    guilds[role.guild]["verifications"]["member_role"] = role
+    raw_settings["guilds"][str(role.guild.id)]["verifications"]["member_role"] = role.id
+
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def set_member_message_req(guild: discord.Guild, number: int):
+    """
+    Sets the amount of messages required to become verified
+
+    :param guild: Guild to set the requirement for
+    :param number: Number of messages required
+    """
+    global guilds, raw_settings
+
+    guilds[guild]["verifications"]["message_req"] = number
+    raw_settings["guilds"][str(guild.id)]["verifications"]["message_req"] = number
+
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def set_member_time_req(guild: discord.Guild, time: timedelta):
+    """
+    Sets the amount of time that needs to pass after the first message is sent in order to get verified
+
+    :param guild: Guild to set the requirement for
+    :param time: Number of messages required
+    """
+    global guilds, raw_settings
+
+    guilds[guild]["verifications"]["time_req"] = time
+    raw_settings["guilds"][str(guild.id)]["verifications"]["time_req"] = int(time.total_seconds())
+
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def add_member(member: discord.Member):
+    """
+    Adds a member to the member list
+
+    :param member: Member to add
+    """
+    global guilds, raw_settings
+
+    guilds[member.guild]["verifications"]["member"][member] = {
+        "datetime": datetime.now(),
+        "message_count": 1,
+        "verified": False
+    }
+    raw_settings["guilds"][str(member.guild.id)]["verifications"]["member"][str(member.id)] = {
+        "datetime": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "message_count": 1,
+        "verified": False
+    }
+
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def remove_member(member: discord.Member):
+    """
+    Removes a member from the member list
+
+    :param member: Member to remove
+    """
+    global guilds, raw_settings
+
+    del guilds[member.guild]["verifications"]["member"][member]
+    del raw_settings["guilds"][str(member.guild.id)]["verifications"]["member"][str(member.id)]
+
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def add_message(member: discord.Member):
+    """
+    Adds a message to a member in the list
+
+    :param member: Member to add message to
+    """
+    global guilds, raw_settings
+
+    guilds[member.guild]["verifications"]["member"][member]["message_count"] += 1
+    raw_settings["guilds"][str(member.guild.id)]["verifications"]["member"][str(member.id)]["message_count"] += 1
+
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def remove_message(member: discord.Member):
+    """
+    Adds a message to a member in the list
+
+    :param member: Member to add message to
+    """
+    global guilds, raw_settings
+
+    guilds[member.guild]["verifications"]["member"][member]["message_count"] -= 1
+    raw_settings["guilds"][str(member.guild.id)]["verifications"]["member"][str(member.id)]["message_count"] -= 1
+
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def verify_member(member: discord.Member):
+    """
+    Verifies a member in the member list
+
+    :param member: Member to verify
+    """
+    global guilds, raw_settings
+
+    guilds[member.guild]["verifications"]["member"][member]["verified"] = True
+    raw_settings["guilds"][str(member.guild.id)]["verifications"]["member"][str(member.id)]["verified"] = True
+
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def unverify_member(member: discord.Member):
+    """
+    Unverifies a member in the member list
+
+    :param member:
+    """
+    global guilds, raw_settings
+
+    del guilds[member.guild]["verifications"]["member"][member]
+    del raw_settings["guilds"][str(member.guild.id)]["verifications"]["member"][str(member.id)]
+
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def disable_member_verification(member: discord.Member):
+    """
+    Disables member verification
+
+    :param member:
+    """
+    global guilds, raw_settings
+
+    guilds[member.guild]["verifications"]["member"][member] = {
+        "datetime": None,
+        "message_count": 0,
+        "verified": None
+    }
+    raw_settings["guilds"][str(member.guild.id)]["verifications"]["member"][str(member.id)] = {
+        "datetime": None,
+        "message_count": 0,
+        "verified": None
+    }
+
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def set_wpi_member_role(role: discord.Role):
+    """
+    Sets the WPI verification role
+
+    :param role: Role to set
+    """
+    global guilds, raw_settings
+
+    guilds[role.guild]["verifications"]["wpi_role"] = role
+    raw_settings["guilds"][str(role.guild.id)]["verifications"]["wpi_role"] = role.id
+
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def update_wpi_verifications():
+    """
+    Checks the verification list and returns new WPI verified IDs
+
+    :return: List of new IDs
+    """
+    global guilds, raw_settings
+
+    verifications = load_json()  # Open the verification file and read the user IDs. Compare to the ones stored here.
+
+    new_users = []
+    for token in verifications:
+        if token not in guilds[main_guild]["verifications"]["wpi"]:
+            guilds[main_guild]["verifications"]["wpi"][token] = verifications[token]
+            raw_settings["guilds"][str(main_guild.id)]["verifications"]["wpi"][token] = verifications[token]
+            new_users.append(verifications[token])
+
+    if len(new_users) > 0:
+        save_json(os.path.join("config", "settings.json"), raw_settings)
+
+    return new_users
