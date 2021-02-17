@@ -11,7 +11,6 @@ from cogs.EmbedBuilder import EmbedBuilder
 from cogs.Leaderboards import Leaderboards
 from cogs.Verification import Verification
 from cogs.Information import Information
-from cogs.JoinHandler import JoinHandler
 from cogs.Triggers import Triggers
 from cogs.Logging import Logging
 from cogs.Voting import Voting
