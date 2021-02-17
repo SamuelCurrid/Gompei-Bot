@@ -1,6 +1,20 @@
 from discord.ext import commands
+from . import sql
+import discord
 
-
+def is_gk_mod():
+    async def predicate(ctx):
+        bot = ctx.bot
+        ses = bot.Sql()
+        mod = (
+        ses.query(sql.GatekeeperMods).filter(sql.GatekeeperMods.user_id ==
+                str(ctx.author.id)).first() 
+        )
+        if mod is not None:
+            return True
+        else:
+            return False
+    return commands.check(predicate)
 class Gatekeeper(commands.Cog):
     """
     Pre-emptive ban list
@@ -10,11 +24,12 @@ class Gatekeeper(commands.Cog):
         self.bot = bot
         self.Sql = bot.Sql
 
-    @commands.listener()
+    @commands.Cog.listener()
     async def on_member_join(self, member):
         pass
 
     @commands.group()
+    @is_gk_mod()
     async def gkban(self, ctx):
         """
         Manages Gatekeeper bans
@@ -50,12 +65,34 @@ class Gatekeeper(commands.Cog):
         """
         Adds a mod to Gatekeeper
         """
-        pass
+        ses = self.bot.Sql()
+        mod = (ses.query(sql.GatekeeperMods).filter(sql.GatekeeperMods.user_id ==
+                str(ctx.author.id)).first()
+            )
+        if mod is not None:
+            await ctx.send("That user is already a moderator")
+            return
+        else:
+            mod = sql.GatekeeperMods(user_id=str(ctx.author.id))
+            ses.add(mod)
+            ses.commit()
+            await ctx.send("Done")
 
     @gkmod.command(name="remove")
     async def remove_mod(self, ctx, target: discord.Member):
         """
         Removes a Gatekeeper mod
         """
-        pass
+        ses = self.bot.Sql()
+        mod = (ses.query(sql.GatekeeperMods).filter(sql.GatekeeperMods.user_id
+                == str(ctx.author.id)).first()
+            )
+        if mod is not None:
+            ses.delete(mod)
+            ses.commit()
+            await ctx.send("Done")
+            return
+        else:
+            await ctx.send("That user is not a moderator")
+            return
 

@@ -19,6 +19,7 @@ from cogs.Voting import Voting
 from cogs.Games import Games
 from cogs.Roles import Roles
 from cogs.Memes import Memes
+from cogs.Gatekeeper import Gatekeeper
 
 # Libraries
 from discord.ext import commands
@@ -65,6 +66,7 @@ gompei.add_cog(Roles(gompei))
 gompei.add_cog(Triggers(gompei))
 #gompei.add_cog(Verification(gompei))
 gompei.add_cog(Voting(gompei))
+gompei.add_cog(Gatekeeper(gompei))
 print("Cogs loaded")
 
 # Overwrite help command
