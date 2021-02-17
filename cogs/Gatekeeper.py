@@ -30,8 +30,7 @@ class Gatekeeper(commands.Cog):
         ban = (ses.query(sql.GatekeeperBans).filter(sql.GatekeeperBans.user_id
             == str(member.id)).first())
         if ban is not None:
-            await member.ban(reason=f"Found in Gatekeeper blacklist. Reason:
-                    {ban.reason}")
+            await (member.ban(reason=f"Found in Gatekeeper blacklist. Reason: {ban.reason}"))
             return
         else:
             return
@@ -63,8 +62,7 @@ class Gatekeeper(commands.Cog):
                     moderator=str(ctx.author.id)))
             ses.add(new_ban)
             ses.commit()
-            await ctx.send(f"Added to banlist. If they're in the server, ban them
-            with this: <@{target}>")
+            await ctx.send(f"Added to banlist. If they're in the server, ban them with this: <@{target}>")
             return
 
     @gkban.command(name="list")
@@ -75,7 +73,7 @@ class Gatekeeper(commands.Cog):
         pass
 
     @commands.group()
-    @is_owner()
+    @commands.is_owner()
     async def gkmod(self, ctx):
         """
         Manages Gatekeeper mods
