@@ -44,7 +44,19 @@ class Gatekeeper(commands.Cog):
         """
         Adds a ban to Gatekeeper. All bans must be removed manually once added
         """
-        pass
+        ses = self.bot.Sql()
+        ban = (ses.query(sql.GatekeeperBans).filter(sql.GatekeeperBans.user_id
+            == str(target)).first())
+        if ban is not None:
+            await ctx.send("Already banned")
+            return
+        else:
+            new_ban = (sql.GatekeeperBans(user_id=target, reason=reason,
+                    moderator=str(ctx.author.id)))
+            ses.add(new_ban)
+            ses.commit()
+            await ctx.send(f"Added to banlist. If they're in the server, ban them
+            with this: <@{target}>")
 
     @gkban.command(name="list")
     async def list_bans(self, ctx):
@@ -54,6 +66,7 @@ class Gatekeeper(commands.Cog):
         pass
 
     @commands.group()
+    @is_owner()
     async def gkmod(self, ctx):
         """
         Manages Gatekeeper mods
