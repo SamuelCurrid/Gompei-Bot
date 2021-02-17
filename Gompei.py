@@ -10,9 +10,8 @@ from cogs.DirectMessages import DirectMessages
 from cogs.ReactionRoles import ReactionRoles
 from cogs.EmbedBuilder import EmbedBuilder
 from cogs.Leaderboards import Leaderboards
-#from cogs.Verification import Verification
+from cogs.Verification import Verification
 from cogs.Information import Information
-#from cogs.JoinHandler import JoinHandler
 from cogs.Triggers import Triggers
 from cogs.Logging import Logging
 from cogs.Voting import Voting
@@ -57,14 +56,13 @@ gompei.add_cog(DirectMessages(gompei))
 gompei.add_cog(EmbedBuilder(gompei))
 gompei.add_cog(Games(gompei))
 gompei.add_cog(Information(gompei))
-#gompei.add_cog(JoinHandler(gompei))
 gompei.add_cog(Leaderboards(gompei))
 gompei.add_cog(Logging(gompei))
 gompei.add_cog(Memes(gompei))
 gompei.add_cog(ReactionRoles(gompei))
 gompei.add_cog(Roles(gompei))
 gompei.add_cog(Triggers(gompei))
-#gompei.add_cog(Verification(gompei))
+gompei.add_cog(Verification(gompei))
 gompei.add_cog(Voting(gompei))
 gompei.add_cog(Gatekeeper(gompei))
 print("Cogs loaded")
