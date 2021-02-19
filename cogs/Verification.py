@@ -325,3 +325,6 @@ class Verification(commands.Cog):
             if not Config.guilds[message.guild]["verifications"]["member"][message.author]["verified"] and \
                     Config.guilds[message.guild]["verifications"]["member"][message.author]["verified"] is not None:
                 Config.remove_message(message.author)
+
+def setup(bot):
+    bot.add_cog(Verification(bot))

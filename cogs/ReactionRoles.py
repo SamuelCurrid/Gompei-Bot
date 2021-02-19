@@ -187,3 +187,6 @@ class ReactionRoles(commands.Cog):
                 else:
                     await payload.member.edit(roles=roles, reason="Reaction role")
                 await message.remove_reaction(payload.emoji, payload.member)
+
+def setup(bot):
+    bot.add_cog(ReactionRoles(bot))

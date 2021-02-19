@@ -154,3 +154,6 @@ class Roles(commands.Cog):
         else:
             Config.remove_opt_in_roles(roles)
             await ctx.send("Successfully removed roles")
+
+def setup(bot):
+    bot.add_cog(Roles(bot))

@@ -971,3 +971,7 @@ class Administration(commands.Cog):
         invite = await channel.create_invite()
 
         await ctx.send("Created invite " + invite.url + " to " + channel.mention)
+
+
+def setup(bot):
+    bot.add_cog(Administration(bot))

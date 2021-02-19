@@ -24,3 +24,6 @@ class Triggers(commands.Cog):
                     await message.add_reaction("👋")
                 elif any(x in message.content.lower() for x in violent_references):
                     await message.add_reaction("😨")
+
+def setup(bot):
+    bot.add_cog(Triggers(bot))

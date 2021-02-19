@@ -1974,3 +1974,5 @@ class Logging(commands.Cog):
         else:
             await channel.send(embed=embed)
 
+def setup(bot):
+    bot.add_cog(Logging(bot))

@@ -287,3 +287,6 @@ class EmbedBuilder(commands.Cog):
             await ctx.send("Successfully cancelled embed creation")
         else:
             await ctx.send("No embed is being worked on currently. To create one use `.embed create`.")
+
+def setup(bot):
+    bot.add_cog(EmbedBuilder(bot))
