@@ -684,7 +684,7 @@ class Administration(commands.Cog):
         Unlocks a channel that is locked
         Usage: .unlock (channel)
 
-        :param ctx: Context object
+        :param ctx: context object
         :param channel: (optional) channel to unlock
         """
         if channel is None:
@@ -699,25 +699,6 @@ class Administration(commands.Cog):
             await lock_channel.send(":unlock: **Unlocked the channel**")
         else:
             await ctx.send("Channel is not locked")
-
-    @commands.command(pass_context=True, name="serverLockdown")
-    @commands.check(administrator_perms)
-    @commands.guild_only()
-    async def server_lockdown(self, ctx):
-        """
-        Locks down the server
-
-        :param ctx: Context object
-        """
-        perms = ctx.guild.default_role.permissions
-        if perms.send_messages:
-            perms.send_messages = False
-            ctx.guild.default_role.edit(permissions=perms, reason="Server lockdown")
-            await ctx.send("Server is now locked down. Send serverLockdown again to open the server")
-        else:
-            perms.send_messages = True
-            ctx.guild.default_role.edit(permissions=perms, reason="Server lockdown")
-            await ctx.send("Server is now open! Send `.serverLockdown` again to open the server")
 
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
