@@ -11,6 +11,7 @@ import asyncio
 import discord
 
 
+
 class Verification(commands.Cog):
     """
     WPI Verification system
@@ -72,7 +73,7 @@ class Verification(commands.Cog):
             await asyncio.sleep(time.total_seconds())
 
             for guild in Config.guilds:
-                self.check_verifications(guild)
+                await self.check_verifications(guild)
 
     @commands.command(pass_context=True, name="memberRole")
     @commands.check(administrator_perms)
