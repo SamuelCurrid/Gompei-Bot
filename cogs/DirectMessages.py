@@ -184,12 +184,9 @@ class DirectMessages(commands.Cog):
                     m = chunk.count("\r")
 
                 index = chunk.rfind("\r")
-                if index == -1:
-                    chunks.append(chunk)
-                    content = content[2048:]
-                else:
-                    chunks.append(chunk[: index])
-                    content = content[index + 1:]
+                chunks.append(chunk[: index])
+                content = content[index + 1:]
+
 
             for i in range(0, len(chunks)):
                 embed = discord.Embed(
