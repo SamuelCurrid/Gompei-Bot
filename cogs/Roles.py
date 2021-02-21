@@ -21,13 +21,6 @@ class Roles(commands.Cog):
         added_roles = [x for x in after.roles if x not in before.roles]
         removed_roles = [x for x in before.roles if x not in after.roles]
 
-        for role in added_roles:
-            if role.id == 630589807084699653:
-                await after.send("Welcome to the " + after.guild.name + "!\n\nIf you have any "
-                                                                        "questions, feel free to shoot them in "
-                                                                        "#help-me. Hopefully we, or someone else in "
-                                                                        "the community, can answer them :smile:.")
-
         # If roles edited
         if len(added_roles) + len(removed_roles) > 0:
             role_list = []
@@ -38,6 +31,66 @@ class Roles(commands.Cog):
                     role_list.append(role)
 
             await after.edit(roles=role_list)
+
+        # WPI Specific checks
+        if after.guild is not Config.main_guild:
+            return
+
+        class_roles = [
+            Config.main_guild.get_role(787375833509658655),  # 2025
+            Config.main_guild.get_role(664719508404961293),  # 2024
+            Config.main_guild.get_role(567179738683015188),  # 2023
+            Config.main_guild.get_role(578350297978634240),  # 2022
+            Config.main_guild.get_role(578350427209203712),  # 2021
+            Config.main_guild.get_role(692461531983511662),  # Mass Academy
+            Config.main_guild.get_role(638748298152509461),  # WPI Staff
+            Config.main_guild.get_role(599319106478669844),  # Graduate Student
+            Config.main_guild.get_role(634223378773049365)  # Alumni
+        ]
+
+        # Check if the member qualifies for WPI Verified role
+        if after.id in Config.guilds[after.guild]["verifications"]["wpi"].values():
+            if Config.guilds[Config.main_guild]["verifications"]["wpi_role"] not in after.roles:
+                if any(item in added_roles for item in class_roles):
+                    await after.add_roles(
+                        Config.guilds[Config.main_guild]["verifications"]["wpi_role"],
+                        reason="Picked up class role, previously verified"
+                    )
+            else:
+                for role in after.roles:
+                    if role in class_roles:
+                        break
+                else:
+                    await after.remove_roles(
+                        Config.guilds[Config.main_guild]["verifications"]["wpi_role"],
+                        reason="Removed class role"
+                    )
+
+        # Check if the member qualifies for Member role
+        if str(after.id) in Config.guilds[after.guild]["verifications"]["member"]:
+            if Config.guilds[after.guild]["verifications"]["member"][str(after.id)]["verified"]:
+                if any(item in Config.guilds[after.guild]["access_roles"] for item in added_roles):
+                    if Config.guilds[after.guild]["verifications"]["member_role"] not in after.roles:
+                        await after.add_roles(
+                            Config.guilds[after.guild]["verifications"]["member_role"],
+                            reason="Picked up access role, previously earned member"
+                        )
+                elif any(item in Config.guilds[after.guild]["access_roles"] for item in removed_roles):
+                    for role in after.roles:
+                        if role in Config.guilds[after.guild]["access_roles"]:
+                            break
+                    else:
+                        await after.remove_roles(
+                            Config.guilds[Config.main_guild]["verifications"]["member_role"],
+                            reason="Removed access role"
+                        )
+
+        for role in added_roles: # TODO move to reaction roles
+            if role.id == 630589807084699653:  # Prospective students
+                await after.send(
+                    f"Welcome to the {after.guild.name}!\n\nIf you have any questions, feel free to shoot them in "
+                    f"#help-me. Hopefully we, or someone else in the community, can answer them :smile:."
+                )
 
     @commands.command(pass_context=True)
     @commands.check(dm_commands)
@@ -154,6 +207,7 @@ class Roles(commands.Cog):
         else:
             Config.remove_opt_in_roles(roles)
             await ctx.send("Successfully removed roles")
+
 
 def setup(bot):
     bot.add_cog(Roles(bot))
