@@ -11,7 +11,6 @@ import asyncio
 import discord
 
 
-
 class Verification(commands.Cog):
     """
     WPI Verification system
@@ -213,7 +212,7 @@ class Verification(commands.Cog):
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
         """
-        Changes perms based on whether a mod is online
+        Changes perms based on whether a mod is online. Checks to see if a user needs to be given verification roles
 
         :param before: Member before
         :param after: Member after
@@ -222,41 +221,13 @@ class Verification(commands.Cog):
         if before.guild is not Config.main_guild:
             return
 
-        class_roles = [
-            Config.main_guild.get_role(787375833509658655),  # 2025
-            Config.main_guild.get_role(664719508404961293),  # 2024
-            Config.main_guild.get_role(567179738683015188),  # 2023
-            Config.main_guild.get_role(578350297978634240),  # 2022
-            Config.main_guild.get_role(578350427209203712),  # 2021
-            Config.main_guild.get_role(692461531983511662),  # Mass Academy
-            Config.main_guild.get_role(638748298152509461),  # WPI Staff
-            Config.main_guild.get_role(599319106478669844),  # Graduate Student
-            Config.main_guild.get_role(634223378773049365)  # Alumni
-        ]
-
-        added_roles = [x for x in after.roles if x not in before.roles]
-        if before.id in Config.guilds[Config.main_guild]["verifications"]["wpi"].values():
-            if Config.guilds[Config.main_guild]["verifications"]["wpi_role"] not in after.roles:
-                if any(item in added_roles for item in class_roles):
-                    await after.add_roles(
-                        Config.guilds[Config.main_guild]["verifications"]["wpi_role"],
-                        reason="Picked up class role, previously verified"
-                    )
-            else:
-                for role in class_roles:
-                    if role in after.roles:
-                        break
-                else:
-                    await after.remove_roles(
-                        Config.guilds[Config.main_guild]["verifications"]["wpi_role"],
-                        reason="Removed class role"
-                    )
-
-        # If a moderator
+        # If a moderator has been updated
         if before.top_role.id == 576464175430238208 or before.top_role.id == 742118136458772551:
             moderators = Config.main_guild.get_role(742118136458772551).members
             for moderator in moderators:
-                if moderator.desktop_status is discord.Status.online and moderator.desktop_status is not discord.Status.dnd:
+                # Check if a moderator is online on desktop
+                if moderator.desktop_status is discord.Status.online:
+                    # If a moderator is offline and perms are reduced, raise them
                     if Config.main_guild.default_role.permissions.attach_files is False:
                         perms = before.guild.default_role.permissions
                         perms.add_reactions = perms.embed_links = perms.attach_files = perms.stream = True
@@ -279,6 +250,7 @@ class Verification(commands.Cog):
 
                     return
 
+            # If moderators are offline and perms are elevated, reduce them
             if Config.main_guild.default_role.permissions.attach_files is True:
                 perms = before.guild.default_role.permissions
                 perms.add_reactions = perms.embed_links = perms.attach_files = perms.stream = False
@@ -326,6 +298,7 @@ class Verification(commands.Cog):
             if not Config.guilds[message.guild]["verifications"]["member"][message.author]["verified"] and \
                     Config.guilds[message.guild]["verifications"]["member"][message.author]["verified"] is not None:
                 Config.remove_message(message.author)
+
 
 def setup(bot):
     bot.add_cog(Verification(bot))
