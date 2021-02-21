@@ -185,11 +185,16 @@ async def update_guild_settings(guild: discord.Guild):
                 emoji = emote
 
             if isinstance(emoji, str):
-                role_id = raw_settings["guilds"][str(guild.id)]["reaction_roles"][combo_id]["emojis"][emoji]
+                role_id = raw_settings["guilds"][str(guild.id)]["reaction_roles"][combo_id]["emojis"][emoji]["role"]
+                dm_message = raw_settings["guilds"][str(guild.id)]["reaction_roles"][combo_id]["emojis"][emoji]["message"]
             else:
-                role_id = raw_settings["guilds"][str(guild.id)]["reaction_roles"][combo_id]["emojis"][str(emoji.id)]
+                role_id = raw_settings["guilds"][str(guild.id)]["reaction_roles"][combo_id]["emojis"][str(emoji.id)]["role"]
+                dm_message = raw_settings["guilds"][str(guild.id)]["reaction_roles"][combo_id]["emojis"][str(emoji.id)]["message"]
 
-            guilds[guild]["reaction_roles"][message]["emojis"][emoji] = guild.get_role(role_id)
+            guilds[guild]["reaction_roles"][message]["emojis"][emoji] = {
+                "role": guild.get_role(role_id),
+                "message": dm_message
+            }
 
             # If role deleted
             if guilds[guild]["reaction_roles"][message]["emojis"][emoji] is None:
@@ -918,7 +923,10 @@ def add_reaction_role(message: discord.Message, emoji: typing.Union[discord.Emoj
     else:
         guilds[message.guild]["reaction_roles"][message] = {
             "emojis": {
-                emoji: role.id
+                emoji: {
+                    "role": role.id,
+                    "message": None
+                }
             },
             "exclusive": False
         }
@@ -926,14 +934,20 @@ def add_reaction_role(message: discord.Message, emoji: typing.Union[discord.Emoj
         if isinstance(emoji, str):
             raw_settings["guilds"][str(message.guild.id)]["reaction_roles"][combo_id] = {
                 "emojis": {
-                    emoji: role.id
+                    emoji: {
+                        "role": role.id,
+                        "message": None
+                    }
                 },
                 "exclusive": False
             }
         else:
-            raw_settings["guilds"][str(message.guild.id)]["reaction_roles"][str(emoji.id)] = {
+            raw_settings["guilds"][str(message.guild.id)]["reaction_roles"][combo_id] = {
                 "emojis": {
-                    emoji.name: role.id
+                    str(emoji.id): {
+                        "role": role.id,
+                        "message": None
+                    }
                 },
                 "exclusive": False
             }
@@ -943,7 +957,7 @@ def add_reaction_role(message: discord.Message, emoji: typing.Union[discord.Emoj
 
 def remove_reaction_role(message: discord.Message, emoji: typing.Union[discord.Emoji, str]):
     """
-    Removes a reaction role from a messge
+    Removes a reaction role from a message
     
     :param message: Message to remove reaction role from 
     :param emoji: Emoji to remove
@@ -955,9 +969,9 @@ def remove_reaction_role(message: discord.Message, emoji: typing.Union[discord.E
     del guilds[message.guild]["reaction_roles"][message]["emojis"][emoji]
 
     if isinstance(emoji, str):
-        del raw_settings["guilds"][str(message.guild.id)]["reaction_roles"][combo_id]["emojis"][str(emoji.id)]
-    else:
         del raw_settings["guilds"][str(message.guild.id)]["reaction_roles"][combo_id]["emojis"][emoji]
+    else:
+        del raw_settings["guilds"][str(message.guild.id)]["reaction_roles"][combo_id]["emojis"][str(emoji.id)]
 
     if len(guilds)[message.guild]["reaction_roles"][message]["emojis"] == 0:
         del len(guilds)[message.guild]["reaction_roles"][message]
@@ -978,6 +992,45 @@ def set_reaction_message_exclusivity(message: discord.Message, exclusive: bool):
     combo_id = str(message.channel.id) + str(message.id)
     guilds[message.guild]["reaction_roles"][message]["exclusive"] = True
     raw_settings["guilds"][str(message.guild.id)]["reaction_roles"][combo_id]["exclusive"] = exclusive
+
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def set_reaction_role_message(message: discord.Message, emoji: typing.Union[discord.Emoji, str], msg: str):
+    """
+    Sets the message to be sent to a user for a reaction role
+
+    :param message: Message that has the reaction role
+    :param emoji: Emoji for the reaction role
+    :param msg: String to send to the member who reacts
+    """
+    global guilds, raw_settings
+
+    combo_id = str(message.channel.id) + str(message.id)
+    guilds[message.guild]["reaction_roles"][message]["emojis"][emoji]["message"] = msg
+    if isinstance(emoji, str):
+        raw_settings["guilds"][str(message.guild.id)]["reaction_roles"][combo_id]["emojis"][emoji]["message"] = msg
+    else:
+        raw_settings["guilds"][str(message.guild.id)]["reaction_roles"][combo_id]["emojis"][str(emoji.id)]["message"] = msg
+
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+
+def clear_reaction_role_message(message: discord.Message, emoji: typing.Union[discord.Emoji, str]):
+    """
+    Removes the message for a reaction role
+
+    :param message: Message that has the reaction role
+    :param emoji: Emoji for the reaction role
+    """
+    global guilds, raw_settings
+
+    combo_id = str(message.channel.id) + str(message.id)
+    guilds[message.guild]["reaction_roles"][message]["emojis"][emoji]["message"] = None
+    if isinstance(emoji, str):
+        raw_settings["guilds"][str(message.guild.id)]["reaction_roles"][combo_id]["emojis"][emoji]["message"] = None
+    else:
+        raw_settings["guilds"][str(message.guild.id)]["reaction_roles"][combo_id]["emojis"][str(emoji.id)]["message"] = None
 
     save_json(os.path.join("config", "settings.json"), raw_settings)
 
