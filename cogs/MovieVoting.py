@@ -9,6 +9,9 @@ import os
 
 
 class MovieVoting(commands.Cog):
+    """
+    UNUSED COG
+    """
 
     def __init__(self, bot, key):
         self.bot = bot

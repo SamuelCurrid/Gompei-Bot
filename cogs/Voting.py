@@ -433,5 +433,6 @@ class Voting(commands.Cog):
         embed.description = leaderboard
         await ctx.send("This poll does not update live", embed=embed)
 
+
 def setup(bot):
     bot.add_cog(Voting(bot))

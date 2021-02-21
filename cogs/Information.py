@@ -266,9 +266,9 @@ class Information(commands.Cog):
         )
 
         if emoji.animated:
-            embed.description += "\n**Format:** \<a:" + emoji.name + ":" + str(emoji.id) + ">"
+            embed.description += r"\n**Format:** \<a:" + emoji.name + ":" + str(emoji.id) + ">"
         else:
-            embed.description += "\n**Format:** \<:" + emoji.name + ":" + str(emoji.id) + ">"
+            embed.description += r"\n**Format:** \<:" + emoji.name + ":" + str(emoji.id) + ">"
         embed.description += "\n**Animated:** " + str(emoji.animated)
         if isinstance(emoji, discord.Emoji):
             embed.description += "\n**Available:** " + str(emoji.available)
@@ -529,6 +529,7 @@ class Information(commands.Cog):
             )
 
         return embed
+
 
 def setup(bot):
     bot.add_cog(Information(bot))

@@ -288,5 +288,6 @@ class EmbedBuilder(commands.Cog):
         else:
             await ctx.send("No embed is being worked on currently. To create one use `.embed create`.")
 
+
 def setup(bot):
     bot.add_cog(EmbedBuilder(bot))

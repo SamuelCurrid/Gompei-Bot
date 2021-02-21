@@ -187,7 +187,6 @@ class DirectMessages(commands.Cog):
                 chunks.append(chunk[: index])
                 content = content[index + 1:]
 
-
             for i in range(0, len(chunks)):
                 embed = discord.Embed(
                     title=user.display_name + " PM History (" + str(i + 1) + "/" + str(len(chunks)) + ")",
@@ -389,6 +388,7 @@ class DirectMessages(commands.Cog):
                 else:
                     Config.set_dm_channel(channel_object)
                     await ctx.send("Successfully updated DM channel to <#" + str(channel_object.id) + ">")
+
 
 def setup(bot):
     bot.add_cog(DirectMessages(bot))

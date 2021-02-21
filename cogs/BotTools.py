@@ -4,8 +4,8 @@ import os
 
 
 class BotTools(commands.Cog):
-    """Allows the bot owner to manage functions of the bot including (un|re|)loading cogs
-
+    """
+    Allows the bot owner to manage functions of the bot including (un|re|)loading cogs
     """
 
     def __init__(self, bot):

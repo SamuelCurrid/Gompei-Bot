@@ -1,7 +1,5 @@
 from discord.ext import commands
 
-import discord
-
 
 class Memes(commands.Cog):
     @commands.Cog.listener()
@@ -10,6 +8,7 @@ class Memes(commands.Cog):
             emoji = await message.guild.fetch_emoji(802971310782152724)
             if emoji is not None:
                 await message.add_reaction(emoji)
+
 
 def setup(bot):
     bot.add_cog(Memes(bot))

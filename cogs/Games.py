@@ -220,7 +220,6 @@ class Games(commands.Cog):
                 board[y][x] = numbers[ct]
 
     # Dice
-
     @commands.command(pass_context=True)
     @commands.check(dm_commands)
     async def roll(self, ctx, number):
