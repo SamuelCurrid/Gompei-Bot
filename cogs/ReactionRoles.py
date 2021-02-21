@@ -51,16 +51,16 @@ class ReactionRoles(commands.Cog):
         :param emoji: emoji to react with
         :param role: role tied to the reaction
         """
+        if Config.guilds[message.guild]["reaction_roles"]:
+            if emoji in Config.guilds[message.guild]["reaction_roles"][message]["emojis"]:
+                await ctx.send("This emoji is already being used for a reaction role on this message")
+                return
+
         try:
             await message.add_reaction(emoji)
         except discord.NotFound:
             await ctx.send("Could not find emoji \"" + emoji + "\"")
             return
-
-        if Config.guilds[message.guild]["reaction_roles"]:
-            if emoji in Config.guilds[message.guild]["reaction_roles"][message]["emojis"]:
-                await ctx.send("This emoji is already being used for a reaction role on this message")
-                return
 
         Config.add_reaction_role(message, emoji, role)
         await ctx.send("Added reaction role")
@@ -99,6 +99,13 @@ class ReactionRoles(commands.Cog):
         :param ctx: Context object
         :param message: Message with reaction roles
         """
+        if message not in Config.guilds[message.guild]["reaction_roles"]:
+            await ctx.send("There is no reaction role attached to this message")
+            return
+        elif Config.guilds[message.guild]["reaction_roles"][message]["exclusive"] is True:
+            await ctx.send("This reaction role has already been set to exclusive")
+            return
+
         Config.set_reaction_message_exclusivity(message, True)
         await ctx.send("Made reaction role exclusive")
 
@@ -112,8 +119,63 @@ class ReactionRoles(commands.Cog):
         :param ctx: Context object
         :param message: Message with reaction roles
         """
+        if message not in Config.guilds[message.guild]["reaction_roles"]:
+            await ctx.send("There is no reaction role attached to this message")
+            return
+        elif Config.guilds[message.guild]["reaction_roles"][message]["exclusive"] is False:
+            await ctx.send("This reaction role has already been set to inclusive")
+            return
+
         Config.set_reaction_message_exclusivity(message, False)
         await ctx.send("Made reaction role inclusive")
+
+    @commands.command(pass_context=True, name="setMessage")
+    @commands.check(moderator_perms)
+    @commands.guild_only()
+    async def set_message(self, ctx, roleMsg: discord.Message, emoji: typing.Union[discord.Emoji, str], *, message: str):
+        """
+        Adds a message to be DM'ed to user when using the given reaction role
+
+        :param ctx: Context object
+        :param roleMsg: Message that reaction role is attached too
+        :param emoji: Emoji that is being used
+        :param message: String message to send to the user on role pickup
+        """
+        if roleMsg not in Config.guilds[roleMsg.guild]["reaction_roles"]:
+            await ctx.send("This is no reaction role attached to this message")
+            return
+
+        if emoji not in Config.guilds[roleMsg.guild]["reaction_roles"][roleMsg]["emojis"]:
+            await ctx.send("This emoji is not attached to the reaction role message")
+            return
+
+        Config.set_reaction_role_message(roleMsg, emoji, message)
+        await ctx.send(f"Successfully set message")
+
+    @commands.command(pass_context=True, name="clearMessage")
+    @commands.check(moderator_perms)
+    @commands.guild_only()
+    async def clear_message(self, ctx, roleMsg: discord.Message, emoji: typing.Union[discord.Emoji, str]):
+        """
+        Clears a message from the given reaction role
+
+        :param ctx: Context object
+        :param roleMsg: Message that the reaction role is attached too
+        :param emoji: Emoji that is being used
+        """
+        if roleMsg not in Config.guilds[roleMsg.guild]["reaction_roles"]:
+            await ctx.send("This is no reaction role attached to this message")
+            return
+
+        if not isinstance(emoji, str):
+            emoji = str(emoji.id)
+
+        if emoji not in Config.guilds[roleMsg.guild]["reaction_roles"][roleMsg]:
+            await ctx.send("This emoji is not attached to the reaction role message")
+            return
+
+        Config.clear_reaction_role_message(roleMsg, emoji)
+        await ctx.send(f"Successfully cleared message")
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
@@ -145,12 +207,13 @@ class ReactionRoles(commands.Cog):
                 emoji = str(payload.emoji)
 
             if emoji in Config.guilds[guild]["reaction_roles"][message]["emojis"]:
-                reaction_role = Config.guilds[guild]["reaction_roles"][message]["emojis"][emoji]
+                reaction_role = Config.guilds[guild]["reaction_roles"][message]["emojis"][emoji]["role"]
                 roles = payload.member.roles
 
                 switched = False
                 if Config.guilds[guild]["reaction_roles"][message]["exclusive"]:
-                    for role in Config.guilds[guild]["reaction_roles"][message]["emojis"].values():
+                    for emote in Config.guilds[guild]["reaction_roles"][message]["emojis"]:
+                        role = Config.guilds[guild]["reaction_roles"][message]["emojis"][emote]["role"]
                         if role in payload.member.roles:
                             roles.remove(role)
                             switched = True
@@ -186,6 +249,12 @@ class ReactionRoles(commands.Cog):
                             await logging.send(embed=embed)
                 else:
                     await payload.member.edit(roles=roles, reason="Reaction role")
+
+                print(emoji)
+                if Config.guilds[guild]["reaction_roles"][message]["emojis"][emoji]["message"] is not None:
+                    await payload.member.send(
+                        Config.guilds[guild]["reaction_roles"][message]["emojis"][emoji]["message"]
+                    )
                 await message.remove_reaction(payload.emoji, payload.member)
 
 
