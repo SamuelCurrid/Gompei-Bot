@@ -51,7 +51,7 @@ class ReactionRoles(commands.Cog):
         :param emoji: emoji to react with
         :param role: role tied to the reaction
         """
-        if Config.guilds[message.guild]["reaction_roles"]:
+        if message in Config.guilds[message.guild]["reaction_roles"]:
             if emoji in Config.guilds[message.guild]["reaction_roles"][message]["emojis"]:
                 await ctx.send("This emoji is already being used for a reaction role on this message")
                 return
@@ -142,7 +142,7 @@ class ReactionRoles(commands.Cog):
         :param message: String message to send to the user on role pickup
         """
         if roleMsg not in Config.guilds[roleMsg.guild]["reaction_roles"]:
-            await ctx.send("This is no reaction role attached to this message")
+            await ctx.send("There is no reaction role attached to this message")
             return
 
         if emoji not in Config.guilds[roleMsg.guild]["reaction_roles"][roleMsg]["emojis"]:
@@ -150,7 +150,59 @@ class ReactionRoles(commands.Cog):
             return
 
         Config.set_reaction_role_message(roleMsg, emoji, message)
-        await ctx.send(f"Successfully set message")
+        await ctx.send("Successfully set message")
+
+    @commands.command(pass_context=True, name="addRoleRequirement")
+    @commands.check(moderator_perms)
+    @commands.guild_only()
+    async def add_role_requirement(self, ctx, roleMsg: discord.Message, emoji: typing.Union[discord.Emoji, str], role: discord.Role):
+        """
+        Adds a role to be required in order to use the reaction role
+
+        :param ctx: Context object
+        :param roleMsg: Message that the reaction role is attached to
+        :param emoji: Emoji for the role
+        :param role: Role required
+        """
+        if roleMsg not in Config.guilds[roleMsg.guild]["reaction_roles"]:
+            await ctx.send("There is no reaction role attached to this message")
+            return
+
+        if emoji not in Config.guilds[roleMsg.guild]["reaction_roles"][roleMsg]["emojis"]:
+            await ctx.send("This emoji is not attached to the reaction role message")
+            return
+
+        if role in Config.guilds[roleMsg.guild]["reaction_roles"][roleMsg]["emojis"][emoji]["reqs"]:
+            await ctx.send(f"{role.name} is already a requirement for this reaction role")
+
+        Config.add_reaction_role_requirement(roleMsg, emoji, role)
+        await ctx.send(f"Successfully added {role.name} as a requirement for the reaction role")
+
+    @commands.command(pass_context=True, name="removeRoleRequirement")
+    @commands.check(moderator_perms)
+    @commands.guild_only()
+    async def remove_role_requirement(self, ctx, roleMsg: discord.Message, emoji: typing.Union[discord.Emoji, str], role: discord.Role):
+        """
+        Removes a role requirement in order to use the reaction role
+
+        :param ctx: Context object
+        :param roleMsg: Message that the reaction role is attached to
+        :param emoji: Emoji for the role
+        :param role: Role requirement to remove
+        """
+        if roleMsg not in Config.guilds[roleMsg.guild]["reaction_roles"]:
+            await ctx.send("There is no reaction role attached to this message")
+            return
+
+        if emoji not in Config.guilds[roleMsg.guild]["reaction_roles"][roleMsg]["emojis"]:
+            await ctx.send("This emoji is not attached to the reaction role message")
+            return
+
+        if role not in Config.guilds[roleMsg.guild]["reaction_roles"][roleMsg]["emojis"][emoji]["reqs"]:
+            await ctx.send(f"{role.name} is not a requirement for this reaction role")
+
+        Config.remove_reaction_role_requirement(roleMsg, emoji, role)
+        await ctx.send(f"Successfully added {role.name} as a requirement for the reaction role")
 
     @commands.command(pass_context=True, name="clearMessage")
     @commands.check(moderator_perms)
@@ -197,7 +249,7 @@ class ReactionRoles(commands.Cog):
 
         if message in Config.guilds[guild]["reaction_roles"]:
             # Fake ctx for EmojiConverter
-            ctx = namedtuple('Context', 'bot guild', module=commands.context)
+            ctx = namedtuple("Context", "bot guild", module=commands.context)
             ctx.bot = self.bot
             ctx.guild = guild
 
@@ -223,9 +275,9 @@ class ReactionRoles(commands.Cog):
 
                 if Config.guilds[guild]["closed"]:
                     if reaction_role not in Config.guilds[guild]["access_roles"]:
-                        await payload.member.edit(roles=roles, reason="Reaction role")
+                        pass
                     elif switched:
-                        await payload.member.edit(roles=roles, reason="Reaction role")
+                        pass
                     else:
                         logging = Config.guilds[guild]["logging"]["overwrite_channels"]["mod"]
 
@@ -247,10 +299,14 @@ class ReactionRoles(commands.Cog):
                             embed.timestamp = datetime.utcnow()
 
                             await logging.send(embed=embed)
+
+                for role in Config.guilds[guild]["reaction_roles"][message]["emojis"][emoji]["reqs"]:
+                    if role not in payload.member.roles:
+                        await payload.member.send(f"You are missing the required role {role.name} to pick up this role")
+                        break
                 else:
                     await payload.member.edit(roles=roles, reason="Reaction role")
 
-                print(emoji)
                 if Config.guilds[guild]["reaction_roles"][message]["emojis"][emoji]["message"] is not None:
                     await payload.member.send(
                         Config.guilds[guild]["reaction_roles"][message]["emojis"][emoji]["message"]

@@ -81,9 +81,17 @@ class Roles(commands.Cog):
                             break
                     else:
                         await after.remove_roles(
-                            Config.guilds[Config.main_guild]["verifications"]["member_role"],
+                            Config.guilds[after.guild]["verifications"]["member_role"],
                             reason="Removed access role"
                         )
+
+        # Check if the member qualifies for Venting role
+        if after.guild.get_role(725887796312801340) in after.roles:
+            if Config.guilds[after.guild]["verifications"]["wpi_role"] not in after.roles:
+                await after.remove_roles(
+                    after.guild.get_role(725887796312801340),
+                    reason="Not WPI Verified"
+                )
 
     @commands.command(pass_context=True)
     @commands.check(dm_commands)
@@ -104,9 +112,9 @@ class Roles(commands.Cog):
 
             # Remove members roles (check if nitro booster)
             if member.premium_since is None:
-                await member.edit(roles=[])
+                await member.edit(roles=[Config.main_guild.get_role(812877476824088596)])
             else:
-                await member.edit(roles=[Config.guilds[Config.main_guild]["nitro_role"]], reason="Used lockout command")
+                await member.edit(roles=[Config.guilds[Config.main_guild]["nitro_role"], Config.main_guild.get_role(812877476824088596)], reason="Used lockout command")
 
             # DM User
             await member.send("Locked you out of the server. To get access back just type \".letmein\" here")

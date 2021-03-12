@@ -58,6 +58,7 @@ class Verification(commands.Cog):
     @verification_check.before_loop
     async def before_verification_check(self):
         await self.bot.wait_until_ready()
+        await asyncio.sleep(10)
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -193,21 +194,21 @@ class Verification(commands.Cog):
                     )
                     Config.verify_member(member)
 
-    @commands.Cog.listener()
-    async def on_member_join(self, member):
-        """
-        Checks to see if a user has been verified before, reassigns roles if yes
-
-        :param member:
-        """
-        if Config.guilds[member.guild]["verifications"]["member_role"] is not None:
-            if str(member.id) in Config.raw_settings["guilds"][str(member.guild.id)]["verifications"]["member"]:
-                Config.add_member(member)
-                Config.verify_member(member)
-                await member.add_roles(
-                    Config.guilds[member.guild]["verifications"]["member_role"],
-                    reason="Previously verified"
-                )
+    # @commands.Cog.listener()
+    # async def on_member_join(self, member):
+    #     """
+    #     Checks to see if a user has been verified before, reassigns roles if yes
+    #
+    #     :param member:
+    #     """
+    #     if Config.guilds[member.guild]["verifications"]["member_role"] is not None:
+    #         if str(member.id) in Config.raw_settings["guilds"][str(member.guild.id)]["verifications"]["member"]:
+    #             Config.add_member(member)
+    #             Config.verify_member(member)
+    #             await member.add_roles(
+    #                 Config.guilds[member.guild]["verifications"]["member_role"],
+    #                 reason="Previously verified"
+    #             )
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):

@@ -54,7 +54,7 @@ class Leaderboards(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_emojis_update(self, guild, before, after):
-        emoji_leaderboard = self.leaderboards["emojiLeaderboard"]
+        emoji_leaderboard = self.leaderboards["emoji_leaderboard"]
 
         add_emoji = [x for x in after if x not in before]
 
@@ -300,7 +300,7 @@ class Leaderboards(commands.Cog):
         self.leaderboards[str(guild.id)]["emoji_leaderboard"] = {}
 
         for emoji in guild.emojis:
-            self.leaderboards[str(guild.id)]["emoji_leaderboard"][str(emoji.id)] = 0
+            self.leaderboards[str(guild.id)]["emoji_leaderboard"][emoji] = 0
 
         save_json(os.path.join("config", "leaderboards.json"), self.leaderboards)
         await self.update_leaderboards()
@@ -467,7 +467,6 @@ class Leaderboards(commands.Cog):
 
         await save_json(os.path.join("config", "leaderboards.json"), self.leaderboards)
         print("Leaderboards up to date")
-
 
     async def message_leaderboard(self, ctx, board_type):
         """
