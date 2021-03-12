@@ -23,6 +23,7 @@ def get_prefix(client, message):
 
 
 # Initialize Bot
+start_time = None
 intents = discord.Intents.default()
 intents.members = True
 intents.presences = True
@@ -61,12 +62,15 @@ async def on_ready():
     """
     Load state and update information since last run
     """
+    global start_time
+
     if Config.status is not None:
         await gompei.change_presence(activity=discord.Game(name=Config.status, start=datetime.utcnow()))
 
     await Config.set_client(gompei)
     await Config.load_settings()
 
+    start_time = datetime.utcnow()
     print("Logged on as {0}".format(gompei.user))
     if Config.dm_channel is not None:
         start_embed = discord.Embed(title="Bot started", color=0x43b581)
@@ -206,6 +210,20 @@ async def ping(ctx):
     :param ctx: context object
     """
     await ctx.send(f'Pong! `{int(gompei.latency * 1000)}ms`')
+
+
+@gompei.command()
+@commands.check(dm_commands)
+async def uptime(ctx):
+    """
+    Sends the bots uptime
+    Usage: .uptime
+
+    :param ctx: Context object
+    """
+    global start_time
+
+    await ctx.send(f"{time_delta_string(start_time, datetime.utcnow())}")
 
 
 @gompei.command(pass_context=True, aliases=["status"])
