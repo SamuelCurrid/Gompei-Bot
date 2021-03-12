@@ -532,3 +532,7 @@ class Leaderboards(commands.Cog):
         self.cached_messages[message.id] = {"type": leaderboard_type, "page": 1}
         await message.add_reaction("⬅️")
         await message.add_reaction("➡️")
+
+
+def setup(bot):
+    bot.add_cog(Leaderboards(bot))

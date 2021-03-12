@@ -31,20 +31,21 @@ gompei = commands.Bot(command_prefix=get_prefix, case_insensitive=True, intents=
 
 
 startup_cogs = [
-        "Administration",
-        "DirectMessages",
-        "EmbedBuilder",
-        "Games",
-        "Information",
-        "Logging",
-        "Memes",
-        "ReactionRoles",
-        "Roles",
-        "Triggers",
-        "Verification",
-        "Voting",
-        "botTools",
-        ]
+    "Administration",
+    "DirectMessages",
+    "EmbedBuilder",
+    "Games",
+    "Information",
+    "Leaderboards",
+    "Logging",
+    "Memes",
+    "ReactionRoles",
+    "Roles",
+    "Triggers",
+    "Verification",
+    "Voting",
+    "BotTools"
+]
 
 for cog in startup_cogs:
     gompei.load_extension(f"cogs.{cog}")
