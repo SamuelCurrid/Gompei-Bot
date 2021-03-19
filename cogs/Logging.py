@@ -279,7 +279,7 @@ class Logging(commands.Cog):
                 embed.timestamp = datetime.utcnow()
 
                 if entries[0].action == discord.AuditLogAction.message_delete \
-                        and entries[0].id != Config.guilds[guild]["logging"]["last_audit"].id:
+                        and entries[0].id != Config.guilds[guild]["logging"]["last_audit"]:
                     embed.description = "**Deleted by <@" + str(entries[0].user.id) + ">**"
                     Config.set_last_audit(entries[0])
                     if Config.guilds[guild]["logging"]["overwrite_channels"]["mod"] != \
@@ -862,15 +862,18 @@ class Logging(commands.Cog):
                 embed.set_footer(text="ID: " + str(after.id))
                 embed.timestamp = datetime.utcnow()
 
-            # Log who the editor is
+            # Log who the editor is and the reason
             entries = await before.guild.audit_logs(limit=1).flatten()
             if entries[0].action == discord.AuditLogAction.member_role_update \
                     and entries[0].id != Config.guilds[after.guild]["logging"]["last_audit"]:
                 Config.set_last_audit(entries[0])
-                embed.description += "\n\nEdited by <@" + str(entries[0].user.id) + ">"
+                embed.description += "\n\n**Edited by <@" + str(entries[0].user.id) + ">**\n"
                 if not entries[0].user.bot and Config.guilds[after.guild]["logging"]["overwrite_channels"]["mod"] \
                         != Config.guilds[after.guild]["logging"]["overwrite_channels"]["member"]:
                     await self.send_embed(embed, Config.guilds[after.guild]["logging"]["overwrite_channels"]["mod"])
+
+                if entries[0].reason is not None:
+                    embed.description += "**Reason:** " + entries[0].reason
             else:
                 embed.description = "\n\nEdited by Discord"
 

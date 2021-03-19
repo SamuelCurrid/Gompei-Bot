@@ -219,6 +219,11 @@ class DirectMessages(commands.Cog):
         """
         if Config.dm_channel is not None:
             if not message.author.bot:
+
+                context = await self.bot.get_context(message)
+                if context.valid:  # If a valid command do not send to DM channel
+                    return
+
                 if isinstance(message.channel, discord.channel.DMChannel) and Config.dm_channel is not None:
                     files = []
                     urls = " "

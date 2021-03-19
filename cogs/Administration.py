@@ -300,20 +300,18 @@ class Administration(commands.Cog):
         :param ctx: Context object
         :param user: User to purge messages from
         """
+        message = await ctx.send("Purging messages...")
 
         def is_user(m):
             return m.author.id == user.id
 
         channels = ctx.guild.text_channels
-        channel_messages = []
-        for i in range(len(channels)):
-            channel_messages.append(None)
 
         count = 0
         while True:
             for i in range(len(channels)):
-                count += len(await channels[i].purge(limit=25, check=is_user, before=channel_messages[i]))
-                channel_messages[i] = [-1]
+                await message.edit(content="Purging messages... (" + channels[i].name + ")")
+                count += len(await channels[i].purge(limit=None, check=is_user))
 
         await ctx.send(f"Deleted {count} message(s)")
 
