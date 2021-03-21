@@ -6,6 +6,8 @@ from config import Config
 # Libraries
 from discord.ext import commands
 from datetime import datetime
+
+import traceback
 import discord
 import sys
 
@@ -106,7 +108,8 @@ async def on_command_error(ctx, error):
     elif isinstance(error, commands.BotMissingPermissions):
         await ctx.send("Bot is missing permissions.")
     else:
-        print(error)
+        print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
+        traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 
 
 @gompei.event
