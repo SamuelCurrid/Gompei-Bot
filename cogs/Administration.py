@@ -293,27 +293,34 @@ class Administration(commands.Cog):
     @commands.command(pass_context=True, aliases=["userPurge", "uPurge"])
     @commands.is_owner()
     @commands.guild_only()
-    async def user_purge(self, ctx, user: typing.Union[discord.User, discord.Member]):
+    async def user_purge(self, ctx, *users: typing.Union[discord.User, discord.Member]):
         """
         Purges all messages from a user
 
         :param ctx: Context object
-        :param user: User to purge messages from
+        :param users: Users to purge messages from
         """
-        message = await ctx.send("Purging messages...")
+        user_names = ""
+        for user in users:
+            user_names += user.name + "#" + user.discriminator + ", "
 
-        def is_user(m):
-            return m.author.id == user.id
+        message = await ctx.send("Purging messages from " + user_names[:-2] + "...")
+
+        def is_users(m):
+            for user in users:
+                if m.author.id == user.id:
+                    return True
+
+            return False
 
         channels = ctx.guild.text_channels
 
         count = 0
-        while True:
-            for i in range(len(channels)):
-                await message.edit(content="Purging messages... (" + channels[i].name + ")")
-                count += len(await channels[i].purge(limit=None, check=is_user))
+        for i in range(len(channels)):
+            await message.edit(content="Purging messages from " + user_names[:-2] + "...(" + channels[i].name + ")")
+            count += len(await channels[i].purge(limit=None, check=is_users))
 
-        await ctx.send(f"Deleted {count} message(s)")
+        await ctx.send(f"Deleted {count} message(s) from")
 
     @commands.command(pass_context=True, aliases=["tPurge", "timePurge"])
     @commands.check(moderator_perms)
