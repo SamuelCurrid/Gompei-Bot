@@ -54,7 +54,7 @@ class Leaderboards(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_emojis_update(self, guild, before, after):
-        emoji_leaderboard = self.leaderboards["emoji_leaderboard"]
+        emoji_leaderboard = self.leaderboards[str(guild.id)]["emoji_leaderboard"]
 
         add_emoji = [x for x in after if x not in before]
 
@@ -95,7 +95,7 @@ class Leaderboards(commands.Cog):
                             leaderboard["quote_leaderboard"][str(user.id)] += 1
 
                 # Check for emojis
-                for emoji in self.bot.emojis:
+                for emoji in message.guild.emojis:
                     emoji_name = "<:" + emoji.name + ":" + str(emoji.id) + ">"
                     for index in range(0, message.content.count(emoji_name)):
                         leaderboard["emoji_leaderboard"][str(emoji.id)] += 1
@@ -300,7 +300,7 @@ class Leaderboards(commands.Cog):
         self.leaderboards[str(guild.id)]["emoji_leaderboard"] = {}
 
         for emoji in guild.emojis:
-            self.leaderboards[str(guild.id)]["emoji_leaderboard"][emoji] = 0
+            self.leaderboards[str(guild.id)]["emoji_leaderboard"][str(emoji.id)] = 0
 
         save_json(os.path.join("config", "leaderboards.json"), self.leaderboards)
         await self.update_leaderboards()
@@ -404,8 +404,9 @@ class Leaderboards(commands.Cog):
             if last_update is not None:
                 last_update = dateutil.parser.parse(board["last_update"])
 
-            for channel in self.bot.get_guild(int(guild_id)).text_channels:
+            guild = self.bot.get_guild(int(guild_id))
 
+            for channel in guild.text_channels:
                 # Catch exceptions for no permissions
                 try:
                     async for message in channel.history(limit=None, after=last_update):
@@ -455,10 +456,13 @@ class Leaderboards(commands.Cog):
                                         board["reaction_leaderboard"][str(reaction.emoji)] += reaction.count
 
                             # Emoji check
-                            for emoji in self.bot.emojis:
+                            for emoji in guild.emojis:
                                 emoji_name = "<:" + emoji.name + ":" + str(emoji.id) + ">"
                                 for index in range(0, message.content.count(emoji_name)):
-                                    board["emoji_leaderboard"][str(emoji.id)] += 1
+                                    if str(emoji.id) in board["emoji_leaderboard"]:
+                                        board["emoji_leaderboard"][str(emoji.id)] += 1
+                                    else:
+                                        board["emoji_leaderboard"][str(emoji.id)] = 1
 
                 except discord.Forbidden:
                     print("Do not have read message history permissions for: " + str(channel))
