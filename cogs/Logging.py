@@ -1112,7 +1112,7 @@ class Logging(commands.Cog):
                 embed.set_footer(text="ID: " + str(after.id))
                 embed.timestamp = datetime.utcnow()
 
-                await self.guild_update_helper(after)
+                await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
 
             # Notification Setting
@@ -1127,7 +1127,7 @@ class Logging(commands.Cog):
                 embed.set_footer(text="ID: " + str(after.id))
                 embed.timestamp = datetime.utcnow()
 
-                await self.guild_update_helper(after)
+                await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
 
             # Description
@@ -1150,7 +1150,7 @@ class Logging(commands.Cog):
                 embed.set_footer(text="ID: " + str(after.id))
                 embed.timestamp = datetime.utcnow()
 
-                await self.guild_update_helper(after)
+                await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
 
             # Features
@@ -1161,30 +1161,31 @@ class Logging(commands.Cog):
                 added_features = [x for x in after.features if x not in before.features]
                 removed_features = [x for x in before.features if x not in after.features]
 
-                if len(removed_features) == 0:
-                    embed.colour = discord.Colour(0x43b581)
-                    embed.description = "__Added Features__\n"
-                    for feature in added_features:
-                        embed.description += feature.replace("_", " ").title() + "\n"
-                elif len(added_features) == 0:
-                    embed.colour = discord.Colour(0xbe4041)
-                    embed.description = "__Removed Features__\n"
-                    for feature in removed_features:
-                        embed.description += feature.replace("_", " ").title() + "\n"
-                else:
-                    embed.colour = discord.Colour(0x8899d4)
-                    embed.description = "__Added Features__\n"
-                    for feature in added_features:
-                        embed.description += feature.replace("_", " ").title() + "\n"
-                    embed.description += "\n__Removed Features__\n"
-                    for feature in removed_features:
-                        embed.description += feature.replace("_", " ").title() + "\n"
+                if len(added_features) + len(removed_features) != 0:
+                    if len(removed_features) == 0:
+                        embed.colour = discord.Colour(0x43b581)
+                        embed.description = "__Added Features__\n"
+                        for feature in added_features:
+                            embed.description += feature.replace("_", " ").title() + "\n"
+                    elif len(added_features) == 0:
+                        embed.colour = discord.Colour(0xbe4041)
+                        embed.description = "__Removed Features__\n"
+                        for feature in removed_features:
+                            embed.description += feature.replace("_", " ").title() + "\n"
+                    else:
+                        embed.colour = discord.Colour(0x8899d4)
+                        embed.description = "__Added Features__\n"
+                        for feature in added_features:
+                            embed.description += feature.replace("_", " ").title() + "\n"
+                        embed.description += "\n__Removed Features__\n"
+                        for feature in removed_features:
+                            embed.description += feature.replace("_", " ").title() + "\n"
 
-                embed.set_footer(text="ID: " + str(after.id))
-                embed.timestamp = datetime.utcnow()
+                    embed.set_footer(text="ID: " + str(after.id))
+                    embed.timestamp = datetime.utcnow()
 
-                await self.guild_update_helper(after)
-                await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
+                    await self.guild_update_helper(embed, after)
+                    await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
 
             # File Size Limit
             if before.filesize_limit != after.filesize_limit:
@@ -1202,7 +1203,7 @@ class Logging(commands.Cog):
                 embed.set_footer(text="ID: " + str(after.id))
                 embed.timestamp = datetime.utcnow()
 
-                await self.guild_update_helper(after)
+                await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
 
             # Emoji Limit
@@ -1221,7 +1222,7 @@ class Logging(commands.Cog):
                 embed.set_footer(text="ID: " + str(after.id))
                 embed.timestamp = datetime.utcnow()
 
-                await self.guild_update_helper(after)
+                await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
 
             # 2FA moderation
@@ -1238,7 +1239,7 @@ class Logging(commands.Cog):
                 embed.set_footer(text="ID: " + str(after.id))
                 embed.timestamp = datetime.utcnow()
 
-                await self.guild_update_helper(after)
+                await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
 
             # Owner
@@ -1251,7 +1252,7 @@ class Logging(commands.Cog):
                 embed.set_footer(text="ID: " + str(after.id))
                 embed.timestamp = datetime.utcnow()
 
-                await self.guild_update_helper(after)
+                await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
 
             # Name
@@ -1264,7 +1265,7 @@ class Logging(commands.Cog):
                 embed.set_footer(text="ID: " + str(after.id))
                 embed.timestamp = datetime.utcnow()
 
-                await self.guild_update_helper(after)
+                await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
 
             # Public updates channel
@@ -1292,7 +1293,7 @@ class Logging(commands.Cog):
                 embed.set_footer(text="ID: " + str(after.id))
                 embed.timestamp = datetime.utcnow()
 
-                await self.guild_update_helper(after)
+                await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
 
             # Rules channel
@@ -1320,7 +1321,7 @@ class Logging(commands.Cog):
                 embed.set_footer(text="ID: " + str(after.id))
                 embed.timestamp = datetime.utcnow()
 
-                await self.guild_update_helper(after)
+                await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
 
             # Region
@@ -1333,7 +1334,7 @@ class Logging(commands.Cog):
                 embed.set_footer(text="ID: " + str(after.id))
                 embed.timestamp = datetime.utcnow()
 
-                await self.guild_update_helper(after)
+                await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
 
             # System Channel
@@ -1342,7 +1343,7 @@ class Logging(commands.Cog):
                     title = "System Channel Added"
                     colour = discord.Colour(0x43b581)
                     description = after.system_channel.mention
-                elif after.rules_channel is None:
+                elif after.system_channel is None:
                     title = "System Channel Removed"
                     colour = discord.Colour(0xbe4041)
                     description = before.system_channel.mention
@@ -1361,7 +1362,7 @@ class Logging(commands.Cog):
                 embed.set_footer(text="ID: " + str(after.id))
                 embed.timestamp = datetime.utcnow()
 
-                await self.guild_update_helper(after)
+                await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
 
             # Verification Level
@@ -1373,7 +1374,7 @@ class Logging(commands.Cog):
                 embed.set_footer(text="ID: " + str(after.id))
                 embed.timestamp = datetime.utcnow()
 
-                await self.guild_update_helper(after)
+                await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
 
             # Banner
@@ -1396,7 +1397,7 @@ class Logging(commands.Cog):
                 embed.set_footer(text="ID: " + str(after.id))
                 embed.timestamp = datetime.utcnow()
 
-                await self.guild_update_helper(after)
+                await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
 
             # Discovery Splash
@@ -1406,7 +1407,7 @@ class Logging(commands.Cog):
                 embed.colour = discord.Colour(0x8899d4)
                 embed.set_image(url=after.discovery_splash_url)
 
-                await self.guild_update_helper(after)
+                await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
 
             # Icon
@@ -1418,7 +1419,7 @@ class Logging(commands.Cog):
                 embed.set_footer(text="ID: " + str(after.id))
                 embed.timestamp = datetime.utcnow()
 
-                await self.guild_update_helper(after)
+                await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
 
             # Splash
@@ -1444,7 +1445,7 @@ class Logging(commands.Cog):
                 await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
 
-    async def guild_update_helper(self, embed, guild: discord.Guild):
+    async def guild_update_helper(self, embed: discord.Embed, guild: discord.Guild):
         entries = await guild.audit_logs(limit=1).flatten()
         if entries[0].action == discord.AuditLogAction.guild_update and \
                 entries[0].id != Config.guilds[guild]["logging"]["last_audit"]:
