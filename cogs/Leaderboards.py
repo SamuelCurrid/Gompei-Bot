@@ -469,7 +469,7 @@ class Leaderboards(commands.Cog):
 
             board["lastUpdate"] = datetime.utcnow().isoformat()
 
-        await save_json(os.path.join("config", "leaderboards.json"), self.leaderboards)
+        save_json(os.path.join("config", "leaderboards.json"), self.leaderboards)
         print("Leaderboards up to date")
 
     async def message_leaderboard(self, ctx, board_type):

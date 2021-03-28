@@ -266,7 +266,7 @@ class ReactionRoles(commands.Cog):
                 if Config.guilds[guild]["reaction_roles"][message]["exclusive"]:
                     for emote in Config.guilds[guild]["reaction_roles"][message]["emojis"]:
                         role = Config.guilds[guild]["reaction_roles"][message]["emojis"][emote]["role"]
-                        if role in payload.member.roles:
+                        if reaction_role in payload.member.roles:
                             roles.remove(role)
                             switched = True
                             break
@@ -300,12 +300,15 @@ class ReactionRoles(commands.Cog):
 
                             await logging.send(embed=embed)
 
-                for role in Config.guilds[guild]["reaction_roles"][message]["emojis"][emoji]["reqs"]:
-                    if role not in payload.member.roles:
-                        await payload.member.send(f"You are missing the required role {role.name} to pick up this role")
+                for req_role in Config.guilds[guild]["reaction_roles"][message]["emojis"][emoji]["reqs"]:
+                    if req_role not in payload.member.roles:
+                        await payload.member.send(f"You are missing the required role {req_role.name} to pick up this role")
                         break
                 else:
-                    await payload.member.edit(roles=roles, reason="Reaction role")
+                    if reaction_role in payload.member.roles:
+                        await payload.member.remove_roles(reaction_role, reason="Reaction role")
+                    else:
+                        await payload.member.edit(roles=roles, reason="Reaction role")
 
                 if Config.guilds[guild]["reaction_roles"][message]["emojis"][emoji]["message"] is not None:
                     await payload.member.send(

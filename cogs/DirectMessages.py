@@ -142,19 +142,22 @@ class DirectMessages(commands.Cog):
     @commands.guild_only()
     async def pm_history(self, ctx, user: typing.Union[discord.Member, discord.User, str]):
         # Fetch user from ID
-        if isinstance(user, str) and (len(user) == 18 or len(user) == 17):
-            try:
-                user = int(user)
-                user = await self.bot.fetch_user(user)
-            except ValueError:
-                await ctx.send("Did not find the user")
-                return
-            except discord.NotFound:
-                await ctx.send("Did not find the user with that ID")
-                return
-            except discord.HTTPException:
-                await ctx.send("Bot could not connect with gateway")
-                return
+        if isinstance(user, str):
+            if len(user) == 18 or len(user) == 17:
+                try:
+                    user = int(user)
+                    user = await self.bot.fetch_user(user)
+                except ValueError:
+                    await ctx.send("Did not find the user")
+                    return
+                except discord.NotFound:
+                    await ctx.send("Did not find the user with that ID")
+                    return
+                except discord.HTTPException:
+                    await ctx.send("Bot could not connect with gateway")
+                    return
+            else:
+                await ctx.send("Not a valid user")
 
         dm_channel = user.dm_channel
         if dm_channel is None:
