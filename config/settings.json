@@ -1,30 +1,10 @@
 {
-    "guild_id": null,
-    "nitro_booster_id": null,
+    "dm_channel_id": 746002454180528219,
+    "close_time": null,
+    "lockouts": {},
     "status": null,
-    "dm_channel_id": null,
-    "mod_action_channel_id": null,
-    "muted_role_id": null,
     "prefix": ".",
-    "access_roles": [],
-    "opt_in_roles": [],
-    "command_channels": [],
-    "logging": {
-        "channel": null,
-        "overwrite_channels": {
-            "member": null,
-            "message": null,
-            "member_tracking": null,
-            "mod": null,
-            "server": null,
-            "status": null,
-            "voice": null
-        },
-        "staff": null
-    },
-    "administration": {
-        "mutes": {},
-        "jails": {}
-    },
-    "close_time": null
+    "main_guild": 567169726250352640,
+    "verifications": {"role": null, "users": {}},
+    "guilds": {}
 }

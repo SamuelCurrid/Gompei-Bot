@@ -1,4 +1,4 @@
-from Permissions import command_channels, administrator_perms
+from cogs.Permissions import command_channels, administrator_perms
 from GompeiFunctions import load_json, save_json
 from discord.ext import commands
 
@@ -9,6 +9,9 @@ import os
 
 
 class MovieVoting(commands.Cog):
+    """
+    UNUSED COG
+    """
 
     def __init__(self, bot, key):
         self.bot = bot
@@ -19,7 +22,18 @@ class MovieVoting(commands.Cog):
         self.user_list = {}
         self.movie_list = load_json(os.path.join("config", "movie_list.json"))
         self.user_list = load_json(os.path.join("config", "user_list.json"))
-        self.emojiList = {"1️⃣": 1, "2️⃣": 2, "3️⃣": 3, "4️⃣": 4, "5️⃣": 5, "6️⃣": 6, "7️⃣": 7, "8️⃣": 8, "9️⃣": 9, "➡️": 1, "⬅️": -1}
+        self.emojiList = {
+            "1️⃣": 1,
+            "2️⃣": 2,
+            "3️⃣": 3,
+            "4️⃣": 4,
+            "5️⃣": 5,
+            "6️⃣": 6,
+            "7️⃣": 7,
+            "8️⃣": 8,
+            "9️⃣": 9,
+            "➡️": 1, "⬅️": -1
+        }
 
     @commands.command(pass_context=True, aliases=["addMovie"])
     @commands.check(command_channels)
@@ -72,7 +86,11 @@ class MovieVoting(commands.Cog):
                         self.user_list[author] = {}
                         self.user_list[author]["requests"] = [movie]
                         self.user_list[author]["votes"] = [movie]
-                    await ctx.send(movie + " has been added to the list. By suggesting it, you have already voted for it! You have " + str(2 - (author_votes + 1)) + " suggestions remaining.")
+                    await ctx.send(
+                        movie +
+                        " has been added to the list. By suggesting it, you have already voted for it! You have " +
+                        str(2 - (author_votes + 1)) + " suggestions remaining."
+                    )
 
                     last_page = math.ceil(len(self.movie_list) / 9)
                     for embed in self.cached_voting:
@@ -146,11 +164,12 @@ class MovieVoting(commands.Cog):
                 if len(self.movie_list[title]["votes"]) == 0:
                     self.user_list[self.movie_list[title]["request"]]["requests"].remove(title)
                     del self.movie_list[title]
-                    await ctx.send("Vote for " + title + " removed. Since you were the only vote for this movie, it has been removed from the list.")
-                    return
+                    await ctx.send(
+                        "Vote for " + title +
+                        " removed. Since you were the only vote for this movie, it has been removed from the list."
+                    )
                 else:
                     await ctx.send("Vote for " + title + " removed.")
-                    return
             else:
                 await ctx.send("You have not voted for this movie.")
                 return
@@ -245,7 +264,13 @@ class MovieVoting(commands.Cog):
         :param ctx: context object
         """
         # Sort the movies in movieList
-        self.movie_list = {k: v for k, v in sorted(self.movie_list.items(), key=lambda item: len(item[1]["votes"]), reverse=True)}
+        self.movie_list = {
+            k: v for k, v in sorted(
+                self.movie_list.items(),
+                key=lambda item: len(item[1]["votes"]),
+                reverse=True
+            )
+        }
 
         # Create movieList
         description = ""
@@ -253,7 +278,9 @@ class MovieVoting(commands.Cog):
 
         for movie in self.movie_list:
             count += 1
-            description += "**" + str(count) + ". " + movie + "** " + "*(" + self.movie_list[movie]["year"] + ")*" + " ([IMDB](https://www.imdb.com/title/" + self.movie_list[movie]["id"] + "))" + " - " + str(len(self.movie_list[movie]["votes"])) + "\n\n"
+            description += "**" + str(count) + ". " + movie + "** " + "*(" + self.movie_list[movie]["year"] + ")*" + \
+                           " ([IMDB](https://www.imdb.com/title/" + self.movie_list[movie]["id"] + "))" + " - " + \
+                           str(len(self.movie_list[movie]["votes"])) + "\n\n"
             if count == 9:
                 break
 
@@ -312,7 +339,8 @@ class MovieVoting(commands.Cog):
 
                             # Figure out how many positions the movie changed by
                             differential = 0
-                            while len(self.movie_list[titles[index]]["votes"]) < len(self.movie_list[titles[index - (differential + 1)]]["votes"]):
+                            while len(self.movie_list[titles[index]]["votes"]) < \
+                                    len(self.movie_list[titles[index - (differential + 1)]]["votes"]):
                                 differential += 1
 
                             # If the movie changed positions in leaderboard
@@ -337,7 +365,13 @@ class MovieVoting(commands.Cog):
         Updates a movie list embed in the message
         """
         # Sort the movies in movieList
-        self.movie_list = {k: v for k, v in sorted(self.movie_list.items(), key=lambda item: len(item[1]["votes"]), reverse=True)}
+        self.movie_list = {
+            k: v for k, v in sorted(
+                self.movie_list.items(),
+                key=lambda item: len(item[1]["votes"]),
+                reverse=True
+            )
+        }
         titles = list(self.movie_list.keys())
 
         # Create movieList
@@ -352,7 +386,9 @@ class MovieVoting(commands.Cog):
             count += 1
             if index > len(titles) - 1:
                 break
-            description += "**" + str(count) + ". " + titles[index] + "**" + " ([IMDB](https://www.imdb.com/title/" + self.movie_list[titles[index]]["id"] + "))" + " - " + str(len(self.movie_list[titles[index]]["votes"])) + "\n\n"
+            description += "**" + str(count) + ". " + titles[index] + "**" + " ([IMDB](https://www.imdb.com/title/" + \
+                           self.movie_list[titles[index]]["id"] + "))" + " - " + \
+                           str(len(self.movie_list[titles[index]]["votes"])) + "\n\n"
 
         # Edit message
         self.embed.description = description

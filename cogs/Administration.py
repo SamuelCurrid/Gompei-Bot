@@ -1,14 +1,14 @@
-from GompeiFunctions import make_ordinal, time_delta_string, load_json, save_json, parse_id
-from Permissions import moderator_perms, administrator_perms
+from GompeiFunctions import make_ordinal, time_delta_string, load_json, save_json, yes_no_helper
+from cogs.Permissions import moderator_perms, administrator_perms
 from discord.ext import commands
 from datetime import timedelta
 from datetime import datetime
+from config import Config
 
 import pytimeparse
 import dateparser
 import asyncio
 import discord
-import Config
 import typing
 import os
 
@@ -23,29 +23,31 @@ class Administration(commands.Cog):
         self.bot = bot
 
     async def on_ready(self):
-        for member in Config.administration["jails"]:
-            seconds = (member["date"] - datetime.now()).total_seconds()
+        for guild in Config.guilds:
+            muted_role = Config.guilds[guild]["muted_role"]
 
-            if seconds < 0:
-                seconds = 0
+            for member in Config.guilds[guild]["administration"]["jails"]:
+                seconds = (member["date"] - datetime.now()).total_seconds()
 
-            # Reset roles if some have been picked up since last run
-            if member.roles > 1 and seconds > 0:
-                if member.premium_since is None:
-                    await member.edit(roles=[])
-                else:
-                    await member.edit(roles=[Config.nitro_role])
+                if seconds < 0:
+                    seconds = 0
 
-            await self.jail_helper(member, seconds, member["roles"])
+                # Reset roles if some have been picked up since last run
+                if member.roles > 1 and seconds > 0:
+                    if member.premium_since is None:
+                        await member.edit(roles=[])
+                    else:
+                        await member.edit(roles=[Config.guilds[guild]["nitro_role"]])
 
-        muted_role = Config.guild.get_role(615956736616038432)
-        for member in Config.administration["mutes"]:
-            seconds = (member["date"] - datetime.now()).total_seconds()
+                await self.jail_helper(member, seconds, member["roles"])
 
-            if seconds < 0:
-                seconds = 0
+            for member in Config.guilds[guild]["administration"]["mutes"]:
+                seconds = (member["date"] - datetime.now()).total_seconds()
 
-            await self.mute_helper(member, seconds, muted_role)
+                if seconds < 0:
+                    seconds = 0
+
+                await self.mute_helper(member, seconds, muted_role)
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
@@ -56,7 +58,7 @@ class Administration(commands.Cog):
         :param after: Member after
         """
         # Prevent jailed users from picking up roles
-        if after in Config.administration["jails"]:
+        if after in Config.guilds[after.guild]["administration"]["jails"]:
             added_roles = [x for x in after.roles if x not in before.roles]
             if len(added_roles) > 0:
                 jail_embed = discord.Embed(title="Member jailed", color=0xbe4041)
@@ -69,7 +71,9 @@ class Administration(commands.Cog):
                 jail_embed.set_footer(text="ID: " + str(after.id))
                 jail_embed.timestamp = datetime.utcnow()
 
-                await Config.logging["overwrite_channels"]["mod"].send(embed=jail_embed)
+                if Config.guilds[after.guild]["logging"]["overwrite_channels"]["mod"] is not None:
+                    await Config.guilds[after.guild]["logging"]["overwrite_channels"]["mod"].send(embed=jail_embed)
+
                 if after.premium_since is None:
                     await after.edit(roles=[])
                 else:
@@ -80,19 +84,39 @@ class Administration(commands.Cog):
         """
         Checks for logging reactions to elevate to staff channel
 
-        :param payload:
+        :param payload: Emoji payload
         """
-        # If a staff channel exists
-        if Config.logging["staff"] is not None:
-            if Config.guild.id == payload.guild_id:
-                channel = Config.guild.get_channel(payload.channel_id)
+        if payload.guild_id is None:
+            return
 
-                # If the channel is a logging channel
-                if channel == Config.logging["channel"] or channel == Config.dm_channel or channel in Config.logging["overwrite_channels"].values():
-                    if str(payload.emoji) in ["❗", "‼️", "⁉️", "❕"]:
-                        message = await channel.fetch_message(payload.message_id)
-                        if len(message.embeds) > 0:
-                            await Config.logging["staff"].send("Message forwarded by <@" + str(payload.user_id) + "> from <#" + str(channel.id) + ">", embed=message.embeds[0])
+        guild = self.bot.get_guild(payload.guild_id)
+
+        # If a staff channel exists
+        if Config.guilds[guild]["logging"]["staff"] is not None:
+            channel = guild.get_channel(payload.channel_id)
+
+            # If the channel is a logging channel
+            if channel == Config.guilds[guild]["logging"]["channel"] \
+                    or channel in Config.guilds[guild]["logging"]["overwrite_channels"].values() \
+                    or channel == Config.dm_channel:
+                if str(payload.emoji) in ["❗", "‼️", "⁉️", "❕"]:
+                    message = await channel.fetch_message(payload.message_id)
+
+                    files = []
+                    urls = " "
+                    for attachment in message.attachments:
+                        if attachment.size > 8388608:
+                            urls += attachment.url + " "
+                        else:
+                            files.append(await attachment.to_file())
+
+                    if len(message.embeds) > 0:
+                        await Config.guilds[guild]["logging"]["staff"].send(
+                            "Message forwarded by <@" + str(payload.user_id) + "> from <#" + str(channel.id) + ">\n\n"
+                            + message.content + urls,
+                            embed=message.embeds[0],
+                            files=files
+                        )
 
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
@@ -102,7 +126,7 @@ class Administration(commands.Cog):
         if isinstance(user, str) and (len(user) == 18 or len(user) == 17):
             try:
                 user = int(user)
-                user = await self.user_info(await self.bot.fetch_user(user))
+                user = await self.bot.fetch_user(user)
             except ValueError:
                 await ctx.send("Did not find the user")
                 return
@@ -122,7 +146,6 @@ class Administration(commands.Cog):
         embed.set_footer(text="ID: " + str(user.id))
         embed.timestamp = datetime.utcnow()
 
-        avatar_channel = Config.guild.get_channel(738536336016801793)
         await ctx.send(embed=embed)
 
     @commands.command(pass_context=True)
@@ -143,12 +166,67 @@ class Administration(commands.Cog):
             for i in ctx.message.attachments:
                 attachments.append(await i.to_file())
 
-        if len(msg) is not None:
-            message = await channel.send(msg, files=attachments)
-            await ctx.send("Message sent (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(message.channel.id) + "/" + str(message.id) + ">)")
+        mention_perms = discord.AllowedMentions.none()
+
+        # Check for user mentions
+        if len(ctx.message.mentions) > 0:
+            # Check if users are to be pinged
+
+            users = " ".join([x.mention for x in ctx.message.mentions])
+            await ctx.send(
+                f"This message mentions {users} - would you like it to ping them? (Y/N)",
+                allowed_mentions=mention_perms
+            )
+
+            if await yes_no_helper(self.bot, ctx):
+                mention_perms.users = True
+
+        # Check for role mentions
+        if len(ctx.message.role_mentions) > 0:
+            # Check if author has perms to mention roles
+            if administrator_perms(ctx):
+                perms = True
+            else:
+                for role in ctx.message.role_mentions:
+                    if not role.mentionable:
+                        perms = False
+                        break
+                else:
+                    perms = True
+
+            if perms:
+                roles = " ".join([x.mention for x in ctx.message.role_mentions])
+                await ctx.send(
+                    f"This message mentions {roles} - would you like it to ping them? (Y/N)",
+                    allowed_mentions=mention_perms
+                )
+
+                if await yes_no_helper(self.bot, ctx):
+                    mention_perms.roles = True
+
+        # Check for @everyone and @here mentions
+        if ctx.message.mention_everyone:
+            if ctx.author.guild_permissions.mention_everyone:
+                await ctx.send(
+                    "This message mentions @here or @everyone - would you like it to ping those? (Y/N)",
+                    allowed_mentions=mention_perms
+                )
+
+                if await yes_no_helper(self.bot, ctx):
+                    mention_perms.everyone = True
+
+        if msg is not None:
+            message = await channel.send(msg, files=attachments, allowed_mentions=mention_perms)
+            await ctx.send(
+                "Message sent (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(message.channel.id) +
+                "/" + str(message.id) + ">)",
+            )
         elif len(attachments) > 0:
             message = await channel.send(files=attachments)
-            await ctx.send("Message sent (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(message.channel.id) + "/" + str(message.id) + ">)")
+            await ctx.send(
+                "Message sent (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(message.channel.id) +
+                "/" + str(message.id) + ">)",
+            )
         else:
             await ctx.send("No content to send.")
 
@@ -169,67 +247,10 @@ class Administration(commands.Cog):
             await ctx.send("Cannot edit a message that is not my own")
         else:
             await bot_msg.edit(content=msg)
-            await ctx.send("Message edited (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(bot_msg.channel.id) + "/" + str(bot_msg.id) + ">)")
-
-    @commands.command(pass_context=True, aliases=["echoPM", "pmEcho"])
-    @commands.check(moderator_perms)
-    @commands.guild_only()
-    async def echo_pm(self, ctx, user: typing.Union[discord.User, discord.Member], *, msg):
-        """
-        Forwards given message / attachments to give user
-        Usage: .echoPM <user> <message>
-
-        :param ctx: context object
-        :param user: user to send message to
-        :param msg: message to send
-        """
-        # Read attachments and message
-        attachments = []
-        if len(ctx.message.attachments) > 0:
-            for i in ctx.message.attachments:
-                attachments.append(await i.to_file())
-
-        # Send message to user via DM
-        if len(msg) > 0:
-            message = await user.send(msg, files=attachments)
-            await ctx.send("Message sent (<https://discordapp.com/channels/@me/" + str(message.channel.id) + "/" + str(message.id) + ">)")
-        elif len(attachments) > 0:
-            message = await user.send(files=attachments)
-            await ctx.send("Message sent (<https://discordapp.com/channels/@me/" + str(message.channel.id) + "/" + str(message.id) + ">)")
-        else:
-            await ctx.send("No content to send")
-
-        await ctx.message.add_reaction("👍")
-
-    @commands.guild_only()
-    @commands.command(pass_context=True, aliases=["pmEdit", "editPM"])
-    @commands.check(moderator_perms)
-    async def pm_edit(self, ctx, user: typing.Union[discord.Member, discord.User], message_link, *, msg):
-        """
-        Edits a PM message sent to a user
-        Usage: .pmEdit <user> <messageLink>
-
-        :param ctx: context object
-        :param user: user that the message was sent to
-        :param message_link: link to the message
-        :param msg: message to edit to
-        """
-        # Get message ID from message_link
-        message_id = int(message_link[message_link.rfind("/") + 1:])
-
-        channel = user.dm_channel
-        if channel is None:
-            channel = await user.create_dm()
-
-        message = await channel.fetch_message(message_id)
-        if message is None:
-            await ctx.send("Not a valid link to message")
-        else:
-            if message.author.id != self.bot.user.id:
-                await ctx.send("Cannot edit a message that is not my own")
-            else:
-                await message.edit(content=msg)
-                await ctx.send("Message edited (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(channel.id) + "/" + str(message_id) + ">)")
+            await ctx.send(
+                "Message edited (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" +
+                str(bot_msg.channel.id) + "/" + str(bot_msg.id) + ">)"
+            )
 
     @commands.command(pass_context=True, aliases=["echoReact", "react"])
     @commands.check(moderator_perms)
@@ -281,7 +302,9 @@ class Administration(commands.Cog):
     @commands.command(pass_context=True, aliases=["selectivePurge", "spurge"])
     @commands.check(moderator_perms)
     @commands.guild_only()
-    async def selective_purge(self, ctx, target: typing.Union[discord.User, discord.TextChannel], user: typing.Optional[discord.User], *, number: int = 0):
+    async def selective_purge(self, ctx,
+                              target: typing.Union[discord.User, discord.TextChannel],
+                              user: typing.Optional[discord.User], *, number: int = 0):
         """
         Purges messages from a specific user in a channel
         Usage: .spurge (channel) <user> <number>
@@ -316,6 +339,38 @@ class Administration(commands.Cog):
 
         await channel.delete_messages(messages)
 
+    @commands.command(pass_context=True, aliases=["userPurge", "uPurge"])
+    @commands.is_owner()
+    @commands.guild_only()
+    async def user_purge(self, ctx, *users: typing.Union[discord.User, discord.Member]):
+        """
+        Purges all messages from a user
+
+        :param ctx: Context object
+        :param users: Users to purge messages from
+        """
+        user_names = ""
+        for user in users:
+            user_names += user.name + "#" + user.discriminator + ", "
+
+        message = await ctx.send("Purging messages from " + user_names[:-2] + "...")
+
+        def is_users(m):
+            for user in users:
+                if m.author.id == user.id:
+                    return True
+
+            return False
+
+        channels = ctx.guild.text_channels
+
+        count = 0
+        for i in range(len(channels)):
+            await message.edit(content="Purging messages from " + user_names[:-2] + "...(" + channels[i].name + ")")
+            count += len(await channels[i].purge(limit=None, check=is_users))
+
+        await ctx.send(f"Deleted {count} message(s) from")
+
     @commands.command(pass_context=True, aliases=["tPurge", "timePurge"])
     @commands.check(moderator_perms)
     @commands.guild_only()
@@ -349,7 +404,11 @@ class Administration(commands.Cog):
                 return
 
             offset = datetime.utcnow() - datetime.now()
-            messages = await channel.history(limit=None, after=after_date + offset, before=before_date + offset).flatten()
+            messages = await channel.history(
+                limit=None,
+                after=after_date + offset,
+                before=before_date + offset
+            ).flatten()
 
         if len(messages) == 0:
             await ctx.send("There are no messages to purge in this time frame")
@@ -361,15 +420,12 @@ class Administration(commands.Cog):
         else:
             response += " between " + str(after_date) + " and " + str(before_date) + ".\n"
 
-        response += "The purge will start at <" + messages[0].jump_url + "> and end at <" + messages[-1].jump_url + ">.\n\nAre you sure you want to proceed? (Y/N)"
-
-        def check_author(message):
-            return message.author.id == ctx.author.id
+        response += "The purge will start at <" + messages[0].jump_url + "> and end at <" + messages[-1].jump_url + \
+                    ">.\n\nAre you sure you want to proceed? (Y/N)"
 
         query = await ctx.send(response)
 
-        response = await self.bot.wait_for('message', check=check_author)
-        if response.content.lower() == "y" or response.content.lower() == "yes":
+        if await yes_no_helper(self.bot, ctx):
             if channel.id == ctx.channel.id:
                 messages.append(response)
                 messages.append(query)
@@ -399,7 +455,11 @@ class Administration(commands.Cog):
                 await ctx.send("End message is not in the same channel as the start message")
                 return
 
-            messages = await start_message.channel.history(limit=None, after=start_message.created_at, before=end_message.created_at).flatten()
+            messages = await start_message.channel.history(
+                limit=None,
+                after=start_message.created_at,
+                before=end_message.created_at
+            ).flatten()
             messages.append(end_message)
 
         messages.insert(0, start_message)
@@ -410,16 +470,12 @@ class Administration(commands.Cog):
 
         response = "You are about to purge " + str(len(messages)) + " message(s) from " + start_message.channel.name
 
-        response += "\nThe purge will start at <" + messages[0].jump_url + "> and end at <" + messages[-1].jump_url + ">.\n\nAre you sure you want to proceed? (Y/N)"
-
-        def check_author(message):
-            return message.author.id == ctx.author.id
+        response += "\nThe purge will start at <" + messages[0].jump_url + "> and end at <" + messages[-1].jump_url + \
+                    ">.\n\nAre you sure you want to proceed? (Y/N)"
 
         query = await ctx.send(response)
 
-        response = await self.bot.wait_for('message', check=check_author)
-
-        if response.content.lower() == "y" or response.content.lower() == "yes":
+        if await yes_no_helper(self.bot, ctx):
             if start_message.channel.id == ctx.channel.id:
                 messages.append(response)
                 messages.append(query)
@@ -470,16 +526,27 @@ class Administration(commands.Cog):
 
         mute_time = time_delta_string(datetime.utcnow(), datetime.utcnow() + delta)
 
-        mute_embed = discord.Embed(title="Member muted", color=0xbe4041)
+        mute_embed = discord.Embed(
+            title="Member muted",
+            color=0xbe4041,
+            description=(
+                    "**Muted:** <@" + str(member.id) + ">\n**Time:** " + mute_time + "\n**__Reason__**\n> " + reason +
+                    "\n\n**Muter:** <@" + str(ctx.author.id) + ">"
+            )
+        )
+
         mute_embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
-        mute_embed.description = "**Muted:** <@" + str(member.id) + ">\n**Time:** " + mute_time + "\n**__Reason__**\n> " + reason + "\n\n**Muter:** <@" + str(ctx.author.id) + ">"
         mute_embed.set_footer(text="ID: " + str(member.id))
         mute_embed.timestamp = datetime.utcnow()
 
         await member.add_roles(muted_role)
         await ctx.send("**Muted** user **" + username + "** for **" + mute_time + "** for: **" + reason + "**")
-        await Config.logging["overwrite_channels"]["mod"].send(embed=mute_embed)
-        await member.send("**You were muted in the " + ctx.guild.name + " for " + mute_time + ". Reason:**\n> " + reason + "\n\nYou can respond here to contact staff.")
+        if Config.guilds[ctx.guild]["logging"]["overwrite_channels"]["mod"] is not None:
+            await Config.guilds[ctx.guild]["logging"]["overwrite_channels"]["mod"].send(embed=mute_embed)
+        await member.send(
+            "**You were muted in the " + ctx.guild.name + " for " + mute_time + ". Reason:**\n> " +
+            reason + "\n\nYou can respond here to contact staff."
+        )
 
         await self.mute_helper(member, seconds, muted_role)
 
@@ -501,7 +568,8 @@ class Administration(commands.Cog):
         mute_embed.set_footer(text="ID: " + str(member.id))
         mute_embed.timestamp = datetime.utcnow()
 
-        await Config.logging["overwrite_channels"]["mod"].send(embed=mute_embed)
+        if Config.guilds[member.guild]["logging"]["overwrite_channels"]["mod"] is not None:
+            await Config.guilds[member.guild]["logging"]["overwrite_channels"]["mod"].send(embed=mute_embed)
 
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
@@ -533,7 +601,10 @@ class Administration(commands.Cog):
 
         save_json(os.path.join("config", "warns.json"), self.warns)
 
-        await ctx.send("Warning sent to " + member.display_name + " (" + str(member.id) + "), this is their " + make_ordinal(len(self.warns[str(member.id)])) + " warning")
+        await ctx.send(
+            "Warning sent to " + member.display_name + " (" + str(member.id) + "), this is their " +
+            make_ordinal(len(self.warns[str(member.id)])) + " warning"
+        )
 
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
@@ -598,9 +669,15 @@ class Administration(commands.Cog):
         save_json(os.path.join("config", "warns.json"), self.warns)
 
         if isinstance(user, discord.Member):
-            await ctx.send("Warning added for " + user.display_name + " (" + str(user.id) + "), this is their " + make_ordinal(len(self.warns[str(user.id)])) + " warning")
+            await ctx.send(
+                "Warning added for " + user.display_name + " (" + str(user.id) + "), this is their " +
+                make_ordinal(len(self.warns[str(user.id)])) + " warning"
+            )
         else:
-            await ctx.send("Warning added for " + user.name + " (" + str(user.id) + "), this is their " + make_ordinal(len(self.warns[str(user.id)])) + " warning")
+            await ctx.send(
+                "Warning added for " + user.name + " (" + str(user.id) + "), this is their " +
+                make_ordinal(len(self.warns[str(user.id)])) + " warning"
+            )
 
     @commands.command(pass_context=True, aliases=["clearWarn"])
     @commands.check(moderator_perms)
@@ -682,7 +759,7 @@ class Administration(commands.Cog):
         :param reason: Reason for the jail
         """
         # Is user already jailed
-        if member in Config.administration["jails"]:
+        if member in Config.guilds[ctx.guild]["administration"]["jails"]:
             await ctx.send("This member is already jailed")
             return
 
@@ -706,20 +783,34 @@ class Administration(commands.Cog):
 
         Config.add_jail(member, datetime.now() + timedelta(seconds=seconds), roles)
 
-        jail_embed = discord.Embed(title="Member jailed", color=0xbe4041)
+        jail_embed = discord.Embed(
+            title="Member jailed",
+            color=0xbe4041,
+            description=(
+                    "**Muted:** <@" + str(member.id) + ">\n**Time:** " + jail_time + "\n**__Reason__**\n> " + reason +
+                    "\n\n**Muter:** <@" + str(ctx.author.id) + ">"
+            )
+        )
+
         jail_embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
-        jail_embed.description = "**Muted:** <@" + str(member.id) + ">\n**Time:** " + jail_time + "\n**__Reason__**\n> " + reason + "\n\n**Muter:** <@" + str(ctx.author.id) + ">"
         jail_embed.set_footer(text="ID: " + str(member.id))
         jail_embed.timestamp = datetime.utcnow()
 
         if member.premium_since is None:
             await member.edit(roles=[])
         else:
-            await member.edit(roles=[Config.nitro_role])
+            await member.edit(roles=[Config[ctx.guild]["nitro_role"]])
 
-        await member.send("You have been locked out of the server for " + jail_time + ". Reason:\n> " + reason + "\n\nYou can respond here to contact staff.")
-        await Config.logging["overwrite_channels"]["mod"].send(embed=jail_embed)
-        await ctx.send("**Jailed** user **" + member.display_name + "** for **" + jail_time + "** for: **" + reason + "**")
+        await member.send(
+            "You have been locked out of the server for " + jail_time + ". Reason:\n> " + reason +
+            "\n\nYou can respond here to contact staff."
+        )
+
+        if Config.guilds[ctx.guild]["logging"]["overwrite_channels"]["mod"] is not None:
+            await Config.guilds[ctx.guild]["logging"]["overwrite_channels"]["mod"].send(embed=jail_embed)
+        await ctx.send(
+            "**Jailed** user **" + member.display_name + "** for **" + jail_time + "** for: **" + reason + "**"
+        )
         await self.jail_helper(member, seconds, roles)
 
     async def jail_helper(self, member, seconds, roles):
@@ -740,7 +831,8 @@ class Administration(commands.Cog):
         jail_embed.set_footer(text="ID: " + str(member.id))
         jail_embed.timestamp = datetime.utcnow()
 
-        await Config.logging["overwrite_channels"]["mod"].send(embed=jail_embed)
+        if Config.guilds[member.guild]["logging"]["overwrite_channels"]["mod"] is not None:
+            await Config.guilds[member.guild]["logging"]["overwrite_channels"]["mod"].send(embed=jail_embed)
 
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
@@ -822,23 +914,6 @@ class Administration(commands.Cog):
             await ctx.guild.ban(user=user, reason=reason)
             await ctx.send("Successfully banned user " + user.name + "#" + user.discriminator)
 
-    @commands.command(pass_context=True, name="modLog")
-    @commands.check(administrator_perms)
-    @commands.guild_only()
-    async def change_mod_log(self, ctx, channel: discord.TextChannel):
-        """
-        Changes the channel in which to log mod actions into
-        Usage: .modLog <channel>
-
-        :param ctx: context object
-        :param channel: channel
-        """
-        if Config.raw_settings["mod_log"] != channel.id:
-            Config.set_mod_log(channel)
-            await ctx.send("Successfully updated mod log channel")
-        else:
-            await ctx.send("This is already the mod log channel")
-
     @commands.command(pass_context=True, name="staffChannel")
     @commands.check(administrator_perms)
     @commands.guild_only()
@@ -850,7 +925,7 @@ class Administration(commands.Cog):
         :param ctx: Context object
         :param channel: Channel to be the staff channel
         """
-        if Config.logging["staff"] != channel:
+        if Config.guilds[ctx.guild]["logging"]["staff"] != channel:
             Config.set_staff_channel(channel)
             await ctx.send("Successfully updated staff channel")
         else:
@@ -882,3 +957,47 @@ class Administration(commands.Cog):
             return
 
         await ctx.send("Successfully updated the guild verification level to: **" + key.title() + "**")
+
+    @commands.command(pass_context=True, name="echoReply", aliases=["reply"])
+    @commands.check(moderator_perms)
+    @commands.guild_only()
+    async def echo_reply(self, ctx, message: discord.Message, mention: typing.Optional[bool] = False, *, msg):
+        # Check for attachments to forward
+        attachments = []
+        if len(ctx.message.attachments) > 0:
+            for i in ctx.message.attachments:
+                attachments.append(await i.to_file())
+
+        if len(msg) is not None:
+            msg = await message.channel.send(msg, files=attachments, reference=message, mention_author=mention)
+            await ctx.send(
+                "Message sent (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(msg.channel.id) +
+                "/" + str(msg.id) + ">)",
+            )
+        elif len(attachments) > 0:
+            msg = await message.channel.send(files=attachments, reference=message, mention_author=mention)
+            await ctx.send(
+                "Message sent (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(msg.channel.id) +
+                "/" + str(msg.id) + ">)",
+            )
+        else:
+            await ctx.send("No content to send.")
+
+    @commands.command(pass_context=True, name="createInvite")
+    @commands.check(moderator_perms)
+    @commands.guild_only()
+    async def create_invite(self, ctx, channel: discord.TextChannel):
+        """
+        Creates an invite to a text channel that does not expire
+
+        :param ctx: Context object
+        :param channel: TextChannel to invite to
+        :return:
+        """
+        invite = await channel.create_invite()
+
+        await ctx.send("Created invite " + invite.url + " to " + channel.mention)
+
+
+def setup(bot):
+    bot.add_cog(Administration(bot))

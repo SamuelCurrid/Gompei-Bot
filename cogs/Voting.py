@@ -1,5 +1,5 @@
-from Permissions import dm_commands, moderator_perms
-from GompeiFunctions import load_json, save_json, parse_id
+from cogs.Permissions import dm_commands, moderator_perms
+from GompeiFunctions import load_json, save_json
 from dateutil.parser import parse
 from discord.ext import commands
 from datetime import datetime
@@ -43,25 +43,28 @@ class Voting(commands.Cog):
                 await self.poll_timer(closes)
 
     async def load_poll_message(self):
-        guild = self.bot.get_guild(self.settings["guild_id"])
+        guild = self.bot.get_guild(self.settings["main_guild"])
+        print(guild)
         channel = guild.get_channel(self.votes["channel_id"])
+        print(channel)
         self.poll_message = await channel.fetch_message(self.votes["message_id"])
+        print(self.poll_message)
 
     async def update_poll_message(self):
         self.votes["votes"] = sorted(self.votes["votes"], key=lambda i: len(i["voters"]), reverse=True)
 
-        lastVotes = 0
-        lastCount = 1
+        last_votes = 0
+        last_count = 1
         count = 1
         leaderboard = ""
         for option in self.votes["votes"]:
-            if len(option["voters"]) == lastVotes:
-                leaderboard += "**" + str(lastCount) + ". **" + option["name"] + " - " + str(len(option["voters"])) + "\n"
+            if len(option["voters"]) == last_votes:
+                leaderboard += "**" + str(last_count) + ". **" + option["name"] + " - " + str(len(option["voters"])) + "\n"
                 count += 1
             else:
                 leaderboard += "**" + str(count) + ". **" + option["name"] + " - " + str(len(option["voters"])) + "\n"
-                lastVotes = len(option["voters"])
-                lastCount = count
+                last_votes = len(option["voters"])
+                last_count = count
                 count += 1
 
         embed = discord.Embed(title=self.votes["title"], color=0x43b581)
@@ -82,19 +85,19 @@ class Voting(commands.Cog):
 
         :param ctx: context object
         """
-        lastVotes = 0
-        lastCount = 1
+        last_votes = 0
+        last_count = 1
         count = 1
         leaderboard = ""
         for option in self.votes["votes"]:
-            if len(option["voters"]) == lastVotes:
-                leaderboard += "**" + str(lastCount) + ". **" + option["name"] + " - " + str(
+            if len(option["voters"]) == last_votes:
+                leaderboard += "**" + str(last_count) + ". **" + option["name"] + " - " + str(
                     len(option["voters"])) + "\n"
                 count += 1
             else:
                 leaderboard += "**" + str(count) + ". **" + option["name"] + " - " + str(len(option["voters"])) + "\n"
-                lastVotes = len(option["voters"])
-                lastCount = count
+                last_votes = len(option["voters"])
+                last_count = count
                 count += 1
 
         embed = discord.Embed(title=self.votes["title"], color=0x43b581)
@@ -145,9 +148,21 @@ class Voting(commands.Cog):
 
                 embed = discord.Embed(title=title, color=0x43b581)
 
-                self.poll_message = await channel.send(message + "```.addOption <option> - Create an option to vote for and cast your vote for it\n.vote <option> - Cast a vote for an option in the poll\n.removeVote <option> - Removes a vote you casted for an option\n.sendPoll - sends the poll embed (does not update live)```", embed=embed)
+                self.poll_message = await channel.send(message + "```.addOption <option> - Create an option to vote "
+                                                                 "for and cast your vote for it\n.vote <option> - "
+                                                                 "Cast a vote for an option in the poll\n.removeVote "
+                                                                 "<option> - Removes a vote you casted for an "
+                                                                 "option\n.sendPoll - sends the poll embed (does not "
+                                                                 "update live)```", embed=embed)
 
-                self.votes = {"type": "open", "close": close_timestamp, "title": title, "channel_id": channel.id, "message_id": self.poll_message.id, "votes": []}
+                self.votes = {
+                    "type": "open",
+                    "close": close_timestamp,
+                    "title": title,
+                    "channel_id": channel.id,
+                    "message_id": self.poll_message.id,
+                    "votes": []
+                }
                 save_json(os.path.join("config", "votes.json"), self.votes)
                 await self.poll_timer(closes)
 
@@ -173,9 +188,17 @@ class Voting(commands.Cog):
                 def check_author(msg):
                     return msg.author.id == ctx.author.id
 
-                self.votes = {"type": "decision", "close": close_timestamp, "title": title, "channel_id": channel.id, "message_id": None, "votes": []}
+                self.votes = {
+                    "type": "decision",
+                    "close": close_timestamp,
+                    "title": title,
+                    "channel_id": channel.id,
+                    "message_id": None,
+                    "votes": []
+                }
 
-                query = await ctx.send("What options would you like to add to this decision poll? (Put each option on a new line)")
+                await ctx.send("What options would you like to add to this decision poll? (Put each option on a new "
+                               "line)")
 
                 response = await self.bot.wait_for('message', check=check_author)
 
@@ -189,7 +212,12 @@ class Voting(commands.Cog):
                     await ctx.send("You need at least one option in your poll")
                     return
 
-                self.poll_message = await channel.send(message + "```.vote <option> - Cast a vote for an option in the poll\n.removeVote <option> - Removes a vote you casted for an option\n.sendPoll - sends the poll embed (does not update live)```", embed=embed)
+                self.poll_message = await channel.send(
+                    message + "```.vote <option> - Cast a vote for an option in the poll"
+                              "\n.removeVote <option> - Removes a vote you casted for an option"
+                              "\n.sendPoll - sends the poll embed (does not update live)```",
+                    embed=embed
+                )
                 self.votes["message_id"] = self.poll_message.id
                 await self.update_poll_message()
                 save_json(os.path.join("config", "votes.json"), self.votes)
@@ -237,7 +265,7 @@ class Voting(commands.Cog):
                 if option["creator"] == ctx.author.id:
                     await ctx.send("You already added an option to this poll")
                     return
-                if user_option in option["name"]:
+                if user_option == option["name"]:
                     await ctx.send("This option already exists")
                     return
 
@@ -287,7 +315,10 @@ class Voting(commands.Cog):
                                     def check_author(message):
                                         return message.author.id == ctx.author.id
 
-                                    query = await ctx.send("You already voted for an option (" + other_option["name"] + "). Would you like to switch your vote to " + option["name"] + "? (Y/N)")
+                                    await ctx.send(
+                                        "You already voted for an option (" + other_option["name"] +
+                                        "). Would you like to switch your vote to " + option["name"] + "? (Y/N)"
+                                    )
 
                                     response = await self.bot.wait_for('message', check=check_author)
 
@@ -310,7 +341,10 @@ class Voting(commands.Cog):
                         return
 
         if self.votes["type"] == "open":
-            await ctx.send("This option doesn't exist. If you'd like to add it do it with `" + self.settings["prefix"] + "addOption <option>`")
+            await ctx.send(
+                "This option doesn't exist. If you'd like to add it do it with `" + self.settings["prefix"] +
+                "addOption <option>`"
+            )
         else:
             await ctx.send("This option doesn't exist.")
 
@@ -380,21 +414,25 @@ class Voting(commands.Cog):
             await ctx.send("There is no poll currently open")
             return
 
-        lastVotes = 0
-        lastCount = 1
+        last_votes = 0
+        last_count = 1
         count = 1
         leaderboard = ""
         for option in self.votes["votes"]:
-            if len(option["voters"]) == lastVotes:
-                leaderboard += "**" + str(lastCount) + ". **" + option["name"] + " - " + str(
+            if len(option["voters"]) == last_votes:
+                leaderboard += "**" + str(last_count) + ". **" + option["name"] + " - " + str(
                     len(option["voters"])) + "\n"
                 count += 1
             else:
                 leaderboard += "**" + str(count) + ". **" + option["name"] + " - " + str(len(option["voters"])) + "\n"
-                lastVotes = len(option["voters"])
-                lastCount = count
+                last_votes = len(option["voters"])
+                last_count = count
                 count += 1
 
         embed = discord.Embed(title=self.votes["title"], color=0x43b581)
         embed.description = leaderboard
         await ctx.send("This poll does not update live", embed=embed)
+
+
+def setup(bot):
+    bot.add_cog(Voting(bot))
