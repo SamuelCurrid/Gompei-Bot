@@ -429,17 +429,17 @@ def update_nitro_role(guild: discord.Guild):
             raw_settings["guilds"][str(guild.id)]["nitro_role"] = role.id
 
 
-def set_logging_channel(type: str, channel: discord.TextChannel):
+def set_logging_channel(logging_type: str, channel: discord.TextChannel):
     """
     Sets the logging channel for the bot
 
-    :param type: Type of logging channel to set
+    :param logging_type: Type of logging channel to set
     :param channel: Channel to use for logging
     """
     global guilds, raw_settings
 
-    guilds[channel.guild]["logging"]["overwrite_channels"][type] = channel
-    raw_settings["guilds"][str(channel.guild.id)]["logging"]["overwrite_channels"][type] = channel.id
+    guilds[channel.guild]["logging"]["overwrite_channels"][logging_type] = channel
+    raw_settings["guilds"][str(channel.guild.id)]["logging"]["overwrite_channels"][logging_type] = channel.id
     save_json(os.path.join("config", "settings.json"), raw_settings)
 
 
@@ -1011,8 +1011,8 @@ def remove_reaction_role(message: discord.Message, emoji: typing.Union[discord.E
     else:
         del raw_settings["guilds"][str(message.guild.id)]["reaction_roles"][combo_id]["emojis"][str(emoji.id)]
 
-    if len(guilds)[message.guild]["reaction_roles"][message]["emojis"] == 0:
-        del len(guilds)[message.guild]["reaction_roles"][message]
+    if len(guilds[message.guild]["reaction_roles"][message]["emojis"]) == 0:
+        del guilds[message.guild]["reaction_roles"][message]
         del raw_settings["guilds"][str(message.guild.id)]["reaction_roles"][combo_id]
 
     save_json(os.path.join("config", "settings.json"), raw_settings)
