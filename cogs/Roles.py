@@ -17,20 +17,21 @@ class Roles(commands.Cog):
         :param before: Member before
         :param after: Member after
         """
+        message = ""
+
         # Role checks
         added_roles = [x for x in after.roles if x not in before.roles]
         removed_roles = [x for x in before.roles if x not in after.roles]
 
+        final_roles = after.roles
         # If roles edited
         if len(added_roles) + len(removed_roles) > 0:
             role_list = []
             for role in after.roles:
                 if role in Config.guilds[after.guild]["access_roles"]:
                     break
-                if role not in Config.guilds[after.guild]["opt_in_roles"]:
-                    role_list.append(role)
-            else:
-                await after.edit(roles=role_list)
+                if role in Config.guilds[after.guild]["opt_in_roles"]:
+                    final_roles.remove(role)
 
         # WPI Specific checks
         if after.guild is not Config.main_guild:
@@ -48,50 +49,71 @@ class Roles(commands.Cog):
             Config.main_guild.get_role(634223378773049365)   # Alumni
         ]
 
+        final_roles = after.roles
+        reasons = ""
+
         # Check if the member qualifies for WPI Verified role
         if after.id in Config.guilds[after.guild]["verifications"]["wpi"].values():
             if Config.guilds[after.guild]["verifications"]["wpi_role"] not in after.roles:
                 if any(item in after.roles for item in class_roles):
-                    await after.add_roles(
-                        Config.guilds[Config.main_guild]["verifications"]["wpi_role"],
-                        reason="Picked up class role, previously verified"
-                    )
+                    final_roles.append(Config.guilds[Config.main_guild]["verifications"]["wpi_role"])
+                    reasons += "Picked up class role, previously verified\n"
+                    # await after.add_roles(
+                    #     Config.guilds[Config.main_guild]["verifications"]["wpi_role"],
+                    #     reason="Picked up class role, previously verified"
+                    # )
             else:
                 for role in after.roles:
                     if role in class_roles:
                         break
                 else:
-                    await after.remove_roles(
-                        Config.guilds[Config.main_guild]["verifications"]["wpi_role"],
-                        reason="Removed class role"
-                    )
+                    final_roles.remove(Config.guilds[Config.main_guild]["verifications"]["wpi_role"])
+                    reasons += "Removed class role\n"
+                    # await after.remove_roles(
+                    #     Config.guilds[Config.main_guild]["verifications"]["wpi_role"],
+                    #     reason="Removed class role"
+                    # )
+                    message += f"**The Verified WPI role has been removed because you no longer have a class role.** " \
+                               f"Don't worry - you can get it back again by picking up a class role.\n"
 
         # Check if the member qualifies for Member role
         if after in Config.guilds[after.guild]["verifications"]["member"]:
             if Config.guilds[after.guild]["verifications"]["member"][after]["verified"]:
                 if Config.guilds[after.guild]["verifications"]["member_role"] not in after.roles:
                     if any(item in after.roles for item in Config.guilds[after.guild]["access_roles"]):
-                        await after.add_roles(
-                            Config.guilds[after.guild]["verifications"]["member_role"],
-                            reason="Picked up access role, previously earned member"
-                        )
+                        final_roles.append(Config.guilds[after.guild]["verifications"]["member_role"])
+                        reasons += "Picked up access role, previously earned member\n"
+                        # await after.add_roles(
+                        #     Config.guilds[after.guild]["verifications"]["member_role"],
+                        #     reason="Picked up access role, previously earned member"
+                        # )
                 else:
                     for role in after.roles:
                         if role in Config.guilds[after.guild]["access_roles"]:
                             break
                     else:
-                        await after.remove_roles(
-                            Config.guilds[after.guild]["verifications"]["member_role"],
-                            reason="Removed access role"
-                        )
+                        print(f"User: {after}")
+                        final_roles.remove(Config.guilds[after.guild]["verifications"]["member_role"])
+                        reasons += "Removed access role\n"
 
         # Check if the member qualifies for Venting role
         if after.guild.get_role(725887796312801340) in after.roles:
-            if Config.guilds[after.guild]["verifications"]["wpi_role"] not in after.roles:
-                await after.remove_roles(
-                    after.guild.get_role(725887796312801340),
-                    reason="Not WPI Verified"
-                )
+            if Config.guilds[after.guild]["verifications"]["wpi_role"] not in final_roles:
+                final_roles.remove(after.guild.get_role(725887796312801340))
+                reasons += "Not WPI Verified"
+                # await after.remove_roles(
+                #     after.guild.get_role(725887796312801340),
+                #     reason="Not WPI Verified"
+                # )
+                message += f"**The Venting role has been removed because you no longer have the Verified WPI role.** To " \
+                           f"gain access to venting you will need to pick up the role again after regaining the " \
+                           f"Verified WPI role.\n"
+
+        if after.roles != final_roles:
+            await after.edit(roles=final_roles, reason=reasons)
+
+            if len(message) > 0:
+                await after.send(message)
 
     @commands.command(pass_context=True)
     @commands.check(dm_commands)
