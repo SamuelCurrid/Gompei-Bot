@@ -3,4 +3,3 @@ pytimeparse
 discord.py
 dateparser
 requests
-msal
