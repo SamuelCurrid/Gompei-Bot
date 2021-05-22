@@ -1,4 +1,4 @@
-from GompeiFunctions import make_ordinal, time_delta_string, load_json, save_json
+from GompeiFunctions import make_ordinal, time_delta_string, load_json, save_json, yes_no_helper
 from cogs.Permissions import moderator_perms, administrator_perms
 from discord.ext import commands
 from datetime import timedelta
@@ -166,17 +166,66 @@ class Administration(commands.Cog):
             for i in ctx.message.attachments:
                 attachments.append(await i.to_file())
 
+        mention_perms = discord.AllowedMentions.none()
+
+        # Check for user mentions
+        if len(ctx.message.mentions) > 0:
+            # Check if users are to be pinged
+
+            users = " ".join([x.mention for x in ctx.message.mentions])
+            await ctx.send(
+                f"This message mentions {users} - would you like it to ping them? (Y/N)",
+                allowed_mentions=mention_perms
+            )
+
+            if await yes_no_helper(self.bot, ctx):
+                mention_perms.users = True
+
+        # Check for role mentions
+        if len(ctx.message.role_mentions) > 0:
+            # Check if author has perms to mention roles
+            if administrator_perms(ctx):
+                perms = True
+            else:
+                for role in ctx.message.role_mentions:
+                    if not role.mentionable:
+                        perms = False
+                        break
+                else:
+                    perms = True
+
+            if perms:
+                roles = " ".join([x.mention for x in ctx.message.role_mentions])
+                await ctx.send(
+                    f"This message mentions {roles} - would you like it to ping them? (Y/N)",
+                    allowed_mentions=mention_perms
+                )
+
+                if await yes_no_helper(self.bot, ctx):
+                    mention_perms.roles = True
+
+        # Check for @everyone and @here mentions
+        if ctx.message.mention_everyone:
+            if ctx.author.guild_permissions.mention_everyone:
+                await ctx.send(
+                    "This message mentions @here or @everyone - would you like it to ping those? (Y/N)",
+                    allowed_mentions=mention_perms
+                )
+
+                if await yes_no_helper(self.bot, ctx):
+                    mention_perms.everyone = True
+
         if msg is not None:
-            message = await channel.send(msg, files=attachments)
+            message = await channel.send(msg, files=attachments, allowed_mentions=mention_perms)
             await ctx.send(
                 "Message sent (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(message.channel.id) +
-                "/" + str(message.id) + ">)"
+                "/" + str(message.id) + ">)",
             )
         elif len(attachments) > 0:
             message = await channel.send(files=attachments)
             await ctx.send(
                 "Message sent (<https://discordapp.com/channels/" + str(ctx.guild.id) + "/" + str(message.channel.id) +
-                "/" + str(message.id) + ">)"
+                "/" + str(message.id) + ">)",
             )
         else:
             await ctx.send("No content to send.")
@@ -374,13 +423,9 @@ class Administration(commands.Cog):
         response += "The purge will start at <" + messages[0].jump_url + "> and end at <" + messages[-1].jump_url + \
                     ">.\n\nAre you sure you want to proceed? (Y/N)"
 
-        def check_author(message):
-            return message.author.id == ctx.author.id
-
         query = await ctx.send(response)
 
-        response = await self.bot.wait_for('message', check=check_author)
-        if response.content.lower() == "y" or response.content.lower() == "yes":
+        if await yes_no_helper(self.bot, ctx):
             if channel.id == ctx.channel.id:
                 messages.append(response)
                 messages.append(query)
@@ -428,14 +473,9 @@ class Administration(commands.Cog):
         response += "\nThe purge will start at <" + messages[0].jump_url + "> and end at <" + messages[-1].jump_url + \
                     ">.\n\nAre you sure you want to proceed? (Y/N)"
 
-        def check_author(message):
-            return message.author.id == ctx.author.id
-
         query = await ctx.send(response)
 
-        response = await self.bot.wait_for('message', check=check_author)
-
-        if response.content.lower() == "y" or response.content.lower() == "yes":
+        if await yes_no_helper(self.bot, ctx):
             if start_message.channel.id == ctx.channel.id:
                 messages.append(response)
                 messages.append(query)
