@@ -1,5 +1,5 @@
 from cogs.Permissions import administrator_perms, moderator_perms
-from GompeiFunctions import parse_id
+from GompeiFunctions import parse_id, yes_no_helper
 from discord.ext import commands
 from datetime import datetime
 from config import Config
@@ -111,9 +111,7 @@ class DirectMessages(commands.Cog):
                 str(len(role.members)) + "users. Are you sure you want to do this? (Y/N)"
             )
 
-            response = await self.bot.wait_for('message', check=check_author)
-
-            if response.content.lower() == "y" or response.content.lower() == "yes":
+            if await yes_no_helper(self.bot, ctx):
                 for member in members:
                     await member.send(msg, files=attachments)
                 await ctx.send("Message(s) sent to " + str(len(role.members)) + " members")
@@ -126,9 +124,7 @@ class DirectMessages(commands.Cog):
                 str(len(role.members)) + "users. Are you sure you want to do this? (Y/N)"
             )
 
-            response = await self.bot.wait_for('message', check=check_author)
-
-            if response.content.lower() == "y" or response.content.lower() == "yes":
+            if await yes_no_helper(self.bot, ctx):
                 for member in members:
                     await member.send(files=attachments)
                 await ctx.send("Message(s) sent to " + str(len(role.members)) + " members")

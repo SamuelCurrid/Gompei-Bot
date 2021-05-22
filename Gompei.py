@@ -1,6 +1,6 @@
 # Utility
 from cogs.Permissions import dm_commands, administrator_perms
-from GompeiFunctions import time_delta_string
+from GompeiFunctions import time_delta_string, yes_no_helper
 from config import Config
 
 # Libraries
@@ -137,13 +137,12 @@ async def kill(ctx):
 
     await ctx.send("You are about to shut down the bot, are you sure you want to do this? (Y/N)")
 
-    response = await gompei.wait_for('message', check=check_author)
-
-    if response.content.lower() == "y" or response.content.lower() == "yes":
+    if await yes_no_helper(gompei, ctx):
         Config.set_close_time()
         if Config.dm_channel is not None:
             end_embed = discord.Embed(title="Bot shutting down", color=0xbe4041)
-            end_embed.set_author(name=gompei.user.name + "#" + gompei.user.discriminator, icon_url=gompei.user.avatar_url)
+            end_embed.set_author(name=gompei.user.name + "#" + gompei.user.discriminator,
+                                 icon_url=gompei.user.avatar_url)
             end_embed.set_footer(text="ID: " + str(gompei.user.id))
             end_embed.timestamp = datetime.utcnow()
 
