@@ -258,15 +258,21 @@ class ReactionRoles(commands.Cog):
             else:
                 emoji = str(payload.emoji)
 
+            # If the emoji is a reaction role emoji
             if emoji in Config.guilds[guild]["reaction_roles"][message]["emojis"]:
                 reaction_role = Config.guilds[guild]["reaction_roles"][message]["emojis"][emoji]["role"]
                 roles = payload.member.roles
-
                 switched = False
+
+                # If the reaction role is "exclusive"
                 if Config.guilds[guild]["reaction_roles"][message]["exclusive"]:
                     for emote in Config.guilds[guild]["reaction_roles"][message]["emojis"]:
                         role = Config.guilds[guild]["reaction_roles"][message]["emojis"][emote]["role"]
-                        if reaction_role in payload.member.roles:
+                        if role in payload.member.roles:
+                            try:
+                                message.remove_reaction(emote, payload.member)
+                            except discord.NotFound:
+                                pass
                             roles.remove(role)
                             switched = True
                             break
@@ -302,19 +308,66 @@ class ReactionRoles(commands.Cog):
 
                 for req_role in Config.guilds[guild]["reaction_roles"][message]["emojis"][emoji]["reqs"]:
                     if req_role not in payload.member.roles:
-                        await payload.member.send(f"You are missing the required role {req_role.name} to pick up this role")
+                        try:
+                            await payload.member.send(f"You are missing the required role {req_role.name} to pick up this role")
+                        except discord.Forbidden:
+                            pass
+
+                        await message.remove_reaction(payload.emoji, payload.member)
                         break
                 else:
+                    # Config.reaction_role_add_reactor(message, emoji, payload.member)
+
                     if reaction_role in payload.member.roles:
-                        await payload.member.remove_roles(reaction_role, reason="Reaction role")
+                        pass
                     else:
                         await payload.member.edit(roles=roles, reason="Reaction role")
 
                 if Config.guilds[guild]["reaction_roles"][message]["emojis"][emoji]["message"] is not None:
-                    await payload.member.send(
-                        Config.guilds[guild]["reaction_roles"][message]["emojis"][emoji]["message"]
-                    )
-                await message.remove_reaction(payload.emoji, payload.member)
+                    try:
+                        await payload.member.send(
+                            Config.guilds[guild]["reaction_roles"][message]["emojis"][emoji]["message"]
+                        )
+                    except discord.Forbidden:
+                        pass
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_remove(self, payload):
+        """
+        Checks for a reaction being removed from a reaction role
+
+        :param payload:
+        """
+        # If react is in DMs
+        if payload.guild_id is None:
+            return
+
+        guild = self.bot.get_guild(payload.guild_id)
+        message = await guild.get_channel(payload.channel_id).fetch_message(payload.message_id)
+        member = guild.get_member(payload.user_id)
+
+        if message in Config.guilds[guild]["reaction_roles"]:
+            # If user is no longer in the server
+            if member is None:
+                return
+
+            # Fake ctx for EmojiConverter
+            ctx = namedtuple("Context", "bot guild", module=commands.context)
+            ctx.bot = self.bot
+            ctx.guild = guild
+
+            if payload.emoji.is_custom_emoji():
+                emoji = await commands.EmojiConverter().convert(ctx, str(payload.emoji.id))
+            else:
+                emoji = str(payload.emoji)
+
+            # If the emoji is a reaction role emoji
+            if emoji in Config.guilds[guild]["reaction_roles"][message]["emojis"]:
+                reaction_role = Config.guilds[guild]["reaction_roles"][message]["emojis"][emoji]["role"]
+                roles = member.roles
+
+                if reaction_role in roles:
+                    await member.remove_roles(reaction_role, reason="Reaction role removal")
 
 
 def setup(bot):
