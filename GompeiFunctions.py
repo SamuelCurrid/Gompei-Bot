@@ -26,6 +26,9 @@ def time_delta_string(before, after):
     :param after: datetime 2
     :return: string
     """
+    if after == before:
+        return "0 seconds"
+
     delta = relativedelta.relativedelta(after, before)
 
     if delta.years > 0:
