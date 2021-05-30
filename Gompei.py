@@ -38,6 +38,7 @@ startup_cogs = [
     "DirectMessages",
     "EmbedBuilder",
     "Games",
+    "Highlights",
     "Information",
     "Leaderboards",
     "Logging",
