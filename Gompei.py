@@ -35,6 +35,7 @@ gompei = commands.Bot(command_prefix=get_prefix, case_insensitive=True, intents=
 
 startup_cogs = [
     "Administration",
+    "Automod",
     "DirectMessages",
     "EmbedBuilder",
     "Games",
