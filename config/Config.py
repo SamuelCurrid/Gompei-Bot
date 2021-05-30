@@ -1346,7 +1346,8 @@ def update_wpi_verifications():
     """
     global guilds, raw_settings
 
-    verifications = load_json("/var/www/WPI-Discord-Flask/verifications.json")  # Open the verification file and read the user IDs. Compare to the ones stored here.
+    # Open the verification file and read the user IDs. Compare to the ones stored here.
+    verifications = load_json("/var/www/WPI-Discord-Flask/verifications.json")
 
     new_users = []
     for token in verifications:
@@ -1359,3 +1360,22 @@ def update_wpi_verifications():
         save_json(os.path.join("config", "settings.json"), raw_settings)
 
     return new_users
+
+
+def load_highlights():
+    """
+    Loads highlights from pickle
+
+    :return: Highlights dictionary
+    """
+    try:
+        return pickle.load(open(os.path.join("config", "highlights.p"), "rb"))
+    except (OSError, IOError) as e:
+        return {}
+
+
+def save_highlights(highlights):
+    """
+    Saves highlight to a pickle
+    """
+    pickle.dump(highlights, open(os.path.join("config", "highlights.p"), "wb+"))
