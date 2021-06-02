@@ -228,7 +228,11 @@ async def update_guild_settings(guild: discord.Guild):
         guilds[guild]["logging"]["overwrite_channels"][key] = \
             guild.get_channel(raw_settings["guilds"][str(guild.id)]["logging"]["overwrite_channels"][key])
 
-    guilds[guild]["logging"]["last_audit"] = (await guild.audit_logs(limit=1).flatten())[0].id
+    try:
+        guilds[guild]["logging"]["last_audit"] = (await guild.audit_logs(limit=1).flatten())[0].id
+    except IndexError:
+        pass
+
     guilds[guild]["logging"]["staff"] = guild.get_channel(raw_settings["guilds"][str(guild.id)]["logging"]["staff"])
     for invite in await guild.invites():
         guilds[guild]["logging"]["invites"][invite] = {

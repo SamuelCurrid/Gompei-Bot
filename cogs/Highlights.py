@@ -5,7 +5,7 @@ from config import Config
 
 import discord
 import typing
-import re
+import regex
 
 
 class Highlights(commands.Cog):
@@ -47,7 +47,7 @@ class Highlights(commands.Cog):
         :param phrase: String to test
         """
         for keyword in self.highlights[str(ctx.author.id)]["keywords"]:
-            if re.search(keyword, phrase):
+            if regex.search(keyword, phrase.lower()):
                 await ctx.send(f"This phrase triggers the keyword \"{keyword}\"")
                 return
 
@@ -276,7 +276,7 @@ class Highlights(commands.Cog):
                 continue
 
             for keyword in self.highlights[user_id]["keywords"]:
-                if re.search(keyword, message.content.lower()):
+                if regex.search(keyword, message.content.lower()):
                     permissions = message.channel.permissions_for(member)
                     if permissions.view_channel and permissions.read_messages:
                         messages = await message.channel.history(
