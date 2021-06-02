@@ -47,7 +47,7 @@ class Highlights(commands.Cog):
         :param phrase: String to test
         """
         for keyword in self.highlights[str(ctx.author.id)]["keywords"]:
-            if regex.search(keyword, phrase.lower()):
+            if regex.search(keyword, phrase.lower(), timeout=0.1):
                 await ctx.send(f"This phrase triggers the keyword \"{keyword}\"")
                 return
 
@@ -276,7 +276,7 @@ class Highlights(commands.Cog):
                 continue
 
             for keyword in self.highlights[user_id]["keywords"]:
-                if regex.search(keyword, message.content.lower()):
+                if regex.search(keyword, message.content.lower(), timeout=0.1):
                     permissions = message.channel.permissions_for(member)
                     if permissions.view_channel and permissions.read_messages:
                         messages = await message.channel.history(
