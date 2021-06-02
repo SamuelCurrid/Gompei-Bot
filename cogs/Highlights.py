@@ -47,9 +47,15 @@ class Highlights(commands.Cog):
         :param phrase: String to test
         """
         for keyword in self.highlights[str(ctx.author.id)]["keywords"]:
-            if regex.search(keyword, phrase.lower(), timeout=0.1):
-                await ctx.send(f"This phrase triggers the keyword \"{keyword}\"")
-                return
+            try:
+                if regex.search(keyword, phrase.lower(), timeout=0.1):
+                    await ctx.send(f"This phrase triggers the keyword \"{keyword}\"")
+                    return
+            except TimeoutError:
+                self.highlights[str(ctx.author.id)]["keywords"].remove(keyword)
+                await ctx.send(
+                    f"Your highlight \"{keyword}\" was removed because it took too long to execute."
+                )
 
         await ctx.send("This phrase did not trigger any of your keywords")
 
@@ -276,32 +282,42 @@ class Highlights(commands.Cog):
                 continue
 
             for keyword in self.highlights[user_id]["keywords"]:
-                if regex.search(keyword, message.content.lower(), timeout=0.1):
-                    permissions = message.channel.permissions_for(member)
-                    if permissions.view_channel and permissions.read_messages:
-                        messages = await message.channel.history(
-                            limit=4,
-                            before=message.created_at,
-                        ).flatten()
-                        messages.reverse()
-                        messages.append(message)
+                try:
+                    if regex.search(keyword, message.content.lower(), timeout=0.1):
+                        permissions = message.channel.permissions_for(member)
+                        if permissions.view_channel and permissions.read_messages:
+                            messages = await message.channel.history(
+                                limit=4,
+                                before=message.created_at,
+                            ).flatten()
+                            messages.reverse()
+                            messages.append(message)
 
-                        description = ""
-                        for msg in messages:
-                            description += f"**{msg.author.display_name}:** {msg.content}\n"
+                            if member in [x.author for x in messages]:
+                                continue
 
-                        embed = discord.Embed(
-                            title="Highlighted Message",
-                            description=description + "\n[Go To](" + message.jump_url + ")",
-                            colour=discord.Colour(0x8899d4)
-                        )
-                        embed.timestamp = datetime.now()
+                            description = ""
+                            for msg in messages:
+                                description += f"**{msg.author.display_name}:** {msg.content}\n"
 
-                        await member.send(
-                            f"Your highlight \"{keyword}\" was triggered in the WPI Discord Server",
-                            embed=embed
-                        )
-                        break
+                            embed = discord.Embed(
+                                title="Highlighted Message",
+                                description=description + "\n[Go To](" + message.jump_url + ")",
+                                colour=discord.Colour(0x8899d4)
+                            )
+                            embed.timestamp = datetime.now()
+                            embed.set_footer(text=message.author.id)
+
+                            await member.send(
+                                f"Your highlight \"{keyword}\" was triggered in the WPI Discord Server",
+                                embed=embed
+                            )
+                            break
+                except TimeoutError:
+                    self.highlights[user_id]["keywords"].remove(keyword)
+                    await member.send(
+                        f"Your highlight \"{keyword}\" was removed because it took too long to execute."
+                    )
 
     def blocked(self, message, user_id):
         """
