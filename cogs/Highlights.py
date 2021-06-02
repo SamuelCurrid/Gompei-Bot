@@ -98,13 +98,13 @@ class Highlights(commands.Cog):
         if str(ctx.author.id) not in self.highlights:
             await ctx.send("You don't have any highlights to remove")
             return
-        elif keyword not in self.highlights[str(ctx.author.id)]["keywords"]:
+        elif keyword.lower() not in self.highlights[str(ctx.author.id)]["keywords"]:
             await ctx.send(
                 "Did not find \"{keyword}\" in your highlights",
                 allowed_mentions=discord.AllowedMentions.none()
             )
 
-        self.highlights[str(ctx.author.id)]["keywords"].remove(keyword)
+        self.highlights[str(ctx.author.id)]["keywords"].remove(keyword.lower())
         Config.save_highlights(self.highlights)
         await ctx.send(
             f"Successfully removed \"{keyword}\" as a highlight",
