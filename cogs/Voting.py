@@ -9,6 +9,18 @@ import discord
 import os
 
 
+BLOCKED_NAMES = {"piss"}
+
+def is_blocked_option(option):
+    return option.lower() in BLOCKED_NAMES
+
+def get_allowed_options(options):
+    return [x for x in options if not is_blocked_option(x)]
+
+def get_winning_option(options):
+    allowed = get_allowed_options(options)
+    return allowed[0] if len(allowed) > 0 else "Nope"
+
 class Voting(commands.Cog):
     """
     Create votes and let users vote on them.
@@ -100,8 +112,9 @@ class Voting(commands.Cog):
                 last_count = count
                 count += 1
 
+        winning_option = get_winning_option(self.votes["votes"])
         embed = discord.Embed(title=self.votes["title"], color=0x43b581)
-        embed.description = ":star: " + self.votes["votes"][0]["name"] + " :star:\n" + leaderboard
+        embed.description = ":star: " + winning_option + " :star:\n" + leaderboard
         await self.poll_message.edit(embed=embed)
 
         self.vote_open = False
