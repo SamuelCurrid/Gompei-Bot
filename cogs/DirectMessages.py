@@ -180,7 +180,6 @@ class DirectMessages(commands.Cog):
                 chunk = content[: 2048]
                 if len(attachments) > 1:
                     list(attachments.keys())[0]
-                    m = chunk.count("\r")
 
                 index = chunk.rfind("\r")
                 chunks.append(chunk[: index])
@@ -233,10 +232,11 @@ class DirectMessages(commands.Cog):
                             else:
                                 files.append(await attachment.to_file())
 
+                    description = ""
                     if len(message.content) > 0:
-                        description = message.content + "\n\n"
+                        description += message.content + "\n\n"
                     if len(files) > 0 or len(urls) > 1:
-                       description += "**<File(s) Attached>** "
+                        description += "**<File(s) Attached>** "
 
                     embed = discord.Embed(description=description, timestamp=datetime.utcnow())
                     embed.set_author(

@@ -742,6 +742,27 @@ class Logging(commands.Cog):
                         embed,
                         Config.guilds[member.guild]["logging"]["overwrite_channels"]["member_tracking"]
                     )
+                    break
+            else:
+                creation_delta = time_delta_string(member.created_at, datetime.utcnow())
+
+                embed = discord.Embed(
+                    title="Member joined",
+                    colour=discord.Colour(0x43b581),
+                    description=(
+                            "<@" + str(member.id) + "> " + make_ordinal(member.guild.member_count) +
+                            " to join\ncreated " + creation_delta + " ago\n\nUsed the vanity URL"
+                    )
+                )
+
+                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
+                embed.set_footer(text="ID: " + str(member.id))
+                embed.timestamp = datetime.utcnow()
+
+                await self.send_embed(
+                    embed,
+                    Config.guilds[member.guild]["logging"]["overwrite_channels"]["member_tracking"]
+                )
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
@@ -764,7 +785,7 @@ class Logging(commands.Cog):
 
             entries = await member.guild.audit_logs(limit=1).flatten()
             if entries[0].action == discord.AuditLogAction.kick and entries[0].id != \
-                    Config.guilds[member.guild]["logging"]["last_audit"].id:
+                    Config.guilds[member.guild]["logging"]["last_audit"]:
                 Config.set_last_audit(entries[0])
                 embed.title = "Member kicked"
                 embed.description = "<@" + str(member.id) + "> joined " + join_delta + " ago\n**Roles: **" + roles + \
