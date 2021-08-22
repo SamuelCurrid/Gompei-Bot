@@ -45,23 +45,23 @@ async def on_ready():
     global start_time
 
     if Config.status is not None:
-        await gompei.change_presence(activity=discord.Game(name=Config.status, start=datetime.utcnow()))
+        await gompei.change_presence(activity=discord.Game(name=Config.status, start=discord.utils.utcnow()))
 
     await Config.set_client(gompei)
     await Config.load_settings()
 
-    start_time = datetime.utcnow()
+    start_time = discord.utils.utcnow()
     print("Logged on as {0}".format(gompei.user))
     if Config.dm_channel is not None:
         start_embed = discord.Embed(title="Bot started", color=0x43b581)
-        start_embed.set_author(name=gompei.user.name + "#" + gompei.user.discriminator, icon_url=gompei.user.avatar_url)
+        start_embed.set_author(name=gompei.user.name + "#" + gompei.user.discriminator, icon_url=gompei.user.avatar.url)
         if Config.close_time is None:
             start_embed.description = "**Downtime:** NaN"
         else:
             start_embed.description = "**Downtime:** " + time_delta_string(Config.close_time, datetime.now())
 
         start_embed.set_footer(text="ID: " + str(gompei.user.id))
-        start_embed.timestamp = datetime.utcnow()
+        start_embed.timestamp = discord.utils.utcnow()
 
         await Config.dm_channel.send(embed=start_embed)
 
@@ -142,9 +142,9 @@ async def kill(ctx):
         if Config.dm_channel is not None:
             end_embed = discord.Embed(title="Bot shutting down", color=0xbe4041)
             end_embed.set_author(name=gompei.user.name + "#" + gompei.user.discriminator,
-                                 icon_url=gompei.user.avatar_url)
+                                 icon_url=gompei.user.avatar.url)
             end_embed.set_footer(text="ID: " + str(gompei.user.id))
-            end_embed.timestamp = datetime.utcnow()
+            end_embed.timestamp = discord.utils.utcnow()
 
             await Config.dm_channel.send(embed=end_embed)
         await gompei.close()
@@ -165,7 +165,7 @@ async def help(ctx, command_name=None):
     if command_name is None:
         help_embed = discord.Embed(title=gompei.user.display_name, colour=discord.Colour.blue())
         help_embed.add_field(name="Documentation", value="https://samuelcurrid.github.io/Gompei-Bot/documentation.html")
-        help_embed.set_thumbnail(url=gompei.user.avatar_url)
+        help_embed.set_thumbnail(url=gompei.user.avatar.url)
         help_embed.set_footer(text="Source: https://github.com/SamuelCurrid/Gompei-Bot/")
         await ctx.send(embed=help_embed)
     else:
@@ -225,7 +225,7 @@ async def uptime(ctx):
     """
     global start_time
 
-    await ctx.send(f"{time_delta_string(start_time, datetime.utcnow())}")
+    await ctx.send(f"{time_delta_string(start_time, discord.utils.utcnow())}")
 
 
 @gompei.command(pass_context=True, aliases=["status"])

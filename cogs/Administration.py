@@ -62,14 +62,14 @@ class Administration(commands.Cog):
             added_roles = [x for x in after.roles if x not in before.roles]
             if len(added_roles) > 0:
                 jail_embed = discord.Embed(title="Member jailed", color=0xbe4041)
-                jail_embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+                jail_embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar.url)
 
                 jail_embed.description = "<@" + str(after.id) + "> attempted to pick up a role while jailed:\n"
                 for role in added_roles:
                     jail_embed.description += "<@&" + str(role.id) + "> "
 
                 jail_embed.set_footer(text="ID: " + str(after.id))
-                jail_embed.timestamp = datetime.utcnow()
+                jail_embed.timestamp = discord.utils.utcnow()
 
                 if Config.guilds[after.guild]["logging"]["overwrite_channels"]["mod"] is not None:
                     await Config.guilds[after.guild]["logging"]["overwrite_channels"]["mod"].send(embed=jail_embed)
@@ -139,12 +139,12 @@ class Administration(commands.Cog):
 
         embed = discord.Embed()
         embed.colour = discord.Colour(0x8899d4)
-        embed.set_author(name=user.name + "#" + user.discriminator, icon_url=user.avatar_url)
-        embed.set_image(url=user.avatar_url)
+        embed.set_author(name=user.name + "#" + user.discriminator, icon_url=user.avatar.url)
+        embed.set_image(url=user.avatar.url)
         embed.description = "<@" + str(user.id) + ">"
 
         embed.set_footer(text="ID: " + str(user.id))
-        embed.timestamp = datetime.utcnow()
+        embed.timestamp = discord.utils.utcnow()
 
         await ctx.send(embed=embed)
 
@@ -394,7 +394,7 @@ class Administration(commands.Cog):
             return
 
         if time2 is None:
-            offset = datetime.utcnow() - datetime.now()
+            offset = discord.utils.utcnow() - datetime.now()
             messages = await channel.history(limit=None, after=after_date + offset).flatten()
         else:
             before_date = dateparser.parse(time2)
@@ -403,7 +403,7 @@ class Administration(commands.Cog):
                 await ctx.send("Not a valid before time/date")
                 return
 
-            offset = datetime.utcnow() - datetime.now()
+            offset = discord.utils.utcnow() - datetime.now()
             messages = await channel.history(
                 limit=None,
                 after=after_date + offset,
@@ -524,7 +524,7 @@ class Administration(commands.Cog):
 
         Config.add_mute(member, datetime.now() + timedelta(seconds=seconds))
 
-        mute_time = time_delta_string(datetime.utcnow(), datetime.utcnow() + delta)
+        mute_time = time_delta_string(discord.utils.utcnow(), discord.utils.utcnow() + delta)
 
         mute_embed = discord.Embed(
             title="Member muted",
@@ -535,9 +535,9 @@ class Administration(commands.Cog):
             )
         )
 
-        mute_embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
+        mute_embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar.url)
         mute_embed.set_footer(text="ID: " + str(member.id))
-        mute_embed.timestamp = datetime.utcnow()
+        mute_embed.timestamp = discord.utils.utcnow()
 
         await member.add_roles(muted_role)
         await ctx.send("**Muted** user **" + username + "** for **" + mute_time + "** for: **" + reason + "**")
@@ -563,10 +563,10 @@ class Administration(commands.Cog):
         await member.remove_roles(muted_role)
 
         mute_embed = discord.Embed(title="Member unmuted", color=0x43b581)
-        mute_embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
+        mute_embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar.url)
         mute_embed.description = "Unmuted <@" + str(member.id) + ">"
         mute_embed.set_footer(text="ID: " + str(member.id))
-        mute_embed.timestamp = datetime.utcnow()
+        mute_embed.timestamp = discord.utils.utcnow()
 
         if Config.guilds[member.guild]["logging"]["overwrite_channels"]["mod"] is not None:
             await Config.guilds[member.guild]["logging"]["overwrite_channels"]["mod"].send(embed=mute_embed)
@@ -775,7 +775,7 @@ class Administration(commands.Cog):
             await ctx.send("Not a valid time, try again")
 
         delta = timedelta(seconds=seconds)
-        jail_time = time_delta_string(datetime.utcnow(), datetime.utcnow() + delta)
+        jail_time = time_delta_string(discord.utils.utcnow(), discord.utils.utcnow() + delta)
 
         if len(reason) < 1:
             await ctx.send("You must include a reason for the jail")
@@ -792,9 +792,9 @@ class Administration(commands.Cog):
             )
         )
 
-        jail_embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
+        jail_embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar.url)
         jail_embed.set_footer(text="ID: " + str(member.id))
-        jail_embed.timestamp = datetime.utcnow()
+        jail_embed.timestamp = discord.utils.utcnow()
 
         if member.premium_since is None:
             await member.edit(roles=[])
@@ -826,10 +826,10 @@ class Administration(commands.Cog):
         await member.edit(roles=roles)
 
         jail_embed = discord.Embed(title="Member unjailed", color=0x43b581)
-        jail_embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
+        jail_embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar.url)
         jail_embed.description = "Unjailed <@" + str(member.id) + ">"
         jail_embed.set_footer(text="ID: " + str(member.id))
-        jail_embed.timestamp = datetime.utcnow()
+        jail_embed.timestamp = discord.utils.utcnow()
 
         if Config.guilds[member.guild]["logging"]["overwrite_channels"]["mod"] is not None:
             await Config.guilds[member.guild]["logging"]["overwrite_channels"]["mod"].send(embed=jail_embed)

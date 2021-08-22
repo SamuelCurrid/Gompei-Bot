@@ -193,7 +193,7 @@ class DirectMessages(commands.Cog):
                 )
 
                 embed.set_footer(text=str(user.id))
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = discord.utils.utcnow()
 
                 await ctx.send(embed=embed)
         else:
@@ -204,7 +204,7 @@ class DirectMessages(commands.Cog):
             )
 
             embed.set_footer(text=str(user.id))
-            embed.timestamp = datetime.utcnow()
+            embed.timestamp = discord.utils.utcnow()
 
             await ctx.send(embed=embed)
 
@@ -238,13 +238,13 @@ class DirectMessages(commands.Cog):
                     if len(files) > 0 or len(urls) > 1:
                         description += "**<File(s) Attached>** "
 
-                    embed = discord.Embed(description=description, timestamp=datetime.utcnow())
+                    embed = discord.Embed(description=description, timestamp=discord.utils.utcnow())
                     embed.set_author(
                         name="DM from " + message.author.name + "#" + message.author.discriminator,
-                        icon_url=message.author.avatar_url
+                        icon_url=message.author.avatar.url
                     )
                     embed.set_footer(text=message.author.id)
-                    embed.timestamp = datetime.utcnow()
+                    embed.timestamp = discord.utils.utcnow()
                     await Config.dm_channel.send(urls, embed=embed, files=files)
 
     @commands.Cog.listener()
@@ -261,16 +261,16 @@ class DirectMessages(commands.Cog):
                 if before.content is after.content:
                     return
 
-                message_embed = discord.Embed(timestamp=datetime.utcnow())
+                message_embed = discord.Embed(timestamp=discord.utils.utcnow())
                 message_embed.colour = discord.Colour(0x8899d4)
                 message_embed.set_author(
                     name=after.author.name + "#" + before.author.discriminator,
-                    icon_url=after.author.avatar_url
+                    icon_url=after.author.avatar.url
                 )
                 message_embed.title = "Message edited by " + after.author.name + "#" + str(after.author.discriminator)
                 message_embed.description = "**Before:** " + before.content + "\n**+After:** " + after.content
                 message_embed.set_footer(text="ID: " + str(before.author.id))
-                message_embed.timestamp = datetime.utcnow()
+                message_embed.timestamp = discord.utils.utcnow()
 
                 await Config.dm_channel.send(embed=message_embed)
 
@@ -294,7 +294,7 @@ class DirectMessages(commands.Cog):
                     message_embed.colour = discord.Colour(0x8899d4)
                     message_embed.title = "Message edited by ???"
                     message_embed.set_footer(text="Uncached message: " + str(payload.message_id))
-                    message_embed.timestamp = datetime.utcnow()
+                    message_embed.timestamp = discord.utils.utcnow()
 
                     await dm_channel.send(embed=message_embed)
 
@@ -317,7 +317,7 @@ class DirectMessages(commands.Cog):
                 )
                 message_embed.set_author(
                     name=message.author.name + "#" + message.author.discriminator,
-                    icon_url=message.author.avatar_url
+                    icon_url=message.author.avatar.url
                 )
 
                 if len(message.attachments) > 0:  # Check for attachments
@@ -325,7 +325,7 @@ class DirectMessages(commands.Cog):
                         message_embed.add_field(name="Attachment", value=attachment.proxy_url)
 
                 message_embed.set_footer(text="ID: " + str(message.author.id))
-                message_embed.timestamp = datetime.utcnow()
+                message_embed.timestamp = discord.utils.utcnow()
 
                 await Config.dm_channel.send(embed=message_embed)
 
@@ -345,7 +345,7 @@ class DirectMessages(commands.Cog):
                     message_embed.colour = discord.Colour(0xbe4041)
                     message_embed.title = "Message deleted by ???"
                     message_embed.set_footer(text="Uncached message: " + str(payload.message_id))
-                    message_embed.timestamp = datetime.utcnow()
+                    message_embed.timestamp = discord.utils.utcnow()
 
                     await Config.dm_channel.send(embed=message_embed)
 

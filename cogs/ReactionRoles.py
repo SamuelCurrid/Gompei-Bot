@@ -294,7 +294,7 @@ class ReactionRoles(commands.Cog):
                             embed = discord.Embed(title="Server closed", color=0xbe4041)
                             embed.set_author(
                                 name=payload.member.name + "#" + payload.member.discriminator,
-                                icon_url=payload.member.avatar_url
+                                icon_url=payload.member.avatar.url
                             )
 
                             embed.description = "<@" + str(payload.member.id) + \
@@ -302,7 +302,7 @@ class ReactionRoles(commands.Cog):
                                                 reaction_role.mention
 
                             embed.set_footer(text="ID: " + str(payload.member.id))
-                            embed.timestamp = datetime.utcnow()
+                            embed.timestamp = discord.utils.utcnow()
 
                             await logging.send(embed=embed)
 

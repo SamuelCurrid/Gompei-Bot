@@ -88,7 +88,7 @@ class Information(commands.Cog):
 
         f_description += "\n**Position:** " + str(channel.position) + \
                          "\n**Created:** " + channel.created_at.strftime("%m-%d-%y %H:%M:%S") + \
-                         " UTC\n(" + time_delta_string(channel.created_at, datetime.utcnow()) + " ago)" + \
+                         " UTC\n(" + time_delta_string(channel.created_at, discord.utils.utcnow()) + " ago)" + \
                          "\n\n**__Overwrites__\n**"
 
         embed = discord.Embed(
@@ -133,7 +133,7 @@ class Information(commands.Cog):
             embed.description = embed.description[0:2047]
 
         embed.set_footer(text=str(channel.id))
-        embed.timestamp = datetime.utcnow()
+        embed.timestamp = discord.utils.utcnow()
 
         return embed
 
@@ -155,7 +155,7 @@ class Information(commands.Cog):
                     "\n**Mentionable:** " + str(role.mentionable) +
                     "\n**Position:** " + str(role.position) +
                     "\n**Created:** " + role.created_at.strftime("%m-%d-%y %H:%M:%S") + " UTC" +
-                    "\n(" + time_delta_string(role.created_at, datetime.utcnow()) + " ago)"
+                    "\n(" + time_delta_string(role.created_at, discord.utils.utcnow()) + " ago)"
             )
         )
 
@@ -183,7 +183,7 @@ class Information(commands.Cog):
             embed.description = embed.description[0:2047]
 
         embed.set_footer(text=str(role.id))
-        embed.timestamp = datetime.utcnow()
+        embed.timestamp = discord.utils.utcnow()
 
         return embed
 
@@ -195,7 +195,7 @@ class Information(commands.Cog):
         """
         embed = discord.Embed(
             description=(
-                    "[Avatar](" + str(user.avatar_url) + ")" +
+                    "[Avatar](" + str(user.avatar.url) + ")" +
                     "\n**Mention:** <@" + str(user.id) + ">"
             )
         )
@@ -217,7 +217,7 @@ class Information(commands.Cog):
                 name="Created at",
                 value=(
                         user.created_at.strftime("%m-%d-%y %H:%M:%S") + " UTC" +
-                        "\n(" + time_delta_string(user.created_at, datetime.utcnow()) + " ago)"
+                        "\n(" + time_delta_string(user.created_at, discord.utils.utcnow()) + " ago)"
                 ),
                 inline=True
             )
@@ -225,7 +225,7 @@ class Information(commands.Cog):
                 name="Joined at",
                 value=(
                         user.joined_at.strftime("%m-%d-%y %H:%M:%S") + " UTC" +
-                        "\n(" + time_delta_string(user.joined_at, datetime.utcnow()) + " ago)"
+                        "\n(" + time_delta_string(user.joined_at, discord.utils.utcnow()) + " ago)"
                 ),
                 inline=True
             )
@@ -236,7 +236,7 @@ class Information(commands.Cog):
                 name="Created at",
                 value=(
                         user.created_at.strftime("%m-%d-%y %H:%M:%S") + " UTC" +
-                        "\n(" + time_delta_string(user.created_at, datetime.utcnow()) + " ago)"
+                        "\n(" + time_delta_string(user.created_at, discord.utils.utcnow()) + " ago)"
                 ),
                 inline=True
             )
@@ -244,9 +244,9 @@ class Information(commands.Cog):
         if len(embed.description) > 2048:
             embed.description = embed.description[0:2047]
 
-        embed.set_author(name=user.name + "#" + user.discriminator, icon_url=user.avatar_url)
+        embed.set_author(name=user.name + "#" + user.discriminator, icon_url=user.avatar.url)
         embed.set_footer(text=str(user.id))
-        embed.timestamp = datetime.utcnow()
+        embed.timestamp = discord.utils.utcnow()
 
         return embed
 
@@ -273,10 +273,10 @@ class Information(commands.Cog):
         if isinstance(emoji, discord.Emoji):
             embed.description += "\n**Available:** " + str(emoji.available)
             embed.description += "\n**Created at:** " + emoji.created_at.strftime("%m-%d-%y %H:%M:%S") + " UTC" + \
-                                 "\n(" + time_delta_string(emoji.created_at, datetime.utcnow()) + " ago)"
+                                 "\n(" + time_delta_string(emoji.created_at, discord.utils.utcnow()) + " ago)"
 
         embed.set_footer(text=str(emoji.id))
-        embed.timestamp = datetime.utcnow()
+        embed.timestamp = discord.utils.utcnow()
 
         return embed
 
@@ -451,7 +451,7 @@ class Information(commands.Cog):
             name="Created",
             value=(
                     guild.created_at.strftime("%m-%d-%y %H:%M:%S") + " UTC" +
-                    "\n(" + time_delta_string(guild.created_at, datetime.utcnow()) + " ago)"
+                    "\n(" + time_delta_string(guild.created_at, discord.utils.utcnow()) + " ago)"
             ),
             inline=True
         )
@@ -459,7 +459,7 @@ class Information(commands.Cog):
 
         embed.set_thumbnail(url=guild.icon_url)
         embed.set_footer(text=str(guild.id))
-        embed.timestamp = datetime.utcnow()
+        embed.timestamp = discord.utils.utcnow()
 
         return embed
 
@@ -480,7 +480,7 @@ class Information(commands.Cog):
         )
 
         embed.set_footer(text=str(guild.id))
-        embed.timestamp = datetime.utcnow()
+        embed.timestamp = discord.utils.utcnow()
 
         return embed
 

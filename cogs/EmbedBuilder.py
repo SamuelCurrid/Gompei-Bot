@@ -61,7 +61,7 @@ class EmbedBuilder(commands.Cog):
     async def embed_author(self, ctx, author: discord.Member):
         if ctx.author in self.embeds:
             embed = self.embeds[ctx.author].embeds[0]
-            embed.set_author(name=author.display_name, icon_url=str(author.avatar_url))
+            embed.set_author(name=author.display_name, icon_url=str(author.avatar.url))
 
             await self.embeds[ctx.author].edit(embed=embed)
             await ctx.message.delete()
