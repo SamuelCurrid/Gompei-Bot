@@ -32,29 +32,6 @@ intents.presences = True
 intents.guilds = True
 gompei = commands.Bot(command_prefix=get_prefix, case_insensitive=True, intents=intents)
 
-
-startup_cogs = [
-    "Administration",
-    "DirectMessages",
-    "EmbedBuilder",
-    "Games",
-    "Highlights",
-    "Information",
-    "Leaderboards",
-    "Logging",
-    "Memes",
-    "ReactionRoles",
-    "Roles",
-    "Triggers",
-    "Verification",
-    "Voting",
-    "BotTools"
-]
-
-for cog in startup_cogs:
-    gompei.load_extension(f"cogs.{cog}")
-    print(f"Loaded cog {cog}")
-
 # Overwrite help command
 gompei.remove_command("help")
 
@@ -87,6 +64,28 @@ async def on_ready():
         start_embed.timestamp = datetime.utcnow()
 
         await Config.dm_channel.send(embed=start_embed)
+
+    startup_cogs = [
+        "Administration",
+        "DirectMessages",
+        "EmbedBuilder",
+        "Games",
+        "Highlights",
+        "Information",
+        "Leaderboards",
+        "Logging",
+        "Memes",
+        "ReactionRoles",
+        "Roles",
+        "Triggers",
+        "Verification",
+        "Voting",
+        "BotTools"
+    ]
+
+    for cog in startup_cogs:
+        gompei.load_extension(f"cogs.{cog}")
+        print(f"Loaded cog {cog}")
 
     Config.clear_close_time()
 
