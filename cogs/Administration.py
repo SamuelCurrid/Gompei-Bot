@@ -151,7 +151,7 @@ class Administration(commands.Cog):
     @commands.command(pass_context=True)
     @commands.check(moderator_perms)
     @commands.guild_only()
-    async def echo(self, ctx, channel: discord.TextChannel, *, msg: typing.Optional[str]):
+    async def echo(self, ctx, channel: typing.Union[discord.TextChannel, discord.Thread], *, msg: typing.Optional[str]):
         """
         Forwards message / attachments appended to the command to the given channel
         Usage: .echo <channel> <message>
@@ -982,6 +982,35 @@ class Administration(commands.Cog):
             )
         else:
             await ctx.send("No content to send.")
+
+    @commands.command(pass_context=True, name="echoThread", aliases=["thread"])
+    @commands.check(moderator_perms)
+    @commands.guild_only()
+    async def echo_thread(self, ctx, target: typing.Union[discord.TextChannel, discord.Message], *, name):
+        """
+        Creates a thread for the specified text channel or message
+        Usage: .echoThread <target> <name>
+
+        :param ctx: Context object
+        :param target: Target channel or message
+        :param name: Name of the thread
+        """
+        if isinstance(target, discord.Message):
+            archive_time = target.channel.default_auto_archive_duration
+        else:
+            archive_time = target.default_auto_archive_duration
+
+        if len(name) > 100:
+            await ctx.send("Thread names cannot be greater than 100 characters")
+            return
+
+        thread = await target.create_thread(
+            name=name,
+            auto_archive_duration=archive_time,
+            type=discord.ChannelType.public_thread,
+            reason="Echo thread command used"
+        )
+        await ctx.send(f"Thread created {thread.mention}")
 
     @commands.command(pass_context=True, name="createInvite")
     @commands.check(moderator_perms)
