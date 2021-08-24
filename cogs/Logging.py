@@ -1477,6 +1477,199 @@ class Logging(commands.Cog):
                 await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
 
+    @commands.Cog.listener()
+    async def on_thread_join(self, thread):
+        """
+        Logs thread creation events (if an administrator)
+
+        :param thread: Thread that was created
+        """
+        if Config.guilds[thread.guild]["logging"]["overwrite_channels"]["message"] is None:
+            return
+
+        embed = discord.Embed(
+            title=f"Thread created in #{thread.parent.name}",
+            colour=discord.Colour(0x43b581),
+            description=f"**Mention:** {thread.mention}\n"
+                        f"**Channel:** {thread.parent.mention}\n"
+                        f"**Archive:** {time_delta_string(discord.utils.utcnow(), discord.utils.utcnow() + timedelta(minutes=thread.auto_archive_duration))}\n"
+                        f"**Private:** {thread.is_private()}\n\n"
+                        f"**Created by:** {thread.owner.mention}"
+        )
+        embed.set_author(name=thread.owner.name + "#" + thread.owner.discriminator, icon_url=thread.owner.avatar.url)
+        embed.set_footer(text="ID: " + str(thread.id))
+        embed.timestamp = discord.utils.utcnow()
+
+        await self.send_embed(embed, Config.guilds[thread.guild]["logging"]["overwrite_channels"]["message"])
+
+    @commands.Cog.listener()
+    async def on_thread_delete(self, thread):
+        """
+        Logs thread deletion events
+
+        :param thread: Thread that was deleted
+        """
+        if Config.guilds[thread.guild]["logging"]["overwrite_channels"]["message"] is None:
+            return
+
+        embed = discord.Embed(
+            title=f"Thread deleted in #{thread.parent.name}",
+            colour=discord.Colour(0xbe4041),
+            description=f"**Mention:** {thread.mention}\n"
+                        f"**Channel:** {thread.parent.mention}\n\n"
+        )
+
+        entries = await thread.guild.audit_logs(limit=1).flatten()
+        if entries[0].action == discord.AuditLogAction.thread_delete and \
+                entries[0].id != Config.guilds[thread.guild]["logging"]["last_audit"]:
+            Config.set_last_audit(entries[0])
+            embed.description += "Deleted by <@" + str(entries[0].user.id) + ">"
+
+        embed.set_footer(text="ID: " + str(thread.id))
+        embed.timestamp = discord.utils.utcnow()
+
+        if Config.guilds[thread.guild]["logging"]["overwrite_channels"]["mod"] != \
+                Config.guilds[thread.guild]["logging"]["overwrite_channels"]["voice"]:
+            await self.send_embed(
+                embed,
+                Config.guilds[thread.guild]["logging"]["overwrite_channels"]["mod"]
+            )
+
+        await self.send_embed(embed, Config.guilds[thread.guild]["logging"]["overwrite_channels"]["message"])
+
+    @commands.Cog.listener()
+    async def on_thread_member_join(self, member):
+        """
+        Logs member thread joins
+
+        :param member: Thread member that joined
+        """
+        if Config.guilds[member.thread.guild]["logging"]["overwrite_channels"]["message"] is None:
+            return
+
+        guild_member = member.thread.guild.get_member(member.id)
+
+        embed = discord.Embed(
+            title=f"Thread joined",
+            colour=discord.Colour(0x43b581),
+            description=f"**Thread:** {member.thread.mention}\n"
+        )
+        embed.set_author(name=guild_member.name + "#" + guild_member.discriminator, icon_url=guild_member.avatar.url)
+        embed.set_footer(text="ID: " + str(member.id))
+        embed.timestamp = discord.utils.utcnow()
+
+        await self.send_embed(embed, Config.guilds[member.thread.guild]["logging"]["overwrite_channels"]["message"])
+
+    @commands.Cog.listener()
+    async def on_thread_member_remove(self, member):
+        """
+        Logs member removals from threads
+
+        :param member: Thread member that was removed
+        """
+        if Config.guilds[member.thread.guild]["logging"]["overwrite_channels"]["message"] is None:
+            return
+
+        guild_member = member.thread.guild.get_member(member.id)
+
+        embed = discord.Embed(
+            title=f"Thread left",
+            colour=discord.Colour(0xbe4041),
+            description=f"**Thread:** {member.thread.mention}\n"
+        )
+        embed.set_author(name=guild_member.name + "#" + guild_member.discriminator, icon_url=guild_member.avatar.url)
+        embed.set_footer(text="ID: " + str(member.id))
+        embed.timestamp = discord.utils.utcnow()
+
+        await self.send_embed(embed, Config.guilds[member.thread.guild]["logging"]["overwrite_channels"]["message"])
+
+    @commands.Cog.listener()
+    async def on_thread_update(self, before, after):
+        """
+        Logs thread updates
+
+        :param before: Thread before
+        :param after: Thread after
+        """
+        if Config.guilds[after.guild]["logging"]["overwrite_channels"]["message"] is None:
+            return
+
+        # Check archival update
+        if before.archived != after.archived:
+            if after.archived:
+                embed = discord.Embed(
+                    title="Thread archived",
+                    colour=discord.Colour(0xbe4041),
+                    description=f"**Thread:** {after.mention}"
+                )
+
+                embed.set_footer(text="ID: " + str(after.id))
+                embed.timestamp = discord.utils.utcnow()
+
+                await self.send_embed(embed, Config.guilds[after.guild]["logging"]["overwrite_channels"]["message"])
+            else:
+                embed = discord.Embed(
+                    title="Thread unarchived",
+                    colour=discord.Colour(0x43b581),
+                    description=f"**Thread:** {after.mention}\n\n"
+                )
+
+                entries = await after.guild.audit_logs(limit=1).flatten()
+
+                # Log who the editor is
+                if entries[0].action == discord.AuditLogAction.thread_update \
+                        and entries[0].id != Config.guilds[after.guild]["logging"]["last_audit"]:
+                    Config.set_last_audit(entries[0])
+                    embed.description += "Unarchived by <@" + str(entries[0].user.id) + ">"
+
+                await self.send_embed(embed, Config.guilds[after.guild]["logging"]["overwrite_channels"]["message"])
+
+        before_value = ""
+        after_value = ""
+
+        # Check name update
+        if before.name != after.name:
+            before_value += "**Name:** " + before.name
+            after_value += "**Name:** " + after.name
+
+        # Check slowmode update
+        if before.slowmode_delay != after.slowmode_delay:
+            if before.slowmode_delay > 0:
+                before_value += "\n**Slowmode:** " + time_delta_string(
+                    datetime.now(), datetime.now() + timedelta(seconds=before.slowmode_delay)
+                )
+            else:
+                before_value += "\n**Slowmode:** None"
+            if after.slowmode_delay > 0:
+                after_value += "\n**Slowmode:** " + time_delta_string(
+                    datetime.now(), datetime.now() + timedelta(seconds=after.slowmode_delay)
+                )
+            else:
+                after_value += "\n**Slowmode:** None"
+
+        if before_value != "":
+            embed = discord.Embed(
+                title="Thread updated",
+                colour=discord.Colour(0x43b581),
+                description=""
+            )
+            embed.add_field(name="Before", value=before_value, inline=True)
+            embed.add_field(name="After", value=after_value, inline=True)
+            embed.set_footer(text="ID: " + str(after.id))
+            embed.colour = discord.Colour(0x8899d4)
+
+            entries = await after.guild.audit_logs(limit=1).flatten()
+
+            # Log who the editor is
+            if entries[0].action == discord.AuditLogAction.thread_update \
+                    and entries[0].id != Config.guilds[after.guild]["logging"]["last_audit"]:
+                Config.set_last_audit(entries[0])
+                embed.description += "\n\nUpdated by <@" + str(entries[0].user.id) + ">"
+
+            if len(embed.description) > 0 or len(embed.fields) > 0:
+                embed.description = after.mention + "\n" + embed.description
+                await self.send_embed(embed, Config.guilds[after.guild]["logging"]["overwrite_channels"]["message"])
+
     async def guild_update_helper(self, embed: discord.Embed, guild: discord.Guild):
         entries = await guild.audit_logs(limit=1).flatten()
         if entries[0].action == discord.AuditLogAction.guild_update and \
