@@ -241,7 +241,7 @@ class DirectMessages(commands.Cog):
                     embed = discord.Embed(description=description, timestamp=datetime.utcnow())
                     embed.set_author(
                         name="DM from " + message.author.name + "#" + message.author.discriminator,
-                        icon_url=message.author.avatar_url
+                        icon_url=message.author.display_avatar.url
                     )
                     embed.set_footer(text=message.author.id)
                     embed.timestamp = datetime.utcnow()

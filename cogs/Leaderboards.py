@@ -467,7 +467,7 @@ class Leaderboards(commands.Cog):
                 except discord.Forbidden:
                     print("Do not have read message history permissions for: " + str(channel))
 
-            board["lastUpdate"] = datetime.utcnow().isoformat()
+            board["lastUpdate"] = discord.utils.utcnow().isoformat()
 
         save_json(os.path.join("config", "leaderboards.json"), self.leaderboards)
         print("Leaderboards up to date")

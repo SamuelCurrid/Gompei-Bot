@@ -234,10 +234,10 @@ class Logging(commands.Cog):
 
                 embed.set_author(
                     name=message.author.name + "#" + message.author.discriminator,
-                    icon_url=message.author.avatar_url
+                    icon_url=message.author.display_avatar.url
                 )
                 embed.set_footer(text="ID: " + str(message.author.id))
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = discord.utils.utcnow()
 
                 entries = await message.guild.audit_logs(limit=1).flatten()
                 if entries[0].action == discord.AuditLogAction.message_delete \
@@ -276,7 +276,7 @@ class Logging(commands.Cog):
                 )
 
                 embed.set_footer(text="Uncached message: " + str(payload.message_id))
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = discord.utils.utcnow()
 
                 if entries[0].action == discord.AuditLogAction.message_delete \
                         and entries[0].id != Config.guilds[guild]["logging"]["last_audit"]:
@@ -316,7 +316,7 @@ class Logging(commands.Cog):
                     description=content
                 )
 
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = discord.utils.utcnow()
 
                 if Config.guilds[guild]["logging"]["overwrite_channels"]["mod"] != \
                         Config.guilds[guild]["logging"]["overwrite_channels"]["message"]:
@@ -354,10 +354,10 @@ class Logging(commands.Cog):
 
                     embed.set_author(
                         name=before.author.name + "#" + before.author.discriminator,
-                        icon_url=before.author.avatar_url
+                        icon_url=before.author.display_avatar.url
                     )
                     embed.set_footer(text="ID: " + str(before.author.id))
-                    embed.timestamp = datetime.utcnow()
+                    embed.timestamp = discord.utils.utcnow()
 
                     await self.send_embed(embed, Config.guilds[after.guild]["logging"]["overwrite_channels"]["message"])
 
@@ -377,10 +377,10 @@ class Logging(commands.Cog):
 
                     embed.set_author(
                         name=before.author.name + "#" + before.author.discriminator,
-                        icon_url=before.author.avatar_url
+                        icon_url=before.author.display_avatar.url
                     )
                     embed.set_footer(text="ID: " + str(before.author.id))
-                    embed.timestamp = datetime.utcnow()
+                    embed.timestamp = discord.utils.utcnow()
 
                     await self.send_embed(embed, Config.guilds[after.guild]["logging"]["overwrite_channels"]["message"])
 
@@ -399,7 +399,7 @@ class Logging(commands.Cog):
 
             if Config.guilds[guild]["logging"]["overwrite_channels"]["message"] is not None and \
                     payload.cached_message is None:
-                channel = Config.guild.get_channel(payload.channel_id)
+                channel = guild.get_channel(payload.channel_id)
                 # If a dm message
                 if channel is None:
                     return
@@ -417,10 +417,10 @@ class Logging(commands.Cog):
 
                     embed.set_author(
                         name=message.author.name + "#" + message.author.discriminator,
-                        icon_url=message.author.avatar_url
+                        icon_url=message.author.display_avatar.url
                     )
                     embed.set_footer(text="ID: " + str(message.author.id))
-                    embed.timestamp = datetime.utcnow()
+                    embed.timestamp = discord.utils.utcnow()
 
                     await self.send_embed(embed, Config.guilds[guild]["logging"]["overwrite_channels"]["message"])
 
@@ -477,7 +477,7 @@ class Logging(commands.Cog):
             )
 
             embed.set_footer(text="ID: " + str(channel.id))
-            embed.timestamp = datetime.utcnow()
+            embed.timestamp = discord.utils.utcnow()
 
             for target in channel.overwrites:
                 permissions = []
@@ -545,7 +545,7 @@ class Logging(commands.Cog):
             )
 
             embed.set_footer(text="ID: " + str(channel.id))
-            embed.timestamp = datetime.utcnow()
+            embed.timestamp = discord.utils.utcnow()
 
             # Log who the editor is
             entries = await channel.guild.audit_logs(limit=1).flatten()
@@ -718,7 +718,7 @@ class Logging(commands.Cog):
                 if Config.guilds[member.guild]["logging"]["invites"][invite]["uses"] != invite.uses:
                     Config.update_invite_uses(invite)
 
-                    creation_delta = time_delta_string(member.created_at, datetime.utcnow())
+                    creation_delta = time_delta_string(member.created_at, discord.utils.utcnow())
 
                     note = ""
                     if Config.guilds[member.guild]["logging"]["invites"][invite]["note"] is not None:
@@ -734,9 +734,9 @@ class Logging(commands.Cog):
                         )
                     )
 
-                    embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
+                    embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.display_avatar.url)
                     embed.set_footer(text="ID: " + str(member.id))
-                    embed.timestamp = datetime.utcnow()
+                    embed.timestamp = discord.utils.utcnow()
 
                     await self.send_embed(
                         embed,
@@ -744,7 +744,7 @@ class Logging(commands.Cog):
                     )
                     break
             else:
-                creation_delta = time_delta_string(member.created_at, datetime.utcnow())
+                creation_delta = time_delta_string(member.created_at, discord.utils.utcnow())
 
                 embed = discord.Embed(
                     title="Member joined",
@@ -755,9 +755,9 @@ class Logging(commands.Cog):
                     )
                 )
 
-                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
+                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.display_avatar.url)
                 embed.set_footer(text="ID: " + str(member.id))
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = discord.utils.utcnow()
 
                 await self.send_embed(
                     embed,
@@ -772,16 +772,16 @@ class Logging(commands.Cog):
         """
         if Config.guilds[member.guild]["logging"]["overwrite_channels"]["member_tracking"] is not None:
             embed = discord.Embed(colour=discord.Colour(0xbe4041))
-            embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
+            embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.display_avatar.url)
 
-            join_delta = time_delta_string(member.joined_at, datetime.utcnow())
+            join_delta = time_delta_string(member.joined_at, discord.utils.utcnow())
             roles = ""
 
             for index in range(1, len(member.roles)):
                 roles += "<@&" + str(member.roles[index].id) + "> "
 
             embed.set_footer(text="ID: " + str(member.id))
-            embed.timestamp = datetime.utcnow()
+            embed.timestamp = discord.utils.utcnow()
 
             entries = await member.guild.audit_logs(limit=1).flatten()
             if entries[0].action == discord.AuditLogAction.kick and entries[0].id != \
@@ -807,6 +807,9 @@ class Logging(commands.Cog):
         """
         Sends a logging message containing
         the property of the member updated before and after
+
+        :param before: Member before
+        :param after: Member after
         """
 
         # Check for role updates
@@ -815,6 +818,14 @@ class Logging(commands.Cog):
         # Check for nickname updates
         await self.nickname_update_checks(before, after)
 
+    @commands.Cog.listener()
+    async def on_presence_update(self, before, after):
+        """
+        Sends a logging message containing the presence update before and after
+
+        :param before: Member before
+        :param after: Member after
+        """
         # Check for status updates
         await self.status_update_checks(before, after)
 
@@ -836,7 +847,7 @@ class Logging(commands.Cog):
 
             # Reset embed
             embed = discord.Embed()
-            embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+            embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.display_avatar.url)
 
             if len(added_roles) > 0:
 
@@ -853,7 +864,7 @@ class Logging(commands.Cog):
                         embed.description += "<@&" + str(role.id) + "> "
 
                     embed.set_footer(text="ID: " + str(after.id))
-                    embed.timestamp = datetime.utcnow()
+                    embed.timestamp = discord.utils.utcnow()
 
                 # Roles have only been added
                 else:
@@ -867,7 +878,7 @@ class Logging(commands.Cog):
                         embed.description += "<@&" + str(role.id) + "> "
 
                     embed.set_footer(text="ID: " + str(after.id))
-                    embed.timestamp = datetime.utcnow()
+                    embed.timestamp = discord.utils.utcnow()
 
             # Roles have only been removed
             else:
@@ -881,7 +892,7 @@ class Logging(commands.Cog):
                     embed.description += "<@&" + str(role.id) + "> "
 
                 embed.set_footer(text="ID: " + str(after.id))
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = discord.utils.utcnow()
 
             # Log who the editor is and the reason
             entries = await before.guild.audit_logs(limit=1).flatten()
@@ -932,9 +943,9 @@ class Logging(commands.Cog):
                 if before != entries[0].user:
                     embed.description += "\n\nEdited by <@" + str(entries[0].user.id) + ">"
 
-            embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+            embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.display_avatar.url)
             embed.set_footer(text="ID: " + str(after.id))
-            embed.timestamp = datetime.utcnow()
+            embed.timestamp = discord.utils.utcnow()
 
             await self.send_embed(embed, Config.guilds[after.guild]["logging"]["overwrite_channels"]["member"])
 
@@ -1041,9 +1052,9 @@ class Logging(commands.Cog):
             if status_after != "":
                 Config.save_statuses(self.statuses)
                 embed.description = "**Before:** " + status_before + "\n**+After:** " + status_after + "\n\n" + links
-                embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+                embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.display_avatar.url)
                 embed.set_footer(text="ID: " + str(after.id))
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = discord.utils.utcnow()
 
                 await self.send_embed(embed, Config.guilds[after.guild]["logging"]["overwrite_channels"]["status"])
 
@@ -1061,11 +1072,11 @@ class Logging(commands.Cog):
                     if before.name != after.name:
                         embed = discord.Embed()
                         embed.colour = discord.Colour(0x8899d4)
-                        embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+                        embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.display_avatar.url)
                         embed.title = "Name change"
                         embed.description = "**Before:** " + before.name + "\n**+After:** " + after.name
                         embed.set_footer(text="ID: " + str(after.id))
-                        embed.timestamp = datetime.utcnow()
+                        embed.timestamp = discord.utils.utcnow()
 
                         await self.send_embed(embed, Config.guilds[guild]["logging"]["overwrite_channels"]["member"])
 
@@ -1073,12 +1084,12 @@ class Logging(commands.Cog):
                     if before.discriminator != after.discriminator:
                         embed = discord.Embed()
                         embed.colour = discord.Colour(0x8899d4)
-                        embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+                        embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.display_avatar.url)
                         embed.title = "Discriminator update"
                         embed.description = "**Before:** " + before.discriminator + \
                                             "\n**+After:** " + after.discriminator
                         embed.set_footer(text="ID: " + str(after.id))
-                        embed.timestamp = datetime.utcnow()
+                        embed.timestamp = discord.utils.utcnow()
 
                         await self.send_embed(embed, Config.guilds[guild]["logging"]["overwrite_channels"]["member"])
 
@@ -1087,18 +1098,19 @@ class Logging(commands.Cog):
                         if before.avatar != after.avatar:
                             embed = discord.Embed()
                             embed.colour = discord.Colour(0x8899d4)
-                            embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+                            embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.display_avatar.url)
                             embed.title = "Avatar update"
                             embed.set_image(url=after.avatar_url)
                             embed.description = "<@" + str(after.id) + ">"
 
-                            embed.set_footer(text="ID: " + str(after.id))
-                            embed.timestamp = datetime.utcnow()
+                                embed.set_footer(text="ID: " + str(after.id))
+                                embed.timestamp = discord.utils.utcnow()
 
-                            await self.send_embed(
-                                embed,
-                                Config.guilds[guild]["logging"]["overwrite_channels"]["avatar"]
-                            )
+                                await self.send_embed(
+                                    embed,
+                                    Config.guilds[guild]["logging"]["overwrite_channels"]["avatar"]
+                                )
+
 
     @commands.Cog.listener()
     async def on_guild_update(self, before, after):
@@ -1131,7 +1143,7 @@ class Logging(commands.Cog):
                 )
 
                 embed.set_footer(text="ID: " + str(after.id))
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = discord.utils.utcnow()
 
                 await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
@@ -1146,7 +1158,7 @@ class Logging(commands.Cog):
                 )
 
                 embed.set_footer(text="ID: " + str(after.id))
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = discord.utils.utcnow()
 
                 await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
@@ -1169,7 +1181,7 @@ class Logging(commands.Cog):
                     embed.description = "***Before:** " + before.description + "\n**+After:** " + after.description
 
                 embed.set_footer(text="ID: " + str(after.id))
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = discord.utils.utcnow()
 
                 await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
@@ -1203,7 +1215,7 @@ class Logging(commands.Cog):
                             embed.description += feature.replace("_", " ").title() + "\n"
 
                     embed.set_footer(text="ID: " + str(after.id))
-                    embed.timestamp = datetime.utcnow()
+                    embed.timestamp = discord.utils.utcnow()
 
                     await self.guild_update_helper(embed, after)
                     await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
@@ -1222,7 +1234,7 @@ class Logging(commands.Cog):
                     embed.description = str(after.filesize_limit / 1000000) + " MB"
 
                 embed.set_footer(text="ID: " + str(after.id))
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = discord.utils.utcnow()
 
                 await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
@@ -1241,7 +1253,7 @@ class Logging(commands.Cog):
                     embed.description = str(before.emoji_limit) + " emojis"
 
                 embed.set_footer(text="ID: " + str(after.id))
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = discord.utils.utcnow()
 
                 await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
@@ -1258,7 +1270,7 @@ class Logging(commands.Cog):
                     embed.description = "False"
 
                 embed.set_footer(text="ID: " + str(after.id))
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = discord.utils.utcnow()
 
                 await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
@@ -1271,7 +1283,7 @@ class Logging(commands.Cog):
                 embed.description = "**Before:** " + before.owner.mention + "\n" + "**+After:** " + after.owner.mention
 
                 embed.set_footer(text="ID: " + str(after.id))
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = discord.utils.utcnow()
 
                 await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
@@ -1284,7 +1296,7 @@ class Logging(commands.Cog):
                 embed.description = "**Before:** " + before.name + "\n" + "**+After:** " + after.name
 
                 embed.set_footer(text="ID: " + str(after.id))
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = discord.utils.utcnow()
 
                 await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
@@ -1312,7 +1324,7 @@ class Logging(commands.Cog):
                 )
 
                 embed.set_footer(text="ID: " + str(after.id))
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = discord.utils.utcnow()
 
                 await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
@@ -1340,7 +1352,7 @@ class Logging(commands.Cog):
                 )
 
                 embed.set_footer(text="ID: " + str(after.id))
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = discord.utils.utcnow()
 
                 await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
@@ -1353,7 +1365,7 @@ class Logging(commands.Cog):
                 embed.description = str(after.region).replace("-", " ").title()
 
                 embed.set_footer(text="ID: " + str(after.id))
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = discord.utils.utcnow()
 
                 await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
@@ -1381,7 +1393,7 @@ class Logging(commands.Cog):
                 )
 
                 embed.set_footer(text="ID: " + str(after.id))
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = discord.utils.utcnow()
 
                 await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
@@ -1393,7 +1405,7 @@ class Logging(commands.Cog):
                 embed.colour = discord.Colour(0x8899d4)
                 embed.description = str(after.verification_level).title()
                 embed.set_footer(text="ID: " + str(after.id))
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = discord.utils.utcnow()
 
                 await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
@@ -1416,7 +1428,7 @@ class Logging(commands.Cog):
                     embed.set_image(url=after.banner_url)
 
                 embed.set_footer(text="ID: " + str(after.id))
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = discord.utils.utcnow()
 
                 await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
@@ -1438,7 +1450,7 @@ class Logging(commands.Cog):
                 embed.colour = discord.Colour(0x8899d4)
                 embed.set_image(url=after.icon_url)
                 embed.set_footer(text="ID: " + str(after.id))
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = discord.utils.utcnow()
 
                 await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
@@ -1461,7 +1473,7 @@ class Logging(commands.Cog):
                     embed.set_image(url=after.splash_url)
 
                 embed.set_footer(text="ID: " + str(after.id))
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = discord.utils.utcnow()
 
                 await self.guild_update_helper(embed, after)
                 await self.send_embed(embed, Config.guilds[after]["logging"]["overwrite_channels"]["server"])
@@ -1514,7 +1526,7 @@ class Logging(commands.Cog):
             embed.description = embed.description[0:2047]
 
         embed.set_footer(text=str(role.id))
-        embed.timestamp = datetime.utcnow()
+        embed.timestamp = discord.utils.utcnow()
 
         # Log who the editor is
         entries = await role.guild.audit_logs(limit=1).flatten()
@@ -1566,7 +1578,7 @@ class Logging(commands.Cog):
             embed.description = embed.description[0:2047]
 
         embed.set_footer(text=str(role.id))
-        embed.timestamp = datetime.utcnow()
+        embed.timestamp = discord.utils.utcnow()
 
         # Log who the editor is
         entries = await role.guild.audit_logs(limit=1).flatten()
@@ -1674,7 +1686,7 @@ class Logging(commands.Cog):
 
     async def role_update_helper(self, role, embed):
         embed.set_footer(text=str(role.id))
-        embed.timestamp = datetime.utcnow()
+        embed.timestamp = discord.utils.utcnow()
 
         entries = await role.guild.audit_logs(limit=1).flatten()
         if entries[0].action == discord.AuditLogAction.role_update and entries[0].id != \
@@ -1712,7 +1724,7 @@ class Logging(commands.Cog):
 
             embed.set_image(url=emoji.url)
             embed.set_footer(text="ID: " + str(emoji.id))
-            embed.timestamp = datetime.utcnow()
+            embed.timestamp = discord.utils.utcnow()
 
             await self.send_embed(embed, Config.guilds[guild]["logging"]["overwrite_channels"]["server"])
 
@@ -1725,7 +1737,7 @@ class Logging(commands.Cog):
 
             embed.set_image(url=emoji.url)
             embed.set_footer(text="ID: " + str(emoji.id))
-            embed.timestamp = datetime.utcnow()
+            embed.timestamp = discord.utils.utcnow()
 
             await self.send_embed(embed, Config.guilds[guild]["logging"]["overwrite_channels"]["server"])
 
@@ -1757,9 +1769,9 @@ class Logging(commands.Cog):
                     description=description
                 )
 
-                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
+                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.display_avatar.url)
                 embed.set_footer(text="ID: " + str(member.id))
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = discord.utils.utcnow()
 
                 entries = await member.guild.audit_logs(limit=1).flatten()
                 if entries[0].action == discord.AuditLogAction.member_move and \
@@ -1788,9 +1800,9 @@ class Logging(commands.Cog):
                     description="**" + member.display_name + "** streaming in " + after.channel.mention
                 )
 
-                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
+                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.display_avatar.url)
                 embed.set_footer(text="ID: " + str(member.id))
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = discord.utils.utcnow()
 
                 await self.send_embed(embed, Config.guilds[member.guild]["logging"]["overwrite_channels"]["voice"])
 
@@ -1808,9 +1820,9 @@ class Logging(commands.Cog):
                     description="**" + member.display_name + "** video in " + after.channel.mention
                 )
 
-                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
+                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.display_avatar.url)
                 embed.set_footer(text="ID: " + str(member.id))
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = discord.utils.utcnow()
 
                 await self.send_embed(embed, Config.guilds[member.guild]["logging"]["overwrite_channels"]["voice"])
 
@@ -1830,9 +1842,9 @@ class Logging(commands.Cog):
                     description=description
                 )
 
-                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
+                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.display_avatar.url)
                 embed.set_footer(text="ID: " + str(member.id))
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = discord.utils.utcnow()
 
                 await self.send_embed(embed, Config.guilds[member.guild]["logging"]["overwrite_channels"]["voice"])
 
@@ -1852,9 +1864,9 @@ class Logging(commands.Cog):
                     description=description
                 )
 
-                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
+                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.display_avatar.url)
                 embed.set_footer(text="ID: " + str(member.id))
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = discord.utils.utcnow()
 
                 await self.send_embed(embed, Config.guilds[member.guild]["logging"]["overwrite_channels"]["voice"])
 
@@ -1877,9 +1889,9 @@ class Logging(commands.Cog):
             if entries[0].reason is not None:
                 embed.description += "\n**Reason:** " + entries[0].reason
 
-            embed.set_author(name=user.name + "#" + user.discriminator, icon_url=user.avatar_url)
+            embed.set_author(name=user.name + "#" + user.discriminator, icon_url=user.display_avatar.url)
             embed.set_footer(text="ID: " + str(user.id))
-            embed.timestamp = datetime.utcnow()
+            embed.timestamp = discord.utils.utcnow()
 
             await self.send_embed(embed, Config.guilds[guild]["logging"]["overwrite_channels"]["mod"])
 
@@ -1897,9 +1909,9 @@ class Logging(commands.Cog):
                 description="<@" + str(user.id) + ">"
             )
 
-            embed.set_author(name=user.name + "#" + user.discriminator, icon_url=user.avatar_url)
+            embed.set_author(name=user.name + "#" + user.discriminator, icon_url=user.display_avatar.url)
             embed.set_footer(text="ID: " + str(user.id))
-            embed.timestamp = datetime.utcnow()
+            embed.timestamp = discord.utils.utcnow()
 
             await self.send_embed(embed, Config.guilds[guild]["logging"]["overwrite_channels"]["mod"])
 
@@ -1937,7 +1949,7 @@ class Logging(commands.Cog):
             )
 
             embed.set_footer(text="ID: " + str(invite.inviter.id))
-            embed.timestamp = datetime.utcnow()
+            embed.timestamp = discord.utils.utcnow()
 
             await self.send_embed(
                 embed,
@@ -1998,6 +2010,7 @@ class Logging(commands.Cog):
                 await channel.send(embed=embed)
         else:
             await channel.send(embed=embed)
+
 
 def setup(bot):
     bot.add_cog(Logging(bot))

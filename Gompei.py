@@ -77,7 +77,7 @@ async def on_ready():
     print("Logged on as {0}".format(gompei.user))
     if Config.dm_channel is not None:
         start_embed = discord.Embed(title="Bot started", color=0x43b581)
-        start_embed.set_author(name=gompei.user.name + "#" + gompei.user.discriminator, icon_url=gompei.user.avatar_url)
+        start_embed.set_author(name=gompei.user.name + "#" + gompei.user.discriminator, icon_url=gompei.user.avatar.url)
         if Config.close_time is None:
             start_embed.description = "**Downtime:** NaN"
         else:

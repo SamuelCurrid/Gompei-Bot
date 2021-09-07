@@ -88,7 +88,7 @@ class Information(commands.Cog):
 
         f_description += "\n**Position:** " + str(channel.position) + \
                          "\n**Created:** " + channel.created_at.strftime("%m-%d-%y %H:%M:%S") + \
-                         " UTC\n(" + time_delta_string(channel.created_at, datetime.utcnow()) + " ago)" + \
+                         " UTC\n(" + time_delta_string(channel.created_at, discord.utils.utcnow()) + " ago)" + \
                          "\n\n**__Overwrites__\n**"
 
         embed = discord.Embed(
@@ -147,15 +147,15 @@ class Information(commands.Cog):
             title="Role Info",
             colour=role.colour,
             description=(
-                    "**Name:** " + role.name +
-                    "\n**Mention:** " + role.mention +
-                    "\n**Members:** " + str(len(role.members)) +
-                    "\n**(R,G,B):** " + str(role.color.to_rgb()) +
-                    "\n**Hoisted:** " + str(role.hoist) +
-                    "\n**Mentionable:** " + str(role.mentionable) +
-                    "\n**Position:** " + str(role.position) +
-                    "\n**Created:** " + role.created_at.strftime("%m-%d-%y %H:%M:%S") + " UTC" +
-                    "\n(" + time_delta_string(role.created_at, datetime.utcnow()) + " ago)"
+                "**Name:** " + role.name +
+                "\n**Mention:** " + role.mention +
+                "\n**Members:** " + str(len(role.members)) +
+                "\n**(R,G,B):** " + str(role.color.to_rgb()) +
+                "\n**Hoisted:** " + str(role.hoist) +
+                "\n**Mentionable:** " + str(role.mentionable) +
+                "\n**Position:** " + str(role.position) +
+                "\n**Created:** " + role.created_at.strftime("%m-%d-%y %H:%M:%S") + " UTC" +
+                "\n(" + time_delta_string(role.created_at, discord.utils.utcnow()) + " ago)"
             )
         )
 
@@ -183,7 +183,7 @@ class Information(commands.Cog):
             embed.description = embed.description[0:2047]
 
         embed.set_footer(text=str(role.id))
-        embed.timestamp = datetime.utcnow()
+        embed.timestamp = discord.utils.utcnow()
 
         return embed
 
@@ -195,8 +195,7 @@ class Information(commands.Cog):
         """
         embed = discord.Embed(
             description=(
-                    "[Avatar](" + str(user.avatar_url) + ")" +
-                    "\n**Mention:** <@" + str(user.id) + ">"
+                "[Avatar](" + str(user.display_avatar.url) + ")"
             )
         )
 
@@ -451,15 +450,15 @@ class Information(commands.Cog):
             name="Created",
             value=(
                     guild.created_at.strftime("%m-%d-%y %H:%M:%S") + " UTC" +
-                    "\n(" + time_delta_string(guild.created_at, datetime.utcnow()) + " ago)"
+                    "\n(" + time_delta_string(guild.created_at, discord.utils.utcnow()) + " ago)"
             ),
             inline=True
         )
         # Playing, Listening, Watching, Streaming ACTIVITIES
 
-        embed.set_thumbnail(url=guild.icon_url)
+        embed.set_thumbnail(url=guild.icon.url)
         embed.set_footer(text=str(guild.id))
-        embed.timestamp = datetime.utcnow()
+        embed.timestamp = discord.utils.utcnow()
 
         return embed
 
@@ -480,7 +479,7 @@ class Information(commands.Cog):
         )
 
         embed.set_footer(text=str(guild.id))
-        embed.timestamp = datetime.utcnow()
+        embed.timestamp = discord.utils.utcnow()
 
         return embed
 
@@ -507,25 +506,25 @@ class Information(commands.Cog):
                 embed = discord.Embed(
                     title="Unrecognized keyword",
                     colour=discord.Colour(0xbe4041),
-                    descrpition="Make sure you have the correct name/ID"
+                    description="Make sure you have the correct name/ID"
                 )
             except discord.NotFound:
                 embed = discord.Embed(
                     title="User not found",
                     colour=discord.Colour(0xbe4041),
-                    descrpition="Make sure you have the correct ID"
+                    description="Make sure you have the correct ID"
                 )
             except discord.HTTPException:
                 embed = discord.Embed(
                     title="HTTP Error",
                     colour=discord.Colour(0xbe4041),
-                    descrpition="Bot could not connect with the gateway"
+                    description="Bot could not connect with the gateway"
                 )
         else:
             embed = discord.Embed(
                 title="Unrecognized keyword",
                 colour=discord.Colour(0xbe4041),
-                descrpition="Make sure you have the correct name/ID"
+                description="Make sure you have the correct name/ID"
             )
 
         return embed

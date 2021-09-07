@@ -211,7 +211,7 @@ class Verification(commands.Cog):
     #             )
 
     @commands.Cog.listener()
-    async def on_member_update(self, before, after):
+    async def on_presence_update(self, before, after):
         """
         Changes perms based on whether a mod is online. Checks to see if a user needs to be given verification roles
 
@@ -224,6 +224,7 @@ class Verification(commands.Cog):
 
         # If a moderator has been updated
         if before.top_role.id == 576464175430238208 or before.top_role.id == 742118136458772551:
+
             moderators = Config.main_guild.get_role(742118136458772551).members
             for moderator in moderators:
                 # Check if a moderator is online on desktop
@@ -245,7 +246,7 @@ class Verification(commands.Cog):
                             embed.description = "Perms elevated for unverified users"
 
                             embed.set_footer(text="ID: " + str(after.guild.id))
-                            embed.timestamp = datetime.utcnow()
+                            embed.timestamp = discord.utils.utcnow()
 
                             await logging.send(embed=embed)
 
@@ -268,7 +269,7 @@ class Verification(commands.Cog):
                 embed.description = "Perms reduced for unverified users"
 
                 embed.set_footer(text="ID: " + str(after.guild.id))
-                embed.timestamp = datetime.utcnow()
+                embed.timestamp = discord.utils.utcnow()
 
                 await logging.send(embed=embed)
 

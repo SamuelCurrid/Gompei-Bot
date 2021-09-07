@@ -17,6 +17,9 @@ class Roles(commands.Cog):
         :param before: Member before
         :param after: Member after
         """
+        if not self.bot.is_ready():
+            return
+
         message = ""
 
         # Role checks

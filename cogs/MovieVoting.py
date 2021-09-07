@@ -248,7 +248,7 @@ class MovieVoting(commands.Cog):
                 count += 1
                 d = d + str(count) + ". " + title + "\n"
             embed = discord.Embed(title=h, description=d)
-            embed.set_thumbnail(url=ctx.message.author.avatar_url)
+            embed.set_thumbnail(url=ctx.message.author.display_avatar.url)
             await ctx.send(embed=embed)
         else:
             await ctx.send("You have not voted for any movies yet!")
