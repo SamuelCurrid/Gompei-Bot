@@ -19,6 +19,7 @@ class Information(commands.Cog):
                        discord.TextChannel,
                        discord.VoiceChannel,
                        discord.CategoryChannel,
+                       discord.Thread,
                        discord.Role,
                        discord.Emoji,
                        discord.PartialEmoji,
@@ -38,6 +39,7 @@ class Information(commands.Cog):
             discord.TextChannel: self.channel_info,
             discord.VoiceChannel: self.channel_info,
             discord.CategoryChannel: self.channel_info,
+            discord.Thread: self.thread_info,
             discord.Role: self.role_info,
             discord.Emoji: self.emoji_info,
             discord.PartialEmoji: self.emoji_info,
@@ -133,7 +135,33 @@ class Information(commands.Cog):
             embed.description = embed.description[0:2047]
 
         embed.set_footer(text=str(channel.id))
-        embed.timestamp = datetime.utcnow()
+        embed.timestamp = discord.utils.utcnow()
+
+        return embed
+
+    async def thread_info(self, thread: discord.Thread):
+        """
+        Dumps thread info into the embed
+
+        :param thread: Thread to gather info for
+        """
+        embed = discord.Embed(
+            title="Thread Info",
+            colour=discord.Colour(0x43b581),
+            description=(
+                "**Name:** " + thread.name +
+                "\n**Mention:** " + thread.mention +
+                "\n**Owner:** " + thread.owner.mention +
+                "\n**Members:** " + str(len(thread.members)) +
+                "\n**Category:** " + thread.category.name +
+                "\n**Archive Time:** " + time_delta_string(thread.archive_timestamp, discord.utils.utcnow()) +
+                "\n**Created:** " + discord.utils.snowflake_time(thread.id).strftime("%m-%d-%y %H:%M:%S") + " UTC" +
+                "\n(" + time_delta_string(discord.utils.snowflake_time(thread.id), discord.utils.utcnow()) + " ago)"
+            )
+        )
+
+        embed.set_footer(text=str(thread.id))
+        embed.timestamp = discord.utils.utcnow()
 
         return embed
 
@@ -200,6 +228,18 @@ class Information(commands.Cog):
         )
 
         if isinstance(user, discord.Member):
+            user_banner = await self.bot.fetch_user(user.id)
+        else:
+            user_banner = user
+
+        if user_banner.banner is not None:
+            embed.description += "\n[Banner](" + str(user_banner.banner.url) + ")"
+        if user_banner.accent_colour is not None:
+            embed.description += f"\nBanner Color: {str(user_banner.colour.to_rgb())}"
+
+        embed.description += "\n**Mention:** <@" + str(user.id) + ">"
+
+        if isinstance(user, discord.Member):
             embed.title = "Member info"
             embed.description += "\n**Display Name:** " + user.display_name
 
@@ -216,7 +256,7 @@ class Information(commands.Cog):
                 name="Created at",
                 value=(
                         user.created_at.strftime("%m-%d-%y %H:%M:%S") + " UTC" +
-                        "\n(" + time_delta_string(user.created_at, datetime.utcnow()) + " ago)"
+                        "\n(" + time_delta_string(user.created_at, discord.utils.utcnow()) + " ago)"
                 ),
                 inline=True
             )
@@ -224,7 +264,7 @@ class Information(commands.Cog):
                 name="Joined at",
                 value=(
                         user.joined_at.strftime("%m-%d-%y %H:%M:%S") + " UTC" +
-                        "\n(" + time_delta_string(user.joined_at, datetime.utcnow()) + " ago)"
+                        "\n(" + time_delta_string(user.joined_at, discord.utils.utcnow()) + " ago)"
                 ),
                 inline=True
             )
@@ -235,7 +275,7 @@ class Information(commands.Cog):
                 name="Created at",
                 value=(
                         user.created_at.strftime("%m-%d-%y %H:%M:%S") + " UTC" +
-                        "\n(" + time_delta_string(user.created_at, datetime.utcnow()) + " ago)"
+                        "\n(" + time_delta_string(user.created_at, discord.utils.utcnow()) + " ago)"
                 ),
                 inline=True
             )
@@ -243,9 +283,9 @@ class Information(commands.Cog):
         if len(embed.description) > 2048:
             embed.description = embed.description[0:2047]
 
-        embed.set_author(name=user.name + "#" + user.discriminator, icon_url=user.avatar_url)
+        embed.set_author(name=user.name + "#" + user.discriminator, icon_url=user.display_avatar.url)
         embed.set_footer(text=str(user.id))
-        embed.timestamp = datetime.utcnow()
+        embed.timestamp = discord.utils.utcnow()
 
         return embed
 
@@ -272,10 +312,10 @@ class Information(commands.Cog):
         if isinstance(emoji, discord.Emoji):
             embed.description += "\n**Available:** " + str(emoji.available)
             embed.description += "\n**Created at:** " + emoji.created_at.strftime("%m-%d-%y %H:%M:%S") + " UTC" + \
-                                 "\n(" + time_delta_string(emoji.created_at, datetime.utcnow()) + " ago)"
+                                 "\n(" + time_delta_string(emoji.created_at, discord.utils.utcnow()) + " ago)"
 
         embed.set_footer(text=str(emoji.id))
-        embed.timestamp = datetime.utcnow()
+        embed.timestamp = discord.utils.utcnow()
 
         return embed
 
@@ -304,13 +344,13 @@ class Information(commands.Cog):
             )
         )
 
-        resource_values = "[Icon](" + str(guild.icon_url) + ")"
+        resource_values = "[Icon](" + str(guild.icon.url) + ")"
         if guild.banner is not None:
-            resource_values += "\n[Banner](" + str(guild.banner_url) + ")"
+            resource_values += "\n[Banner](" + str(guild.banner.url) + ")"
         if guild.splash is not None:
-            resource_values += "\n[Splash](" + str(guild.splash_url) + ")"
+            resource_values += "\n[Splash](" + str(guild.splash.url) + ")"
         if guild.discovery_splash is not None:
-            resource_values += "\n[Discovery Splash](" + str(guild.discovery_splash_url) + ")"
+            resource_values += "\n[Discovery Splash](" + str(guild.discovery_splash.url) + ")"
 
         feature_values = ""
         for feature in guild.features:
