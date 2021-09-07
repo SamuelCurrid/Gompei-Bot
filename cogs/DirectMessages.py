@@ -212,11 +212,35 @@ class DirectMessages(commands.Cog):
     async def on_message(self, message):
         """
         Forwards DM messages to the DM channel
+        Checks for replies to DMs in the DM channel
 
         :param message: message
         """
         if Config.dm_channel is not None:
             if not message.author.bot:
+
+                # If a DM channel reply
+                if message.channel is Config.dm_channel and message.reference is not None:
+                    # Check to see if in response to a bot message
+                    reference = await Config.dm_channel.fetch_message(message.reference.message_id)
+                    if reference.author == self.bot.user and len(reference.embeds) > 0:
+                        user_id = int(reference.embeds[0].footer.text)
+
+                        user = message.guild.get_member(user_id)
+                        if user is None:
+                            try:
+                                user = await self.bot.fetch_user(user)
+                            except ValueError:
+                                await ctx.send("Did not find the user")
+                                return
+
+                        dm_channel = user.dm_channel
+                        if dm_channel is None:
+                            dm_channel = await user.create_dm()
+
+                        ctx = await self.bot.get_context(message)
+
+                        await self.echo_pm(ctx, user, msg=message.content)
 
                 context = await self.bot.get_context(message)
                 if context.valid:  # If a valid command do not send to DM channel
@@ -224,6 +248,7 @@ class DirectMessages(commands.Cog):
 
                 if isinstance(message.channel, discord.channel.DMChannel) and Config.dm_channel is not None:
                     files = []
+                    stickers = []
                     urls = " "
                     if len(message.attachments) > 0:
                         for attachment in message.attachments:
@@ -232,20 +257,28 @@ class DirectMessages(commands.Cog):
                             else:
                                 files.append(await attachment.to_file())
 
+
+                    if len(message.stickers) > 0:
+                        for sticker in message.stickers:
+                            stickers.append(sticker)
+
                     description = ""
                     if len(message.content) > 0:
                         description += message.content + "\n\n"
                     if len(files) > 0 or len(urls) > 1:
                         description += "**<File(s) Attached>** "
 
-                    embed = discord.Embed(description=description, timestamp=discord.utils.utcnow())
+                    embed = discord.Embed(description=description, timestamp=datetime.utcnow())
                     embed.set_author(
                         name="DM from " + message.author.name + "#" + message.author.discriminator,
-                        icon_url=message.author.avatar.url
+                        icon_url=message.author.display_avatar.url
                     )
                     embed.set_footer(text=message.author.id)
-                    embed.timestamp = discord.utils.utcnow()
-                    await Config.dm_channel.send(urls, embed=embed, files=files)
+                    embed.timestamp = datetime.utcnow()
+                    try:
+                        await Config.dm_channel.send(urls, embed=embed, files=files, stickers=stickers)
+                    except discord.Forbidden:
+                        await Config.dm_channel.send(urls + "\n\nSticker attached but not available to bot", embed=embed, files=files)
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):

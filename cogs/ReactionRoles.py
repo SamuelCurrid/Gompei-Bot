@@ -294,7 +294,7 @@ class ReactionRoles(commands.Cog):
                             embed = discord.Embed(title="Server closed", color=0xbe4041)
                             embed.set_author(
                                 name=payload.member.name + "#" + payload.member.discriminator,
-                                icon_url=payload.member.avatar.url
+                                icon_url=payload.member.display_avatar.url
                             )
 
                             embed.description = "<@" + str(payload.member.id) + \

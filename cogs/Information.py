@@ -19,6 +19,7 @@ class Information(commands.Cog):
                        discord.TextChannel,
                        discord.VoiceChannel,
                        discord.CategoryChannel,
+                       discord.Thread,
                        discord.Role,
                        discord.Emoji,
                        discord.PartialEmoji,
@@ -38,6 +39,7 @@ class Information(commands.Cog):
             discord.TextChannel: self.channel_info,
             discord.VoiceChannel: self.channel_info,
             discord.CategoryChannel: self.channel_info,
+            discord.Thread: self.thread_info,
             discord.Role: self.role_info,
             discord.Emoji: self.emoji_info,
             discord.PartialEmoji: self.emoji_info,
@@ -137,6 +139,32 @@ class Information(commands.Cog):
 
         return embed
 
+    async def thread_info(self, thread: discord.Thread):
+        """
+        Dumps thread info into the embed
+
+        :param thread: Thread to gather info for
+        """
+        embed = discord.Embed(
+            title="Thread Info",
+            colour=discord.Colour(0x43b581),
+            description=(
+                "**Name:** " + thread.name +
+                "\n**Mention:** " + thread.mention +
+                "\n**Owner:** " + thread.owner.mention +
+                "\n**Members:** " + str(len(thread.members)) +
+                "\n**Category:** " + thread.category.name +
+                "\n**Archive Time:** " + time_delta_string(thread.archive_timestamp, discord.utils.utcnow()) +
+                "\n**Created:** " + discord.utils.snowflake_time(thread.id).strftime("%m-%d-%y %H:%M:%S") + " UTC" +
+                "\n(" + time_delta_string(discord.utils.snowflake_time(thread.id), discord.utils.utcnow()) + " ago)"
+            )
+        )
+
+        embed.set_footer(text=str(thread.id))
+        embed.timestamp = discord.utils.utcnow()
+
+        return embed
+
     async def role_info(self, role: discord.Role):
         """
         Dumps role info into the embed
@@ -147,15 +175,15 @@ class Information(commands.Cog):
             title="Role Info",
             colour=role.colour,
             description=(
-                    "**Name:** " + role.name +
-                    "\n**Mention:** " + role.mention +
-                    "\n**Members:** " + str(len(role.members)) +
-                    "\n**(R,G,B):** " + str(role.color.to_rgb()) +
-                    "\n**Hoisted:** " + str(role.hoist) +
-                    "\n**Mentionable:** " + str(role.mentionable) +
-                    "\n**Position:** " + str(role.position) +
-                    "\n**Created:** " + role.created_at.strftime("%m-%d-%y %H:%M:%S") + " UTC" +
-                    "\n(" + time_delta_string(role.created_at, discord.utils.utcnow()) + " ago)"
+                "**Name:** " + role.name +
+                "\n**Mention:** " + role.mention +
+                "\n**Members:** " + str(len(role.members)) +
+                "\n**(R,G,B):** " + str(role.color.to_rgb()) +
+                "\n**Hoisted:** " + str(role.hoist) +
+                "\n**Mentionable:** " + str(role.mentionable) +
+                "\n**Position:** " + str(role.position) +
+                "\n**Created:** " + role.created_at.strftime("%m-%d-%y %H:%M:%S") + " UTC" +
+                "\n(" + time_delta_string(role.created_at, discord.utils.utcnow()) + " ago)"
             )
         )
 
@@ -195,10 +223,21 @@ class Information(commands.Cog):
         """
         embed = discord.Embed(
             description=(
-                    "[Avatar](" + str(user.avatar.url) + ")" +
-                    "\n**Mention:** <@" + str(user.id) + ">"
+                "[Avatar](" + str(user.display_avatar.url) + ")"
             )
         )
+
+        if isinstance(user, discord.Member):
+            user_banner = await self.bot.fetch_user(user.id)
+        else:
+            user_banner = user
+
+        if user_banner.banner is not None:
+            embed.description += "\n[Banner](" + str(user_banner.banner.url) + ")"
+        if user_banner.accent_colour is not None:
+            embed.description += f"\nBanner Color: {str(user_banner.colour.to_rgb())}"
+
+        embed.description += "\n**Mention:** <@" + str(user.id) + ">"
 
         if isinstance(user, discord.Member):
             embed.title = "Member info"
@@ -244,7 +283,7 @@ class Information(commands.Cog):
         if len(embed.description) > 2048:
             embed.description = embed.description[0:2047]
 
-        embed.set_author(name=user.name + "#" + user.discriminator, icon_url=user.avatar.url)
+        embed.set_author(name=user.name + "#" + user.discriminator, icon_url=user.display_avatar.url)
         embed.set_footer(text=str(user.id))
         embed.timestamp = discord.utils.utcnow()
 
@@ -305,13 +344,13 @@ class Information(commands.Cog):
             )
         )
 
-        resource_values = "[Icon](" + str(guild.icon_url) + ")"
+        resource_values = "[Icon](" + str(guild.icon.url) + ")"
         if guild.banner is not None:
-            resource_values += "\n[Banner](" + str(guild.banner_url) + ")"
+            resource_values += "\n[Banner](" + str(guild.banner.url) + ")"
         if guild.splash is not None:
-            resource_values += "\n[Splash](" + str(guild.splash_url) + ")"
+            resource_values += "\n[Splash](" + str(guild.splash.url) + ")"
         if guild.discovery_splash is not None:
-            resource_values += "\n[Discovery Splash](" + str(guild.discovery_splash_url) + ")"
+            resource_values += "\n[Discovery Splash](" + str(guild.discovery_splash.url) + ")"
 
         feature_values = ""
         for feature in guild.features:
@@ -457,7 +496,7 @@ class Information(commands.Cog):
         )
         # Playing, Listening, Watching, Streaming ACTIVITIES
 
-        embed.set_thumbnail(url=guild.icon_url)
+        embed.set_thumbnail(url=guild.icon.url)
         embed.set_footer(text=str(guild.id))
         embed.timestamp = discord.utils.utcnow()
 
@@ -507,25 +546,25 @@ class Information(commands.Cog):
                 embed = discord.Embed(
                     title="Unrecognized keyword",
                     colour=discord.Colour(0xbe4041),
-                    descrpition="Make sure you have the correct name/ID"
+                    description="Make sure you have the correct name/ID"
                 )
             except discord.NotFound:
                 embed = discord.Embed(
                     title="User not found",
                     colour=discord.Colour(0xbe4041),
-                    descrpition="Make sure you have the correct ID"
+                    description="Make sure you have the correct ID"
                 )
             except discord.HTTPException:
                 embed = discord.Embed(
                     title="HTTP Error",
                     colour=discord.Colour(0xbe4041),
-                    descrpition="Bot could not connect with the gateway"
+                    description="Bot could not connect with the gateway"
                 )
         else:
             embed = discord.Embed(
                 title="Unrecognized keyword",
                 colour=discord.Colour(0xbe4041),
-                descrpition="Make sure you have the correct name/ID"
+                description="Make sure you have the correct name/ID"
             )
 
         return embed

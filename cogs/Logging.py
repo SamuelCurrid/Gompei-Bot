@@ -234,7 +234,7 @@ class Logging(commands.Cog):
 
                 embed.set_author(
                     name=message.author.name + "#" + message.author.discriminator,
-                    icon_url=message.author.avatar.url
+                    icon_url=message.author.display_avatar.url
                 )
                 embed.set_footer(text="ID: " + str(message.author.id))
                 embed.timestamp = discord.utils.utcnow()
@@ -354,7 +354,7 @@ class Logging(commands.Cog):
 
                     embed.set_author(
                         name=before.author.name + "#" + before.author.discriminator,
-                        icon_url=before.author.avatar.url
+                        icon_url=before.author.display_avatar.url
                     )
                     embed.set_footer(text="ID: " + str(before.author.id))
                     embed.timestamp = discord.utils.utcnow()
@@ -377,7 +377,7 @@ class Logging(commands.Cog):
 
                     embed.set_author(
                         name=before.author.name + "#" + before.author.discriminator,
-                        icon_url=before.author.avatar.url
+                        icon_url=before.author.display_avatar.url
                     )
                     embed.set_footer(text="ID: " + str(before.author.id))
                     embed.timestamp = discord.utils.utcnow()
@@ -399,7 +399,7 @@ class Logging(commands.Cog):
 
             if Config.guilds[guild]["logging"]["overwrite_channels"]["message"] is not None and \
                     payload.cached_message is None:
-                channel = Config.guild.get_channel(payload.channel_id)
+                channel = guild.get_channel(payload.channel_id)
                 # If a dm message
                 if channel is None:
                     return
@@ -417,7 +417,7 @@ class Logging(commands.Cog):
 
                     embed.set_author(
                         name=message.author.name + "#" + message.author.discriminator,
-                        icon_url=message.author.avatar.url
+                        icon_url=message.author.display_avatar.url
                     )
                     embed.set_footer(text="ID: " + str(message.author.id))
                     embed.timestamp = discord.utils.utcnow()
@@ -734,7 +734,7 @@ class Logging(commands.Cog):
                         )
                     )
 
-                    embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar.url)
+                    embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.display_avatar.url)
                     embed.set_footer(text="ID: " + str(member.id))
                     embed.timestamp = discord.utils.utcnow()
 
@@ -755,7 +755,7 @@ class Logging(commands.Cog):
                     )
                 )
 
-                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar.url)
+                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.display_avatar.url)
                 embed.set_footer(text="ID: " + str(member.id))
                 embed.timestamp = discord.utils.utcnow()
 
@@ -772,7 +772,7 @@ class Logging(commands.Cog):
         """
         if Config.guilds[member.guild]["logging"]["overwrite_channels"]["member_tracking"] is not None:
             embed = discord.Embed(colour=discord.Colour(0xbe4041))
-            embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar.url)
+            embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.display_avatar.url)
 
             join_delta = time_delta_string(member.joined_at, discord.utils.utcnow())
             roles = ""
@@ -847,7 +847,7 @@ class Logging(commands.Cog):
 
             # Reset embed
             embed = discord.Embed()
-            embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar.url)
+            embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.display_avatar.url)
 
             if len(added_roles) > 0:
 
@@ -943,7 +943,7 @@ class Logging(commands.Cog):
                 if before != entries[0].user:
                     embed.description += "\n\nEdited by <@" + str(entries[0].user.id) + ">"
 
-            embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar.url)
+            embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.display_avatar.url)
             embed.set_footer(text="ID: " + str(after.id))
             embed.timestamp = discord.utils.utcnow()
 
@@ -1052,7 +1052,7 @@ class Logging(commands.Cog):
             if status_after != "":
                 Config.save_statuses(self.statuses)
                 embed.description = "**Before:** " + status_before + "\n**+After:** " + status_after + "\n\n" + links
-                embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar.url)
+                embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.display_avatar.url)
                 embed.set_footer(text="ID: " + str(after.id))
                 embed.timestamp = discord.utils.utcnow()
 
@@ -1072,7 +1072,7 @@ class Logging(commands.Cog):
                     if before.name != after.name:
                         embed = discord.Embed()
                         embed.colour = discord.Colour(0x8899d4)
-                        embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar.url)
+                        embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.display_avatar.url)
                         embed.title = "Name change"
                         embed.description = "**Before:** " + before.name + "\n**+After:** " + after.name
                         embed.set_footer(text="ID: " + str(after.id))
@@ -1084,7 +1084,7 @@ class Logging(commands.Cog):
                     if before.discriminator != after.discriminator:
                         embed = discord.Embed()
                         embed.colour = discord.Colour(0x8899d4)
-                        embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar.url)
+                        embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.display_avatar.url)
                         embed.title = "Discriminator update"
                         embed.description = "**Before:** " + before.discriminator + \
                                             "\n**+After:** " + after.discriminator
@@ -1093,14 +1093,14 @@ class Logging(commands.Cog):
 
                         await self.send_embed(embed, Config.guilds[guild]["logging"]["overwrite_channels"]["member"])
 
-                    # Check for avatar update
+                    # Check for avatar / banner update
                     if Config.guilds[guild]["logging"]["overwrite_channels"]["avatar"] is not None:
                         if before.avatar != after.avatar:
                             embed = discord.Embed()
                             embed.colour = discord.Colour(0x8899d4)
-                            embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar.url)
+                            embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.display_avatar.url)
                             embed.title = "Avatar update"
-                            embed.set_image(url=after.avatar.url)
+                            embed.set_image(url=after.display_avatar.url)
                             embed.description = "<@" + str(after.id) + ">"
 
                             embed.set_footer(text="ID: " + str(after.id))
@@ -1110,6 +1110,23 @@ class Logging(commands.Cog):
                                 embed,
                                 Config.guilds[guild]["logging"]["overwrite_channels"]["avatar"]
                             )
+                        if before.banner != after.banner:
+                            if after.banner is not None:
+                                embed = discord.Embed()
+                                embed.colour = discord.Colour(0x8899d4)
+                                embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.display_avatar.url)
+                                embed.title = "Banner update"
+                                embed.set_image(url=after.banner.url)
+                                embed.description = "<@" + str(after.id) + ">"
+
+                                embed.set_footer(text="ID: " + str(after.id))
+                                embed.timestamp = discord.utils.utcnow()
+
+                                await self.send_embed(
+                                    embed,
+                                    Config.guilds[guild]["logging"]["overwrite_channels"]["avatar"]
+                                )
+
 
     @commands.Cog.listener()
     async def on_guild_update(self, before, after):
@@ -1496,7 +1513,7 @@ class Logging(commands.Cog):
                         f"**Private:** {thread.is_private()}\n\n"
                         f"**Created by:** {thread.owner.mention}"
         )
-        embed.set_author(name=thread.owner.name + "#" + thread.owner.discriminator, icon_url=thread.owner.avatar.url)
+        embed.set_author(name=thread.owner.name + "#" + thread.owner.discriminator, icon_url=thread.owner.display_avatar.url)
         embed.set_footer(text="ID: " + str(thread.id))
         embed.timestamp = discord.utils.utcnow()
 
@@ -1554,7 +1571,7 @@ class Logging(commands.Cog):
             colour=discord.Colour(0x43b581),
             description=f"**Thread:** {member.thread.mention}\n"
         )
-        embed.set_author(name=guild_member.name + "#" + guild_member.discriminator, icon_url=guild_member.avatar.url)
+        embed.set_author(name=guild_member.name + "#" + guild_member.discriminator, icon_url=guild_member.display_avatar.url)
         embed.set_footer(text="ID: " + str(member.id))
         embed.timestamp = discord.utils.utcnow()
 
@@ -1577,7 +1594,7 @@ class Logging(commands.Cog):
             colour=discord.Colour(0xbe4041),
             description=f"**Thread:** {member.thread.mention}\n"
         )
-        embed.set_author(name=guild_member.name + "#" + guild_member.discriminator, icon_url=guild_member.avatar.url)
+        embed.set_author(name=guild_member.name + "#" + guild_member.discriminator, icon_url=guild_member.display_avatar.url)
         embed.set_footer(text="ID: " + str(member.id))
         embed.timestamp = discord.utils.utcnow()
 
@@ -1961,7 +1978,7 @@ class Logging(commands.Cog):
                     description=description
                 )
 
-                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar.url)
+                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.display_avatar.url)
                 embed.set_footer(text="ID: " + str(member.id))
                 embed.timestamp = discord.utils.utcnow()
 
@@ -1992,7 +2009,7 @@ class Logging(commands.Cog):
                     description="**" + member.display_name + "** streaming in " + after.channel.mention
                 )
 
-                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar.url)
+                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.display_avatar.url)
                 embed.set_footer(text="ID: " + str(member.id))
                 embed.timestamp = discord.utils.utcnow()
 
@@ -2012,7 +2029,7 @@ class Logging(commands.Cog):
                     description="**" + member.display_name + "** video in " + after.channel.mention
                 )
 
-                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar.url)
+                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.display_avatar.url)
                 embed.set_footer(text="ID: " + str(member.id))
                 embed.timestamp = discord.utils.utcnow()
 
@@ -2034,7 +2051,7 @@ class Logging(commands.Cog):
                     description=description
                 )
 
-                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar.url)
+                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.display_avatar.url)
                 embed.set_footer(text="ID: " + str(member.id))
                 embed.timestamp = discord.utils.utcnow()
 
@@ -2056,7 +2073,7 @@ class Logging(commands.Cog):
                     description=description
                 )
 
-                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar.url)
+                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.display_avatar.url)
                 embed.set_footer(text="ID: " + str(member.id))
                 embed.timestamp = discord.utils.utcnow()
 
@@ -2081,7 +2098,7 @@ class Logging(commands.Cog):
             if entries[0].reason is not None:
                 embed.description += "\n**Reason:** " + entries[0].reason
 
-            embed.set_author(name=user.name + "#" + user.discriminator, icon_url=user.avatar.url)
+            embed.set_author(name=user.name + "#" + user.discriminator, icon_url=user.display_avatar.url)
             embed.set_footer(text="ID: " + str(user.id))
             embed.timestamp = discord.utils.utcnow()
 
@@ -2101,7 +2118,7 @@ class Logging(commands.Cog):
                 description="<@" + str(user.id) + ">"
             )
 
-            embed.set_author(name=user.name + "#" + user.discriminator, icon_url=user.avatar.url)
+            embed.set_author(name=user.name + "#" + user.discriminator, icon_url=user.display_avatar.url)
             embed.set_footer(text="ID: " + str(user.id))
             embed.timestamp = discord.utils.utcnow()
 
@@ -2202,6 +2219,7 @@ class Logging(commands.Cog):
                 await channel.send(embed=embed)
         else:
             await channel.send(embed=embed)
+
 
 def setup(bot):
     bot.add_cog(Logging(bot))
