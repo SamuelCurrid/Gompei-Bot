@@ -38,6 +38,13 @@ class Roles(commands.Cog):
 
         # WPI Specific checks
         if after.guild is not Config.main_guild:
+            if Config.guilds[after.guild]["verifications"]["wpi_role"] is not None:
+                if after.id in Config.guilds[Config.main_guild]["verifications"]["wpi"].values():
+                    if Config.guilds[after.guild]["verifications"]["wpi_role"] not in after.roles:
+                        await after.add_roles(
+                            Config.guilds[after.guild]["verifications"]["wpi_role"],
+                            reason="Verified!"
+                        )
             return
 
         class_roles = [
@@ -61,10 +68,6 @@ class Roles(commands.Cog):
                 if any(item in after.roles for item in class_roles):
                     final_roles.append(Config.guilds[Config.main_guild]["verifications"]["wpi_role"])
                     reasons += "Picked up class role, previously verified\n"
-                    # await after.add_roles(
-                    #     Config.guilds[Config.main_guild]["verifications"]["wpi_role"],
-                    #     reason="Picked up class role, previously verified"
-                    # )
             else:
                 for role in after.roles:
                     if role in class_roles:
@@ -72,10 +75,6 @@ class Roles(commands.Cog):
                 else:
                     final_roles.remove(Config.guilds[Config.main_guild]["verifications"]["wpi_role"])
                     reasons += "Removed class role\n"
-                    # await after.remove_roles(
-                    #     Config.guilds[Config.main_guild]["verifications"]["wpi_role"],
-                    #     reason="Removed class role"
-                    # )
                     message += f"**The Verified WPI role has been removed because you no longer have a class role.** " \
                                f"Don't worry - you can get it back again by picking up a class role.\n"
 
@@ -86,10 +85,6 @@ class Roles(commands.Cog):
                     if any(item in after.roles for item in Config.guilds[after.guild]["access_roles"]):
                         final_roles.append(Config.guilds[after.guild]["verifications"]["member_role"])
                         reasons += "Picked up access role, previously earned member\n"
-                        # await after.add_roles(
-                        #     Config.guilds[after.guild]["verifications"]["member_role"],
-                        #     reason="Picked up access role, previously earned member"
-                        # )
                 else:
                     for role in after.roles:
                         if role in Config.guilds[after.guild]["access_roles"]:
@@ -236,6 +231,34 @@ class Roles(commands.Cog):
         else:
             Config.remove_opt_in_roles(roles)
             await ctx.send("Successfully removed roles")
+
+    @commands.command(pass_context=True, aliases=["forceVerificationCheck"])
+    @commands.check(administrator_perms)
+    @commands.guild_only()
+    async def force_verification_check(self, ctx):
+        if Config.guilds[ctx.guild]["verifications"]["wpi_role"] is not None:
+            count = 0
+            failed = []
+            for member in ctx.guild.members:
+
+                if member.id in Config.guilds[Config.main_guild]["verifications"]["wpi"].values():
+                    if Config.guilds[member.guild]["verifications"]["wpi_role"] not in member.roles:
+                        try:
+                            await member.add_roles(
+                                Config.guilds[ctx.guild]["verifications"]["wpi_role"],
+                                reason="Verified!"
+                            )
+                        except discord.Forbidden:
+                            failed.append(member)
+
+                        count += 1
+
+            await ctx.send(f"Checked {len(ctx.guild.members)} and verified {count} members")
+
+            if len(failed) > 0:
+                await ctx.send(f"Failed to give role to {' '.join([x.mention for x in failed])}")
+        else:
+            await ctx.send("No verification role is set for this guild. Use `.wpiRole` to set it")
 
 
 def setup(bot):

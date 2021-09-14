@@ -50,6 +50,17 @@ class Verification(commands.Cog):
                     await member.send("You are now verified in the WPI Discord Server!")
                 except discord.Forbidden:
                     print(f"Couldn't send verification message to {member.display_name} due to having locked their DMs")
+
+                for guild in self.bot.guilds:
+                    if Config.guilds[guild]["verifications"]["wpi_role"] is not None:
+                        if guild.get_member(user_id) is not None:
+                            try:
+                                await member.add_roles(
+                                    Config.guilds[guild]["verifications"]["wpi_role"],
+                                    reason="Verified!"
+                                )
+                            except discord.Forbidden:
+                                pass
             else:
                 try:
                     await member.send(
