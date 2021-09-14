@@ -19,6 +19,7 @@ class Verification(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.verification_check.start()
+        self.uptime_thread = None
 
     @tasks.loop(seconds=5.0)
     async def verification_check(self):
@@ -235,12 +236,23 @@ class Verification(commands.Cog):
                         perms.add_reactions = perms.embed_links = perms.attach_files = perms.stream = True
                         await before.guild.default_role.edit(permissions=perms, reason="Moderators are online")
 
-                        logging = Config.guilds[before.guild]["logging"]["overwrite_channels"]["mod"]
-
-                        if logging is None:
-                            logging = Config.guilds[before.guild]["logging"]["channel"]
+                        logging = Config.mod_uptime_thread
 
                         if logging is not None:
+                            if Config.mod_uptime_thread is None:
+                                Config.set_mod_uptime_thread(
+                                    await logging.create_thread(
+                                        name="Moderator Uptime",
+                                        auto_archive_duration=1440,
+                                        type=discord.ChannelType.public_thread
+                                    )
+                                )
+
+                            if Config.mod_uptime_thread.archived:
+                                await Config.mod_uptime_thread.edit(
+                                    auto_archive_duration=1440
+                                )
+
                             embed = discord.Embed(title="Moderators Online", color=0x43b581)
 
                             embed.description = "Perms elevated for unverified users"
@@ -258,10 +270,22 @@ class Verification(commands.Cog):
                 perms.add_reactions = perms.embed_links = perms.attach_files = perms.stream = False
                 await before.guild.default_role.edit(permissions=perms, reason="Moderators are not online")
 
-                logging = Config.guilds[before.guild]["logging"]["overwrite_channels"]["mod"]
+                logging = Config.mod_uptime_thread
 
-                if logging is None:
-                    logging = Config.guilds[before.guild]["logging"]["channel"]
+                if logging is not None:
+                    if Config.mod_uptime_thread is None:
+                        Config.set_mod_uptime_thread(
+                            await logging.create_thread(
+                                name="Moderator Uptime",
+                                auto_archive_duration=1440,
+                                type=discord.ChannelType.public_thread
+                            )
+                        )
+
+                    if Config.mod_uptime_thread.archived:
+                        await Config.mod_uptime_thread.edit(
+                            auto_archive_duration=1440
+                        )
 
                 if logging is not None:
                     embed = discord.Embed(title="Moderators Offline", color=0xbe4041)

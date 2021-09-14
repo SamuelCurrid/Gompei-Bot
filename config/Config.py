@@ -14,6 +14,7 @@ close_time = None
 dm_channel = None
 lockouts = {}
 main_guild = None
+mod_uptime_thread = None
 prefix = "."
 raw_settings = None
 status = None
@@ -40,9 +41,6 @@ async def load_settings():
     if raw_settings["close_time"] is not None:
         close_time = datetime.strptime(raw_settings["close_time"], "%Y-%m-%d %H:%M:%S")
 
-    if main_guild is not None:
-        await update_main_guild_settings()
-
     status = raw_settings["status"]
     if status is not None:
         await client.change_presence(activity=discord.Game(name=status))
@@ -52,6 +50,9 @@ async def load_settings():
             await update_guild_settings(guild)
         else:
             add_guild(guild)
+
+    if main_guild is not None:
+        await update_main_guild_settings()
 
 
 async def set_main_guild(new_guild: discord.Guild):
@@ -74,7 +75,7 @@ async def update_main_guild_settings():
     """
     Updates guild settings for the currently selected guild
     """
-    global dm_channel, lockouts, main_guild
+    global dm_channel, guilds, lockouts, main_guild, mod_uptime_thread
 
     dm_channel = main_guild.get_channel(raw_settings["dm_channel_id"])
 
@@ -92,6 +93,18 @@ async def update_main_guild_settings():
                 roles.append(role)
 
         lockouts[member] = roles
+
+    if raw_settings["mod_uptime_thread"] is not None:
+        mod_uptime_thread = main_guild.get_thread(raw_settings["mod_uptime_thread"])
+
+        if mod_uptime_thread is None:
+            async for thread in guilds[main_guild]["logging"]["mod"].archived_threads:
+                if thread.id == raw_settings["mod_uptime_thread"]:
+                    mod_uptime_thread = thread
+                    break
+
+
+
 
 
 async def update_guild_settings(guild: discord.Guild):
@@ -248,12 +261,15 @@ async def update_guild_settings(guild: discord.Guild):
         else:
             guilds[guild]["logging"]["invites"][invite]["note"] = None
 
-    vanity_url = await guild.vanity_invite()
-    if vanity_url is not None:
+    try:
+        vanity_url = await guild.vanity_invite()
+
         guilds[guild]["logging"]["invites"][vanity_url] = {
             "invite_id": None,
             "uses": invite.uses
         }
+    except discord.Forbidden:
+        pass
 
     # Administration
     for user_id in raw_settings["guilds"][str(guild.id)]["administration"]["mutes"]:
@@ -1391,3 +1407,18 @@ def save_highlights(highlights):
     Saves highlight to a pickle
     """
     pickle.dump(highlights, open(os.path.join("config", "highlights.p"), "wb+"))
+
+def set_mod_uptime_thread(thread: discord.Thread):
+    """
+    Saves the mod uptime thread
+
+    :param thread: Thread to save
+    """
+    global mod_uptime_thread, raw_settings
+
+    mod_uptime_thread = thread
+    raw_settings["mod_uptime_thread"] = thread.id
+
+    save_json(os.path.join("config", "settings.json"), raw_settings)
+
+

@@ -744,8 +744,9 @@ class Logging(commands.Cog):
                     )
                     break
             else:
-                vanity_url = await member.guild.vanity_invite()
-                if vanity_url is not None:
+                try:
+                    vanity_url = await member.guild.vanity_invite()
+
                     if vanity_url not in Config.guilds[member.guild]["logging"]["invites"]:
                         Config.add_invite(vanity_url)
                         creation_delta = time_delta_string(member.created_at, discord.utils.utcnow())
@@ -776,7 +777,8 @@ class Logging(commands.Cog):
                             )
                         )
 
-                        embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.display_avatar.url)
+                        embed.set_author(name=member.name + "#" + member.discriminator,
+                                         icon_url=member.display_avatar.url)
                         embed.set_footer(text="ID: " + str(member.id))
                         embed.timestamp = discord.utils.utcnow()
                     else:
@@ -795,6 +797,23 @@ class Logging(commands.Cog):
                                          icon_url=member.display_avatar.url)
                         embed.set_footer(text="ID: " + str(member.id))
                         embed.timestamp = discord.utils.utcnow()
+
+                except discord.Forbidden:
+                    creation_delta = time_delta_string(member.created_at, discord.utils.utcnow())
+
+                    embed = discord.Embed(
+                        title="Member joined",
+                        colour=discord.Colour(0x43b581),
+                        description=(
+                                "<@" + str(member.id) + "> " + make_ordinal(member.guild.member_count) +
+                                " to join\ncreated " + creation_delta + " ago\n\nUsed a discovery invite"
+                        )
+                    )
+
+                    embed.set_author(name=member.name + "#" + member.discriminator,
+                                     icon_url=member.display_avatar.url)
+                    embed.set_footer(text="ID: " + str(member.id))
+                    embed.timestamp = discord.utils.utcnow()
 
                 await self.send_embed(
                     embed,

@@ -1,10 +1,11 @@
 {
-    "dm_channel_id": 746002454180528219,
+    "dm_channel_id": null,
     "close_time": null,
     "lockouts": {},
     "status": null,
     "prefix": ".",
-    "main_guild": 567169726250352640,
+    "main_guild": null,
+    "mod_uptime_thread": null,
     "verifications": {"role": null, "users": {}},
     "guilds": {}
 }
