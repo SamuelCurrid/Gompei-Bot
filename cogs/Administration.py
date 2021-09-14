@@ -543,10 +543,14 @@ class Administration(commands.Cog):
         await ctx.send("**Muted** user **" + username + "** for **" + mute_time + "** for: **" + reason + "**")
         if Config.guilds[ctx.guild]["logging"]["overwrite_channels"]["mod"] is not None:
             await Config.guilds[ctx.guild]["logging"]["overwrite_channels"]["mod"].send(embed=mute_embed)
-        await member.send(
-            "**You were muted in the " + ctx.guild.name + " for " + mute_time + ". Reason:**\n> " +
-            reason + "\n\nYou can respond here to contact staff."
-        )
+
+        try:
+            await member.send(
+                "**You were muted in the " + ctx.guild.name + " for " + mute_time + ". Reason:**\n> " +
+                reason + "\n\nYou can respond here to contact staff."
+            )
+        except discord.Forbidden:
+            await ctx.send(f"Couldn't send mute message to {member.display_name} due to having locked their DMs")
 
         await self.mute_helper(member, seconds, muted_role)
 
@@ -589,7 +593,10 @@ class Administration(commands.Cog):
                 attachments.append(await i.to_file())
 
         if len(reason) > 0:
-            await member.send("You were warned in the " + ctx.guild.name + ". Reason:\n> " + reason, files=attachments)
+            try:
+                await member.send("You were warned in the " + ctx.guild.name + ". Reason:\n> " + reason, files=attachments)
+            except discord.Forbidden:
+                await ctx.send(f"Couldn't send warn message to {member.display_name} due to having locked their DMs")
         else:
             await ctx.send("No warning to send")
             return
@@ -801,10 +808,13 @@ class Administration(commands.Cog):
         else:
             await member.edit(roles=[Config[ctx.guild]["nitro_role"]])
 
-        await member.send(
-            "You have been locked out of the server for " + jail_time + ". Reason:\n> " + reason +
-            "\n\nYou can respond here to contact staff."
-        )
+        try:
+            await member.send(
+                "You have been locked out of the server for " + jail_time + ". Reason:\n> " + reason +
+                "\n\nYou can respond here to contact staff."
+            )
+        except discord.Forbidden:
+            await ctx.send(f"Couldn't send jail message to {member.display_name} due to having locked their DMs")
 
         if Config.guilds[ctx.guild]["logging"]["overwrite_channels"]["mod"] is not None:
             await Config.guilds[ctx.guild]["logging"]["overwrite_channels"]["mod"].send(embed=jail_embed)
@@ -873,7 +883,10 @@ class Administration(commands.Cog):
         if len(reason) < 1:
             await ctx.send("Must include a reason with the kick")
         else:
-            await member.send(member.guild.name + " kicked you for reason:\n> " + reason)
+            try:
+                await member.send(member.guild.name + " kicked you for reason:\n> " + reason)
+            except discord.Forbidden:
+                await ctx.send(f"Couldn't send kick message to {member.display_name} due to having locked their DMs")
             await member.kick(reason=reason)
             await ctx.send("Successfully kicked user " + member.name + "#" + member.discriminator)
 

@@ -100,9 +100,7 @@ class DirectMessages(commands.Cog):
                 attachments.append(await i.to_file())
 
         members = role.members
-
-        def check_author(message):
-            return message.author.id == ctx.author.id
+        closed_dms = []
 
         # Send message to user via DM
         if len(msg) > 0:
@@ -113,8 +111,15 @@ class DirectMessages(commands.Cog):
 
             if await yes_no_helper(self.bot, ctx):
                 for member in members:
-                    await member.send(msg, files=attachments)
-                await ctx.send("Message(s) sent to " + str(len(role.members)) + " members")
+                    try:
+                        await member.send(msg, files=attachments)
+                    except discord.Forbidden:
+                        closed_dms.append(member)
+
+                await ctx.send("Message(s) sent to " + str(len(role.members) - len(closed_dms)) + " members")
+
+                if len(closed_dms) > 0:
+                    await ctx.send(f"Failed to send message to {' '.join([x.mention for x in closed_dms])}")
             else:
                 await ctx.send("Cancelled role PM")
 

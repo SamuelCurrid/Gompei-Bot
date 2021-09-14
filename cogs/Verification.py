@@ -49,12 +49,15 @@ class Verification(commands.Cog):
                 try:
                     await member.send("You are now verified in the WPI Discord Server!")
                 except discord.Forbidden:
-                    print("Couldn't send verification message to " + member.display_name + " due to having locked their DMs")
+                    print(f"Couldn't send verification message to {member.display_name} due to having locked their DMs")
             else:
-                await member.send(
-                    "You are now verified in the WPI Discord! One last step, in order to get the " + wpi_role.name +
-                    " role you must pick up a class role"
-                )
+                try:
+                    await member.send(
+                        "You are now verified in the WPI Discord! One last step, in order to get the " + wpi_role.name +
+                        " role you must pick up a class role"
+                    )
+                except discord.Forbidden:
+                    print(f"Couldn't send verification message to {member.display_name} due to having locked their DMs")
 
     @verification_check.before_loop
     async def before_verification_check(self):
@@ -194,22 +197,6 @@ class Verification(commands.Cog):
                         reason="Verified member"
                     )
                     Config.verify_member(member)
-
-    # @commands.Cog.listener()
-    # async def on_member_join(self, member):
-    #     """
-    #     Checks to see if a user has been verified before, reassigns roles if yes
-    #
-    #     :param member:
-    #     """
-    #     if Config.guilds[member.guild]["verifications"]["member_role"] is not None:
-    #         if str(member.id) in Config.raw_settings["guilds"][str(member.guild.id)]["verifications"]["member"]:
-    #             Config.add_member(member)
-    #             Config.verify_member(member)
-    #             await member.add_roles(
-    #                 Config.guilds[member.guild]["verifications"]["member_role"],
-    #                 reason="Previously verified"
-    #             )
 
     @commands.Cog.listener()
     async def on_presence_update(self, before, after):

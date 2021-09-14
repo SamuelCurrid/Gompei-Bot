@@ -165,7 +165,10 @@ class Roles(commands.Cog):
                 await member.edit(roles=Config.lockouts[member], reason="Used letmein command")
                 Config.remove_lockout(member)
 
-                await member.send("Welcome back to the server :)")
+                try:
+                    await member.send("Welcome back to the server :)")
+                except discord.Forbidden:
+                    pass
 
     @commands.command(pass_context=True, aliases=["addAccessRole"])
     @commands.check(administrator_perms)
