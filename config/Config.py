@@ -234,11 +234,12 @@ async def update_guild_settings(guild: discord.Guild):
         pass
 
     guilds[guild]["logging"]["staff"] = guild.get_channel(raw_settings["guilds"][str(guild.id)]["logging"]["staff"])
+
+    # Invites
     for invite in await guild.invites():
         guilds[guild]["logging"]["invites"][invite] = {
             "inviter_id": invite.inviter.id,
             "uses": invite.uses
-
         }
 
         if invite.code in raw_settings["guilds"][str(guild.id)]["logging"]["invites"]:
@@ -246,6 +247,13 @@ async def update_guild_settings(guild: discord.Guild):
                 raw_settings["guilds"][str(guild.id)]["logging"]["invites"][invite.code]
         else:
             guilds[guild]["logging"]["invites"][invite]["note"] = None
+
+    vanity_url = await guild.vanity_invite()
+    if vanity_url is not None:
+        guilds[guild]["logging"]["invites"][vanity_url] = {
+            "invite_id": None,
+            "uses": invite.uses
+        }
 
     # Administration
     for user_id in raw_settings["guilds"][str(guild.id)]["administration"]["mutes"]:

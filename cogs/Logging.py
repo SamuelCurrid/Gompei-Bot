@@ -744,20 +744,57 @@ class Logging(commands.Cog):
                     )
                     break
             else:
-                creation_delta = time_delta_string(member.created_at, discord.utils.utcnow())
+                vanity_url = await member.guild.vanity_invite()
+                if vanity_url is not None:
+                    if vanity_url not in Config.guilds[member.guild]["logging"]["invites"]:
+                        Config.add_invite(vanity_url)
+                        creation_delta = time_delta_string(member.created_at, discord.utils.utcnow())
 
-                embed = discord.Embed(
-                    title="Member joined",
-                    colour=discord.Colour(0x43b581),
-                    description=(
-                            "<@" + str(member.id) + "> " + make_ordinal(member.guild.member_count) +
-                            " to join\ncreated " + creation_delta + " ago\n\nUsed the vanity URL"
-                    )
-                )
+                        embed = discord.Embed(
+                            title="Member joined",
+                            colour=discord.Colour(0x43b581),
+                            description=(
+                                    "<@" + str(member.id) + "> " + make_ordinal(member.guild.member_count) +
+                                    " to join\ncreated " + creation_delta + " ago\n\nUsed the vanity URL"
+                            )
+                        )
 
-                embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.display_avatar.url)
-                embed.set_footer(text="ID: " + str(member.id))
-                embed.timestamp = discord.utils.utcnow()
+                        embed.set_author(name=member.name + "#" + member.discriminator,
+                                         icon_url=member.display_avatar.url)
+                        embed.set_footer(text="ID: " + str(member.id))
+                        embed.timestamp = discord.utils.utcnow()
+                    elif Config.guilds[member.guild]["logging"]["invites"][vanity_url]["uses"] != invite.uses:
+                        Config.update_invite_uses(vanity_url)
+                        creation_delta = time_delta_string(member.created_at, discord.utils.utcnow())
+
+                        embed = discord.Embed(
+                            title="Member joined",
+                            colour=discord.Colour(0x43b581),
+                            description=(
+                                    "<@" + str(member.id) + "> " + make_ordinal(member.guild.member_count) +
+                                    " to join\ncreated " + creation_delta + " ago\n\nUsed the vanity URL"
+                            )
+                        )
+
+                        embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.display_avatar.url)
+                        embed.set_footer(text="ID: " + str(member.id))
+                        embed.timestamp = discord.utils.utcnow()
+                    else:
+                        creation_delta = time_delta_string(member.created_at, discord.utils.utcnow())
+
+                        embed = discord.Embed(
+                            title="Member joined",
+                            colour=discord.Colour(0x43b581),
+                            description=(
+                                    "<@" + str(member.id) + "> " + make_ordinal(member.guild.member_count) +
+                                    " to join\ncreated " + creation_delta + " ago\n\nUsed a discovery invite"
+                            )
+                        )
+
+                        embed.set_author(name=member.name + "#" + member.discriminator,
+                                         icon_url=member.display_avatar.url)
+                        embed.set_footer(text="ID: " + str(member.id))
+                        embed.timestamp = discord.utils.utcnow()
 
                 await self.send_embed(
                     embed,
