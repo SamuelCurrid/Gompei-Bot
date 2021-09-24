@@ -694,11 +694,18 @@ def add_invite(invite: discord.Invite):
     """
     global guilds, raw_settings
 
-    guilds[invite.guild]["logging"]["invites"][invite] = {
-        "inviter_id": invite.inviter.id,
-        "uses": invite.uses,
-        "note": None
-    }
+    if invite.inviter is None:
+        guilds[invite.guild]["logging"]["invites"][invite] = {
+            "inviter_id": None,
+            "uses": invite.uses,
+            "note": None
+        }
+    else:
+        guilds[invite.guild]["logging"]["invites"][invite] = {
+            "inviter_id": invite.inviter.id,
+            "uses": invite.uses,
+            "note": None
+        }
 
 
 def remove_invite(invite: discord.Invite):
@@ -859,7 +866,7 @@ def remove_announcement_channel(channel: discord.TextChannel):
     save_json(os.path.join("config", "settings.json"), raw_settings)
 
 
-def add_command_channel(channel: discord.TextChannel):
+def add_command_channel(channel: typing.Union[discord.TextChannel, discord.Thread]):
     """
     Adds a command channel for a guild
 
@@ -872,7 +879,7 @@ def add_command_channel(channel: discord.TextChannel):
     save_json(os.path.join("config", "settings.json"), raw_settings)
 
 
-def remove_command_channel(channel: discord.TextChannel):
+def remove_command_channel(channel: typing.Union[discord.TextChannel, discord.Thread]):
     """
     Removes a command channel
 

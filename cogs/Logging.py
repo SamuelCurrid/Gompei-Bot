@@ -745,7 +745,7 @@ class Logging(commands.Cog):
                     break
             else:
                 try:
-                    vanity_url = await member.guild.vanity_invite()
+                    vanity_url = await member.guild.vanity_invite() # Not populating correctly
 
                     if vanity_url not in Config.guilds[member.guild]["logging"]["invites"]:
                         Config.add_invite(vanity_url)

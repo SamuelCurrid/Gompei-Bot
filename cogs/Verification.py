@@ -59,6 +59,8 @@ class Verification(commands.Cog):
                                     Config.guilds[guild]["verifications"]["wpi_role"],
                                     reason="Verified!"
                                 )
+                            except discord.NotFound:
+                                print(f"Verification role was not found for {guild}")
                             except discord.Forbidden:
                                 pass
             else:
@@ -242,7 +244,6 @@ class Verification(commands.Cog):
                                     await logging.create_thread(
                                         name="Moderator Uptime",
                                         auto_archive_duration=1440,
-                                        type=discord.ChannelType.public_thread
                                     )
                                 )
 

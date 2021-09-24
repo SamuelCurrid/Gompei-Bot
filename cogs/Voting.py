@@ -1,8 +1,11 @@
+import pytz
+
 from cogs.Permissions import dm_commands, moderator_perms
 from GompeiFunctions import load_json, save_json
 from dateutil.parser import parse
 from discord.ext import commands
 from datetime import datetime
+from config import Config
 
 import asyncio
 import discord
@@ -73,7 +76,7 @@ class Voting(commands.Cog):
 
     async def poll_timer(self, close_date):
         self.vote_open = True
-        await asyncio.sleep((close_date - datetime.now()).total_seconds())
+        await asyncio.sleep((close_date - discord.utils.utcnow()).total_seconds())
         await self.close_poll(None)
 
     @commands.command(pass_context=True, aliases=["closePoll"])
@@ -101,7 +104,10 @@ class Voting(commands.Cog):
                 count += 1
 
         embed = discord.Embed(title=self.votes["title"], color=0x43b581)
-        embed.description = ":star: " + self.votes["votes"][0]["name"] + " :star:\n" + leaderboard
+        if len(self.votes["votes"]) > 0:
+            embed.description = ":star: " + self.votes["votes"][0]["name"] + " :star:\n" + leaderboard
+        else:
+            embed.description = ":star: Nothing! :star:\n" + leaderboard
         await self.poll_message.edit(embed=embed)
 
         self.vote_open = False
@@ -138,7 +144,9 @@ class Voting(commands.Cog):
 
             if closes is None:
                 await ctx.send("Not a valid close time")
-            elif (closes - datetime.now()).total_seconds() < 0:
+
+            closes = closes.astimezone(pytz.utc)
+            if (closes - discord.utils.utcnow()).total_seconds() < 0:
                 await ctx.send("Close time cannot be before current time")
             else:
                 modifier = 4
@@ -164,7 +172,18 @@ class Voting(commands.Cog):
                     "votes": []
                 }
                 save_json(os.path.join("config", "votes.json"), self.votes)
+
+                # Create open thread
+                voting_thread = await self.poll_message.create_thread(
+                    name=title + " Voting",
+                    auto_archive_duration=10080,
+                )
+
+                Config.add_command_channel(voting_thread)
+
                 await self.poll_timer(closes)
+                await voting_thread.edit(archived=True)
+                Config.remove_command_channel(voting_thread)
 
     @commands.command(pass_context=True, aliases=['createDecisionVote'])
     @commands.check(moderator_perms)

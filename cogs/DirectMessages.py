@@ -273,13 +273,13 @@ class DirectMessages(commands.Cog):
                     if len(files) > 0 or len(urls) > 1:
                         description += "**<File(s) Attached>** "
 
-                    embed = discord.Embed(description=description, timestamp=datetime.utcnow())
+                    embed = discord.Embed(description=description, timestamp=discord.utils.utcnow())
                     embed.set_author(
                         name="DM from " + message.author.name + "#" + message.author.discriminator,
                         icon_url=message.author.display_avatar.url
                     )
                     embed.set_footer(text=message.author.id)
-                    embed.timestamp = datetime.utcnow()
+                    embed.timestamp = discord.utils.utcnow()
                     try:
                         await Config.dm_channel.send(urls, embed=embed, files=files, stickers=stickers)
                     except discord.Forbidden:

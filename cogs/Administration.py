@@ -62,7 +62,7 @@ class Administration(commands.Cog):
             added_roles = [x for x in after.roles if x not in before.roles]
             if len(added_roles) > 0:
                 jail_embed = discord.Embed(title="Member jailed", color=0xbe4041)
-                jail_embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar_url)
+                jail_embed.set_author(name=after.name + "#" + after.discriminator, icon_url=after.avatar.url)
 
                 jail_embed.description = "<@" + str(after.id) + "> attempted to pick up a role while jailed:\n"
                 for role in added_roles:
@@ -139,8 +139,8 @@ class Administration(commands.Cog):
 
         embed = discord.Embed()
         embed.colour = discord.Colour(0x8899d4)
-        embed.set_author(name=user.name + "#" + user.discriminator, icon_url=user.avatar_url)
-        embed.set_image(url=user.avatar_url)
+        embed.set_author(name=user.name + "#" + user.discriminator, icon_url=user.avatar.url)
+        embed.set_image(url=user.avatar.url)
         embed.description = "<@" + str(user.id) + ">"
 
         embed.set_footer(text="ID: " + str(user.id))
@@ -522,9 +522,9 @@ class Administration(commands.Cog):
             await ctx.send("You must include a reason for the mute")
             return
 
-        Config.add_mute(member, datetime.now() + timedelta(seconds=seconds))
+        Config.add_mute(member, discord.utils.utcnow() + timedelta(seconds=seconds))
 
-        mute_time = time_delta_string(datetime.utcnow(), datetime.utcnow() + delta)
+        mute_time = time_delta_string(discord.utils.utcnow(), discord.utils.utcnow() + delta)
 
         mute_embed = discord.Embed(
             title="Member muted",
@@ -535,9 +535,9 @@ class Administration(commands.Cog):
             )
         )
 
-        mute_embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
+        mute_embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar.url)
         mute_embed.set_footer(text="ID: " + str(member.id))
-        mute_embed.timestamp = datetime.utcnow()
+        mute_embed.timestamp = discord.utils.utcnow()
 
         await member.add_roles(muted_role)
         await ctx.send("**Muted** user **" + username + "** for **" + mute_time + "** for: **" + reason + "**")
@@ -567,7 +567,7 @@ class Administration(commands.Cog):
         await member.remove_roles(muted_role)
 
         mute_embed = discord.Embed(title="Member unmuted", color=0x43b581)
-        mute_embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
+        mute_embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar.url)
         mute_embed.description = "Unmuted <@" + str(member.id) + ">"
         mute_embed.set_footer(text="ID: " + str(member.id))
         mute_embed.timestamp = discord.utils.utcnow()
@@ -782,7 +782,7 @@ class Administration(commands.Cog):
             await ctx.send("Not a valid time, try again")
 
         delta = timedelta(seconds=seconds)
-        jail_time = time_delta_string(datetime.utcnow(), datetime.utcnow() + delta)
+        jail_time = time_delta_string(discord.utils.utcnow(), discord.utils.utcnow() + delta)
 
         if len(reason) < 1:
             await ctx.send("You must include a reason for the jail")
@@ -799,9 +799,9 @@ class Administration(commands.Cog):
             )
         )
 
-        jail_embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar_url)
+        jail_embed.set_author(name=member.name + "#" + member.discriminator, icon_url=member.avatar.url)
         jail_embed.set_footer(text="ID: " + str(member.id))
-        jail_embed.timestamp = datetime.utcnow()
+        jail_embed.timestamp = discord.utils.utcnow()
 
         if member.premium_since is None:
             await member.edit(roles=[])
@@ -891,9 +891,9 @@ class Administration(commands.Cog):
             await ctx.send("Successfully kicked user " + member.name + "#" + member.discriminator)
 
     @commands.command(pass_context=True)
-    @commands.check(administrator_perms)
+    @commands.check(moderator_perms)
     @commands.guild_only()
-    async def ban(self, ctx, user: typing.Union[discord.Member, str], *, reason):
+    async def ban(self, ctx, user: typing.Union[discord.Member, str], *, reason: typing.Optional[str]):
         """
         Bans a user from the server, requires a reason as well
         Usage: .ban <member> <reason>
@@ -917,15 +917,17 @@ class Administration(commands.Cog):
                 await ctx.send("Bot could not connect with gateway")
                 return
 
-        if len(reason) < 1:
-            await ctx.send("Must include a reason with the ban")
-        else:
+        # if len(reason) < 1:
+        #     await ctx.send("Must include a reason with the ban")
+        # else:
 
+        if reason is None:
+            await ctx.guild.ban(user=user)
+        else:
             if isinstance(user, discord.Member):
                 await user.send(user.guild.name + " banned you for reason:\n> " + reason)
-
             await ctx.guild.ban(user=user, reason=reason)
-            await ctx.send("Successfully banned user " + user.name + "#" + user.discriminator)
+        await ctx.send("Successfully banned user " + user.name + "#" + user.discriminator)
 
     @commands.command(pass_context=True, name="staffChannel")
     @commands.check(administrator_perms)
@@ -1019,9 +1021,7 @@ class Administration(commands.Cog):
 
         thread = await target.create_thread(
             name=name,
-            auto_archive_duration=archive_time,
-            type=discord.ChannelType.public_thread,
-            reason="Echo thread command used"
+            auto_archive_duration=archive_time
         )
         await ctx.send(f"Thread created {thread.mention}")
 
