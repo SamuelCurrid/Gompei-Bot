@@ -48,7 +48,7 @@ class Highlights(commands.Cog):
         """
         for keyword in self.highlights[str(ctx.author.id)]["keywords"]:
             try:
-                if regex.search(keyword, phrase.lower(), timeout=0.1):
+                if regex.search(keyword, phrase, timeout=0.1):
                     await ctx.send(f"This phrase triggers the keyword \"{keyword}\"")
                     return
             except TimeoutError:
@@ -73,7 +73,7 @@ class Highlights(commands.Cog):
                 "blocked_channels": [],
                 "blocked_users": []
             }
-        elif keyword.lower() in self.highlights[str(ctx.author.id)]:
+        elif keyword in self.highlights[str(ctx.author.id)]:
             await ctx.send(
                 f"You already have \"{keyword}\" as a highlight",
                 allowed_mentions=discord.AllowedMentions.none()
@@ -98,13 +98,13 @@ class Highlights(commands.Cog):
         if str(ctx.author.id) not in self.highlights:
             await ctx.send("You don't have any highlights to remove")
             return
-        elif keyword.lower() not in self.highlights[str(ctx.author.id)]["keywords"]:
+        elif keyword not in self.highlights[str(ctx.author.id)]["keywords"]:
             await ctx.send(
                 "Did not find \"{keyword}\" in your highlights",
                 allowed_mentions=discord.AllowedMentions.none()
             )
 
-        self.highlights[str(ctx.author.id)]["keywords"].remove(keyword.lower())
+        self.highlights[str(ctx.author.id)]["keywords"].remove(keyword)
         Config.save_highlights(self.highlights)
         await ctx.send(
             f"Successfully removed \"{keyword}\" as a highlight",
@@ -283,7 +283,7 @@ class Highlights(commands.Cog):
 
             for keyword in self.highlights[user_id]["keywords"]:
                 try:
-                    if regex.search(keyword, message.content.lower(), timeout=0.1):
+                    if regex.search(keyword, message.content, timeout=0.1):
                         permissions = message.channel.permissions_for(member)
                         if permissions.view_channel and permissions.read_messages:
                             messages = await message.channel.history(
